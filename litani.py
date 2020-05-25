@@ -18,24 +18,76 @@ import argparse
 import json
 import re
 
-import ninja_syntax
+from ninja.misc import ninja_syntax
+
+
+_ci_stages = [
+    "build", "test", "report",
+]
 
 
 def get_add_job_args():
-    return [{
-            "flags": ["--inputs"],
+    return {
+        "describing the build graph": [{
+            "flags": ["-i", "--inputs"],
             "required": True,
             "nargs": "+",
-    }, {
-            "flags": ["--command"],
-            "required": True
-    }, {
-            "flags": ["--outputs"],
+            "metavar": "F",
+            "help": "list of files that this job depends on",
+        }, {
+            "flags": ["-c", "--command"],
+            "metavar": "C",
             "required": True,
+            "help": "the command to run once all dependencies are satisfied",
+        }, {
+            "flags": ["-o", "--outputs"],
+            "required": True,
+            "metavar": "F",
             "nargs": "+",
-    }, {
+            "help": "list of files that this job generates",
+        }],
+        "job control": [{
+            "flags": ["-p", "--pipeline-name"],
+            "required": True,
+            "metavar": "P",
+            "help": "which pipeline this job is a member of",
+        }, {
+            "flags": ["-s", "--ci-stage"],
+            "required": True,
+            "metavar": "S",
+            "choices": _ci_stages,
+            "help": "which CI stage this job should execute in. "
+                    "Must be one of {%(choices)s}.",
+        }, {
+            "flags": ["--timeout"],
+            "metavar": "N",
+            "type": int,
+            "help": "max number of seconds this job should run for"
+        }, {
+            "flags": ["--timeout-ok"],
+            "action": "store_true",
+            "help": "if the job times out, terminate it and return success"
+        }, {
+            "flags": ["--ok-returns"],
+            "metavar": "RC",
+            "nargs": "+",
+            "help": "if the job exits with one of the listed return codes, "
+                    "return success"
+        }],
+        "misc": [{
             "flags": ["--description"],
-    }]
+            "metavar": "DESC",
+            "help": "string to print when this job is being run",
+        }, {
+            "flags": ["-v", "--verbose"],
+            "action": "store_true",
+            "help": "verbose output",
+        }, {
+            "flags": ["-w", "--very-verbose"],
+            "action": "store_true",
+            "help": "very verbose output",
+        }],
+    }
 
 
 def add_job(args):
@@ -102,8 +154,12 @@ def run_build(_):
 
 
 def get_args():
-    pars = argparse.ArgumentParser()
-    subs = pars.add_subparsers(required=True)
+    description = "Incrementally build up a dependency graph of jobs to execute"
+
+    pars = argparse.ArgumentParser(description=description)
+    subs = pars.add_subparsers(
+        title="subcommands", dest="subcommand")
+    subs.required = True
 
     run_build_pars = subs.add_parser("run-build")
     run_build_pars.set_defaults(func=run_build)
@@ -113,9 +169,11 @@ def get_args():
 
     add_job_pars = subs.add_parser("add-job")
     add_job_pars.set_defaults(func=add_job)
-    for arg in get_add_job_args():
-        flags = arg.pop("flags")
-        add_job_pars.add_argument(*flags, **arg)
+    for group_name, args in get_add_job_args().items():
+        group = add_job_pars.add_argument_group(title=group_name)
+        for arg in args:
+            flags = arg.pop("flags")
+            group.add_argument(*flags, **arg)
 
     return pars.parse_args()
 
