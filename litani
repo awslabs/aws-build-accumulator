@@ -16,6 +16,7 @@
 
 import argparse
 import json
+import logging
 import re
 
 from ninja.misc import ninja_syntax
@@ -178,8 +179,19 @@ def get_args():
     return pars.parse_args()
 
 
+def set_up_logging(args):
+    if args.very_verbose:
+        level = logging.DEBUG
+    elif args.verbose:
+        level = logging.INFO
+    else:
+        level = logging.WARNING
+    logging.basicConfig(format="litani:%(level)s: %(message)s", level=level)
+
+
 def main():
     args = get_args()
+    set_up_logging(args)
     args.func(args)
 
 
