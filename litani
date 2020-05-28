@@ -15,23 +15,37 @@
 
 
 import argparse
+import contextlib
+import datetime
 import json
 import logging
+import os
+import pathlib
 import re
+import shlex
+import subprocess
+import sys
+import tempfile
+import uuid
 
-from ninja.misc import ninja_syntax
+import ninja_syntax
+
+from lib import litani
 
 
-_ci_stages = [
-    "build", "test", "report",
-]
+CI_STAGES = ["build", "test", "report",]
+LITANI_CACHE_FILE = "cache.json"
+
+
+################################################################################
+# Argument parsing
+################################################################################
 
 
 def get_add_job_args():
-    return {
-        "describing the build graph": [{
+    return [(
+        "describing the build graph", [{
             "flags": ["-i", "--inputs"],
-            "required": True,
             "nargs": "+",
             "metavar": "F",
             "help": "list of files that this job depends on",
@@ -42,12 +56,11 @@ def get_add_job_args():
             "help": "the command to run once all dependencies are satisfied",
         }, {
             "flags": ["-o", "--outputs"],
-            "required": True,
             "metavar": "F",
             "nargs": "+",
             "help": "list of files that this job generates",
-        }],
-        "job control": [{
+        }]), (
+        "job control", [{
             "flags": ["-p", "--pipeline-name"],
             "required": True,
             "metavar": "P",
@@ -56,9 +69,13 @@ def get_add_job_args():
             "flags": ["-s", "--ci-stage"],
             "required": True,
             "metavar": "S",
-            "choices": _ci_stages,
+            "choices": CI_STAGES,
             "help": "which CI stage this job should execute in. "
                     "Must be one of {%(choices)s}.",
+        }, {
+            "flags": ["--cwd"],
+            "metavar": "DIR",
+            "help": "directory that this job should execute in"
         }, {
             "flags": ["--timeout"],
             "metavar": "N",
@@ -74,84 +91,37 @@ def get_add_job_args():
             "nargs": "+",
             "help": "if the job exits with one of the listed return codes, "
                     "return success"
-        }],
-        "misc": [{
+        }, {
+            "flags": ["--interleave-stdout-stderr"],
+            "action": "store_true",
+            "help": "simulate '2>&1 >...'"
+        }, {
+            "flags": ["--stdout-file"],
+            "metavar": "FILE",
+            "help": "file to redirect stdout to"
+        }, {
+            "flags": ["--stderr-file"],
+            "metavar": "FILE",
+            "help": "file to redirect stderr to"
+        }]), (
+        "misc", [{
             "flags": ["--description"],
             "metavar": "DESC",
             "help": "string to print when this job is being run",
-        }, {
-            "flags": ["-v", "--verbose"],
-            "action": "store_true",
-            "help": "verbose output",
-        }, {
-            "flags": ["-w", "--very-verbose"],
-            "action": "store_true",
-            "help": "very verbose output",
-        }],
-    }
+        }]),
+    ]
 
 
-def add_job(args):
-    try:
-        with open("/tmp/litani_cache.json") as handle:
-            cache = json.load(handle)
-    except FileNotFoundError:
-        cache = {
-            "jobs": []
-        }
-    entry = {
-        "inputs": args.inputs,
-        "outputs": args.outputs,
-        "command": args.command,
-    }
-    cache["jobs"].append(entry)
-    if args.description:
-        entry["description"] = args.description
-
-    with open("/tmp/litani_cache.json", "w") as handle:
-        json.dump(cache, handle, indent=2)
-
-
-def to_rule_name(string):
-    allowed = re.compile(r"[a-zA-Z0-9_]")
-    return "".join([i for i in string if allowed.match(i)])
-
-
-def run_build(_):
-    with open("/tmp/litani_cache.json") as handle:
-        cache = json.load(handle)
-
-    rules = []
-    builds = []
-    for entry in cache["jobs"]:
-        for required in ["inputs", "outputs", "command"]:
-            if required not in entry:
-                print(entry)
-                exit(1)
-
-        if "description" in entry:
-            description = entry["description"]
-        else:
-            description = f"Running '{entry['command']}...'"
-        rule_name = to_rule_name(entry["command"])
-        rules.append({
-            "name": rule_name,
-            "description": description,
-            "command": entry["command"],
-        })
-
-        builds.append({
-            "inputs": entry["inputs"],
-            "outputs": entry["outputs"],
-            "rule": rule_name
-        })
-
-    with open("litani.ninja", "w") as handle:
-        ninja = ninja_syntax.Writer(handle, width=70)
-        for rule in rules:
-            ninja.rule(**rule)
-        for build in builds:
-            ninja.build(**build)
+def get_exec_job_args():
+    exec_job_args = list(get_add_job_args())
+    exec_job_args.append((
+        "`litani exec`-specific flags", [{
+            "flags": ["--status-file"],
+            "metavar": "F",
+            "required": True,
+            "help": "JSON file to write command status to",
+    }]))
+    return exec_job_args
 
 
 def get_args():
@@ -162,21 +132,95 @@ def get_args():
         title="subcommands", dest="subcommand")
     subs.required = True
 
+    for arg in [{
+            "flags": ["-v", "--verbose"],
+            "action": "store_true",
+            "help": "verbose output",
+        }, {
+            "flags": ["-w", "--very-verbose"],
+            "action": "store_true",
+            "help": "very verbose output",
+    }]:
+        flags = arg.pop("flags")
+        pars.add_argument(*flags, **arg)
+
+    run_build_pars = subs.add_parser("init")
+    run_build_pars.set_defaults(func=init)
+    for arg in []:
+        flags = arg.pop("flags")
+        run_build_pars.add_argument(*flags, **arg)
+
     run_build_pars = subs.add_parser("run-build")
     run_build_pars.set_defaults(func=run_build)
-    for arg in []:
+    for arg in [{
+            "flags": ["-n", "--dry-run"],
+            "help": "don't actually run jobs, just act like they succeeded",
+            "action": "store_true",
+    }, {
+            "flags": ["-j", "--parallel"],
+            "metavar": "N",
+            "help": "run N jobs in parallel. 0 means infinity, default is "
+                    "based on the number of cores on this system.",
+    }]:
         flags = arg.pop("flags")
         run_build_pars.add_argument(*flags, **arg)
 
     add_job_pars = subs.add_parser("add-job")
     add_job_pars.set_defaults(func=add_job)
-    for group_name, args in get_add_job_args().items():
+    for group_name, args in get_add_job_args():
         group = add_job_pars.add_argument_group(title=group_name)
         for arg in args:
             flags = arg.pop("flags")
             group.add_argument(*flags, **arg)
 
-    return pars.parse_args()
+    exec_job_pars = subs.add_parser("exec")
+    exec_job_pars.set_defaults(func=exec_job)
+    for group_name, args in get_exec_job_args():
+        group = exec_job_pars.add_argument_group(title=group_name)
+        for arg in args:
+            flags = arg.pop("flags")
+            group.add_argument(*flags, **arg)
+
+    all_args = sys.argv[1:]
+    wrapped_command = None
+    if "--" in all_args:
+        sep_idx = all_args.index("--")
+        arg_list = all_args[0:sep_idx]
+        wrapped_command = arg_list[sep_idx+1:]
+        all_args = arg_list
+
+    args = pars.parse_args(all_args)
+    if wrapped_command is not None:
+        args.command = wrapped_command
+
+    return args
+
+
+################################################################################
+# Other utility functions
+################################################################################
+
+
+@contextlib.contextmanager
+def atomic_write(path, mode="w"):
+    try:
+        tmp = "%s~" % path
+        handle = open(tmp, mode)
+        yield handle
+    except RuntimeError:
+        try:
+            os.unlink(tmp)
+        except RuntimeError:
+            pass
+    else:
+        handle.flush()
+        handle.close()
+        os.rename(tmp, path)
+
+
+def to_rule_name(string):
+    allowed = re.compile(r"[a-zA-Z0-9_]")
+    return "".join([i for i in string if allowed.match(i)])
 
 
 def set_up_logging(args):
@@ -186,7 +230,229 @@ def set_up_logging(args):
         level = logging.INFO
     else:
         level = logging.WARNING
-    logging.basicConfig(format="litani:%(level)s: %(message)s", level=level)
+    logging.basicConfig(
+        format="litani:%(levelname)s: %(message)s", level=level)
+
+
+def positive_int(arg):
+    try:
+        ret = int(arg)
+    except ValueError:
+        raise argparse.ArgumentTypeError("Timeout '%s' must be an int" % arg)
+    if ret <= 0:
+        raise argparse.ArgumentTypeError("Timeout '%d' must be > 0" % ret)
+    return ret
+
+
+def list_of_ints(arg):
+    ret = []
+    for rc in arg:
+        try:
+            ret.append(int(rc))
+        except ValueError:
+            raise argparse.ArgumentTypeError(
+                "Return code '%s' must be an int" % arg)
+    return ret
+
+
+def timestamp(key, data):
+    now = datetime.datetime.utcnow()
+    data[key] = now.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def make_litani_exec_command(add_args, status_file):
+    cmd = [os.path.realpath(__file__), "exec"]
+    # strings
+    for arg in [
+            "command", "pipeline_name", "ci_stage", "cwd",
+            "stdout_file", "stderr_file", "description", "timeout"
+    ]:
+        if arg in add_args:
+            cmd.append("--%s" % arg.replace("_", "-"))
+            cmd.append(shlex.quote(add_args[arg].strip()))
+
+    # lists
+    for arg in ["inputs", "outputs", "ok_returns"]:
+        if arg not in add_args or add_args[arg] is None:
+            continue
+        cmd.append("--%s" % arg.replace("_", "-"))
+        for item in add_args[arg]:
+            cmd.append(shlex.quote(item.strip()))
+
+    # switches
+    for arg in [
+            "timeout_ok", "interleave_stdout_stderr"
+    ]:
+        if arg in add_args:
+            cmd.append("--%s" % arg.replace("_", "-"))
+
+    cmd.extend(["--status-file", str(status_file)])
+
+    return " ".join(cmd)
+
+
+################################################################################
+# Entry points
+# ``````````````````````````````````````````````````````````````````````````````
+# Each litani subcommand invokes one of these functions.
+################################################################################
+
+
+def init(_):
+    cache_dir = pathlib.Path(
+        tempfile.gettempdir()) / "litani" / "runs" / str(uuid.uuid4())
+    cache_dir.mkdir(exist_ok=True, parents=True)
+
+    logging.info("litani cache dir is at: %s", cache_dir)
+
+    with atomic_write(litani.CACHE_POINTER) as handle:
+        print(str(cache_dir), file=handle)
+
+
+def add_job(args):
+    litani_cache_dir = litani.get_litani_cache_dir()
+
+    try:
+        with open(litani_cache_dir / LITANI_CACHE_FILE) as handle:
+            cache = json.load(handle)
+    except FileNotFoundError:
+        cache = {
+            "jobs": []
+        }
+    args_dict = vars(args)
+    args_dict.pop("func")
+    for switch in list(args_dict.keys()):
+        if not args_dict[switch]:
+            args_dict.pop(switch)
+
+    logging.debug("Adding job: %s", json.dumps(args_dict, indent=2))
+    cache["jobs"].append(args_dict)
+
+    with atomic_write(litani_cache_dir / LITANI_CACHE_FILE) as handle:
+        json.dump(cache, handle, indent=2)
+
+
+def run_build(args):
+    litani_cache_dir = litani.get_litani_cache_dir()
+
+    with open(litani_cache_dir / LITANI_CACHE_FILE) as handle:
+        cache = json.load(handle)
+
+    rules = []
+    builds = []
+    status_dir = litani_cache_dir / "status-files"
+    for entry in cache["jobs"]:
+
+        if "description" in entry:
+            description = entry["description"]
+        else:
+            description = f"Running '{entry['command']}...'"
+
+        rule_name = str(uuid.uuid4())
+        status_file = status_dir / ("%s.json" % rule_name)
+
+        rules.append({
+            "name": rule_name,
+            "description": description,
+            "command": make_litani_exec_command(entry, status_file)
+        })
+
+        builds.append({
+            "inputs": entry["inputs"],
+            "outputs": entry["outputs"] + [str(status_file)],
+            "rule": rule_name
+        })
+
+    ninja_file = litani_cache_dir / "litani.ninja"
+    with atomic_write(ninja_file) as handle:
+        ninja = ninja_syntax.Writer(handle, width=70)
+        for rule in rules:
+            logging.debug(rule)
+            ninja.rule(**rule)
+        for build in builds:
+            logging.debug(build)
+            ninja.build(**build)
+
+    cmd = [
+        "ninja",
+        "-k", "0",
+        "-f", ninja_file,
+    ]
+    if args.parallel:
+        cmd.extend(["-j", args.parallel])
+    if args.dry_run:
+        cmd.append("-n")
+    proc = subprocess.run(cmd)
+    logging.info("Status files have been written to %s", str(status_dir))
+    sys.exit(1 if proc.returncode else 0)
+
+
+def exec_job(args):
+    args_dict = vars(args)
+    args_dict.pop("func")
+    out_data = {
+        "wrapper-arguments": args_dict,
+        "wrapper-return-code": 0,
+    }
+    timestamp("start-time", out_data)
+    with atomic_write(args.status_file) as handle:
+        print(json.dumps(out_data, indent=2), file=handle)
+
+    if args.interleave_stdout_stderr:
+        stderr = subprocess.STDOUT
+    else:
+        stderr = subprocess.PIPE
+
+    proc = subprocess.Popen(
+        args=args.command, shell=True, universal_newlines=True,
+        stdout=subprocess.PIPE, stderr=stderr, cwd=args.cwd)
+
+    try:
+        proc_out, proc_err = proc.communicate(timeout=args.timeout)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        proc_out, proc_err = proc.communicate()
+        out_data["timeout-reached"] = True
+        if not args.timeout_ok:
+            out_data["wrapper-return-code"] = 1
+    else:
+        out_data["timeout-reached"] = False
+
+    out_data["command-return-code"] = proc.returncode
+    ok_returns = args.ok_returns if args.ok_returns else []
+    ok_returns = [int(i) for i in ok_returns]
+    ok_returns.append(0)
+    if proc.returncode not in ok_returns:
+        out_data["wrapper-return-code"] = 1
+
+    for out_field, proc_pipe, arg_file, add_to_out in [
+        ("stdout", proc_out, args.stdout_file, True),
+        ("stderr", proc_err, args.stderr_file, args.interleave_stdout_stderr)
+    ]:
+        if add_to_out and proc_pipe:
+            out_data[out_field] = proc_pipe.splitlines()
+        else:
+            out_data[out_field] = []
+        if arg_file:
+            with atomic_write(arg_file) as handle:
+                print(proc_pipe, file=handle)
+
+    timestamp("end-time", out_data)
+    out_str = json.dumps(out_data, indent=2)
+    logging.info(out_str)
+    with atomic_write(args.status_file) as handle:
+        print(out_str, file=handle)
+
+    if out_data["wrapper-return-code"] == 0:
+        sys.exit(0)
+
+    logging.error(out_field["stdout"])
+    if not args.interleave_stdout_stderr:
+        logging.error(out_field["stderr"])
+    logging.error(
+        "Further details about this failed job are recorded in %s",
+        args.status_file)
+    sys.exit(out_data["wrapper-return-code"])
 
 
 def main():

@@ -1,0 +1,43 @@
+#!/usr/bin/env  python3
+
+
+import json
+import logging
+import os
+import sys
+
+from lib import litani
+
+
+ret = {
+    "successful": [],
+    "failed": [],
+    "in-progress": [],
+}
+
+pipelines = {}
+
+cache_dir = litani.get_litani_cache_dir()
+for root, _, files in os.walk(os.path.join(cache_dir, "status-files")):
+    for fyle in files:
+        if not fyle.endswith(".json"):
+            continue
+        with open(os.path.join(root, fyle)) as handle:
+            data = json.load(handle)
+        try:
+            pipeline = data["wrapper-arguments"]["pipeline_name"]
+        except KeyError:
+            logging.error(json.dumps(data, indent=2))
+            sys.exit(1)
+        if pipeline not in pipelines:
+            pipelines[pipeline] = True
+        if data["command-return-code"] != 0:
+            pipelines[pipeline] = False
+
+for pipeline, success in pipelines.items():
+    if success:
+        ret["successful"].append(pipeline)
+    else:
+        ret["failed"].append(pipeline)
+
+print(json.dumps(ret, indent=2))
