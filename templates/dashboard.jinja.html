@@ -1,0 +1,201 @@
+<html>
+<head>
+  <title>
+    {{ run["project"] }} Proof Results&mdash;{{ run["run_id"] }}
+  </title>
+<style>
+#title{
+  background-color: #ec407a;
+  color: white;
+  padding: 2em;
+}
+h1 {
+  margin-bottom: 0em;
+}
+#subtitle {
+  font-variant: small-caps;
+  text-transform: lowercase;
+  letter-spacing: 0.2em;
+}
+.run-info ul {
+  list-style: none;
+}
+.run-info ul li {
+  display: inline;
+  margin-right: 6em;
+  margin-left: -3em;
+  text-transform: uppercase;
+  font-size: small;
+  color: #ec407a;
+}
+#content {
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-top: 2em;
+  color: #263238;
+  font-family: Helvetica, sans-serif;
+}
+p {
+  margin: 0;
+}
+#pipeline-table {
+  display: flex;
+  flex-direction: column;
+}
+.pipeline-row {
+  display: flex;
+  align-content: stretch;
+  background-color: #eceff1;
+  margin-bottom: 0.5em;
+  padding-top: 0.2em;
+  padding-bottom: 0.2em;
+  padding-left: 0.2em;
+  padding-right: 0.2em;
+  border-radius: 5px;
+}
+.first-row {
+  padding-bottom: 0.5em;
+  padding-top: 0.5em;
+  border-radius: 10px;
+  background-color: #cfd8dc;
+  margin-top: 2em;
+}
+.pipeline-progress {
+  display: flex;
+  flex-grow: 1;
+  justify-content: space-between;
+  margin-left: 1%;
+}
+.pipeline-stage {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  margin-left: 0.2em;
+  margin-right: 0.2em;
+}
+
+.stage-bar .progress {
+  height: 1em;
+  border-radius: 5px;
+}
+
+.stage-bar {
+  height: 1em;
+  border-radius: 5px;
+  border: 1px solid #cfd8dc;
+}
+
+.fail_ignored .stage-bar .progress:hover{ background-color: #e65100; }
+.fail_ignored .stage-bar .progress {
+  background-color: #ff9800;
+}
+
+.fail .stage-bar .progress:hover{ background-color: #b61c1c; }
+.fail .stage-bar .progress {
+  background-color: #f44336;
+}
+
+.success .stage-bar .progress:hover{ background-color: #1a237e; }
+.success .stage-bar .progress {
+  background-color: #3f51b5;
+}
+
+.pipeline-name {
+  align-self: center;
+  text-align: end;
+  width: 13em;
+}
+.pipeline-link:hover {
+  color: #01579b;
+}
+.pipeline-link {
+  justify-self: center;
+  align-self: center;
+  width: 1em;
+  color: #29b6f6;
+}
+.pipeline-header {
+  justify-content: space-around;
+  font-weight: bold;
+  font-variant: small-caps;
+  text-transform: lowercase;
+  font-style: italic;
+  font-size: larger;
+  color: #26323899;
+}
+</style>
+</head>
+<body>
+<div id="content">
+
+  <div id="title">
+    <h1>
+      {{ run["project"] }} Proof Results
+    </h1>
+    <p id="subtitle">
+      Wellspring CI Dashboard
+    </p>
+  </div><!-- id="title" -->
+
+  <div class=run-info>
+    <ul>
+      <li>{{ run["status"] }}</li>
+      <li>{{ run["start-time"] }}</li>
+      <li>{{ run["run_id"] }}</li>
+    <ul>
+  </div><!-- class=run-info -->
+
+  <div id="pipeline-table">
+
+    <div class="pipeline-row first-row">
+      <div class="pipeline-link">
+      </div><!-- class="pipeline-link" -->
+
+      <div class="pipeline-name">
+      </div><!-- class="pipeline-name" -->
+
+      <div class="pipeline-progress pipeline-header">
+        <p>Build</p>
+        <p>Test</p>
+        <p>Report</p>
+      </div><!-- class="pipeline-progress" -->
+    </div><!-- class="pipeline-row" -->
+
+    {% for pipe in run["pipelines"] %}
+    <div class="pipeline-row">
+
+      <div class="pipeline-link">
+        <p><a href="{{ pipe['url'] }}">ⓘ </a></p>
+      </div><!-- class="pipeline-link" -->
+
+      <div class="pipeline-name">
+        <p>{{ pipe["name"] }}</p>
+      </div><!-- class="pipeline-name" -->
+
+      <div class="pipeline-progress">
+        {% for stage in pipe["ci_stages"] %}
+        <div class="pipeline-stage">
+
+          <a class="stage-artifacts-link {{ stage['status'] }}"
+             href="{{ stage['url'] }}">
+            <div class="stage-bar">
+              <div class="progress" style="width: {{ stage['progress'] }}%">
+              </div><!-- class="progress" -->
+            </div><!-- class="stage-bar" -->
+          </a>
+
+        </div><!-- class="pipeline-stage" -->
+        {% endfor %}{# stage in pipe["stages"] #}
+
+      </div><!-- class="pipeline-progress" -->
+
+    </div><!-- class="pipeline-row" -->
+    {% endfor %}{# pipe in run["pipelines"] #}
+
+  </div><!-- id="pipeline-table" -->
+
+
+</div><!-- id="content" -->
+</body>
+</html>

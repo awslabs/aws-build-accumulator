@@ -3,9 +3,13 @@ import os
 import pathlib
 import sys
 
-CACHE_POINTER = ".litani_cache_dir"
 
-def get_litani_cache_dir():
+CACHE_FILE = "cache.json"
+CACHE_POINTER = ".litani_cache_dir"
+CI_STAGES = ["build", "test", "report"]
+
+
+def get_cache_dir():
     def cache_pointer_dirs():
         current = pathlib.Path(os.getcwd()).resolve(strict=True)
         yield current
@@ -42,3 +46,15 @@ def get_litani_cache_dir():
         "Could not find a pointer to a litani cache. Did you forget "
         "to run `litani init`?")
     sys.exit(1)
+
+
+def get_report_dir():
+    return get_cache_dir() / "html"
+
+
+def get_artifacts_dir():
+    return get_cache_dir() / "artifacts"
+
+
+def get_status_dir():
+    return get_cache_dir() / "status"

@@ -23,18 +23,17 @@ import os
 import pathlib
 import re
 import shlex
+import shutil
 import subprocess
 import sys
 import tempfile
+import threading
+import time
 import uuid
 
 import ninja_syntax
 
-from lib import litani
-
-
-CI_STAGES = ["build", "test", "report",]
-LITANI_CACHE_FILE = "cache.json"
+from lib import litani, litani_report
 
 
 ################################################################################
@@ -69,9 +68,13 @@ def get_add_job_args():
             "flags": ["-s", "--ci-stage"],
             "required": True,
             "metavar": "S",
-            "choices": CI_STAGES,
+            "choices": litani.CI_STAGES,
             "help": "which CI stage this job should execute in. "
                     "Must be one of {%(choices)s}.",
+        }, {
+            "flags": ["--stats-group"],
+            "metavar": "GROUP",
+            "help": "which statistics report group this job is in"
         }, {
             "flags": ["--cwd"],
             "metavar": "DIR",
@@ -120,6 +123,11 @@ def get_exec_job_args():
             "metavar": "F",
             "required": True,
             "help": "JSON file to write command status to",
+    }, {
+            "flags": ["--job-id"],
+            "metavar": "ID",
+            "required": True,
+            "help": "the globally unique job ID",
     }]))
     return exec_job_args
 
@@ -146,7 +154,12 @@ def get_args():
 
     run_build_pars = subs.add_parser("init")
     run_build_pars.set_defaults(func=init)
-    for arg in []:
+    for arg in [{
+            "flags": ["--project-name"],
+            "required": True,
+            "help": "Project that this proof run is associated with",
+            "metavar": "NAME",
+    }]:
         flags = arg.pop("flags")
         run_build_pars.add_argument(*flags, **arg)
 
@@ -201,9 +214,25 @@ def get_args():
 ################################################################################
 
 
+def render_report(cache_dir, report_dir):
+    run = litani_report.render(cache_dir)
+    with atomic_write(report_dir / "index.html") as handle:
+        print(run, file=handle)
+
+
+def continuous_render_report(cache_dir, report_dir, killer):
+    while True:
+        render_report(cache_dir, report_dir)
+        if killer.is_set():
+            break
+        time.sleep(2)
+
+
 @contextlib.contextmanager
 def atomic_write(path, mode="w"):
     try:
+        parent = pathlib.Path(path).parent
+        parent.mkdir(exist_ok=True, parents=True)
         tmp = "%s~" % path
         handle = open(tmp, mode)
         yield handle
@@ -218,18 +247,11 @@ def atomic_write(path, mode="w"):
         os.rename(tmp, path)
 
 
-def to_rule_name(string):
-    allowed = re.compile(r"[a-zA-Z0-9_]")
-    return "".join([i for i in string if allowed.match(i)])
-
-
 def set_up_logging(args):
-    if args.very_verbose:
+    if args.very_verbose or args.verbose:
         level = logging.DEBUG
-    elif args.verbose:
-        level = logging.INFO
     else:
-        level = logging.WARNING
+        level = logging.INFO
     logging.basicConfig(
         format="litani:%(levelname)s: %(message)s", level=level)
 
@@ -264,7 +286,7 @@ def make_litani_exec_command(add_args, status_file):
     cmd = [os.path.realpath(__file__), "exec"]
     # strings
     for arg in [
-            "command", "pipeline_name", "ci_stage", "cwd",
+            "command", "pipeline_name", "ci_stage", "cwd", "job_id",
             "stdout_file", "stderr_file", "description", "timeout"
     ]:
         if arg in add_args:
@@ -298,10 +320,22 @@ def make_litani_exec_command(add_args, status_file):
 ################################################################################
 
 
-def init(_):
+def init(args):
+    run_id = str(uuid.uuid4())
     cache_dir = pathlib.Path(
-        tempfile.gettempdir()) / "litani" / "runs" / str(uuid.uuid4())
-    cache_dir.mkdir(exist_ok=True, parents=True)
+        tempfile.gettempdir()) / "litani" / "runs" / run_id
+    cache_dir.mkdir(parents=True)
+
+    now = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    with atomic_write(cache_dir / litani.CACHE_FILE) as handle:
+        print(json.dumps({
+            "project": args.project_name,
+            "run_id": run_id,
+            "start_time": now,
+            "status": "in progress",
+            "jobs": []
+        }, indent=2), file=handle)
 
     logging.info("litani cache dir is at: %s", cache_dir)
 
@@ -310,37 +344,35 @@ def init(_):
 
 
 def add_job(args):
-    litani_cache_dir = litani.get_litani_cache_dir()
+    litani_cache_dir = litani.get_cache_dir()
 
-    try:
-        with open(litani_cache_dir / LITANI_CACHE_FILE) as handle:
-            cache = json.load(handle)
-    except FileNotFoundError:
-        cache = {
-            "jobs": []
-        }
+    with open(litani_cache_dir / litani.CACHE_FILE) as handle:
+        cache = json.load(handle)
+
     args_dict = vars(args)
     args_dict.pop("func")
     for switch in list(args_dict.keys()):
         if not args_dict[switch]:
             args_dict.pop(switch)
 
+    args_dict["job_id"] = str(uuid.uuid4())
+
     logging.debug("Adding job: %s", json.dumps(args_dict, indent=2))
     cache["jobs"].append(args_dict)
 
-    with atomic_write(litani_cache_dir / LITANI_CACHE_FILE) as handle:
+    with atomic_write(litani_cache_dir / litani.CACHE_FILE) as handle:
         json.dump(cache, handle, indent=2)
 
 
 def run_build(args):
-    litani_cache_dir = litani.get_litani_cache_dir()
+    cache_dir = litani.get_cache_dir()
 
-    with open(litani_cache_dir / LITANI_CACHE_FILE) as handle:
+    with open(cache_dir / litani.CACHE_FILE) as handle:
         cache = json.load(handle)
 
     rules = []
     builds = []
-    status_dir = litani_cache_dir / "status-files"
+    status_dir = litani.get_status_dir()
     for entry in cache["jobs"]:
 
         if "description" in entry:
@@ -348,7 +380,7 @@ def run_build(args):
         else:
             description = f"Running '{entry['command']}...'"
 
-        rule_name = str(uuid.uuid4())
+        rule_name = entry["job_id"]
         status_file = status_dir / ("%s.json" % rule_name)
 
         rules.append({
@@ -363,7 +395,7 @@ def run_build(args):
             "rule": rule_name
         })
 
-    ninja_file = litani_cache_dir / "litani.ninja"
+    ninja_file = cache_dir / "litani.ninja"
     with atomic_write(ninja_file) as handle:
         ninja = ninja_syntax.Writer(handle, width=70)
         for rule in rules:
@@ -372,6 +404,15 @@ def run_build(args):
         for build in builds:
             logging.debug(build)
             ninja.build(**build)
+
+    report_dir = litani.get_report_dir()
+    render_report(cache_dir, report_dir)
+    logging.info("Report will be rendered at file://%s/index.html", str(report_dir))
+    killer = threading.Event()
+    render_thread = threading.Thread(
+        group=None, target=continuous_render_report,
+        args=(cache_dir, report_dir, killer))
+    render_thread.start()
 
     cmd = [
         "ninja",
@@ -383,6 +424,33 @@ def run_build(args):
     if args.dry_run:
         cmd.append("-n")
     proc = subprocess.run(cmd)
+
+    now = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    with open(cache_dir / litani.CACHE_FILE) as handle:
+        run_info = json.load(handle)
+    run_info["end_time"] = now
+
+    success = True
+    for root, _, files in os.walk(str(status_dir)):
+        for fyle in files:
+            if not fyle.endswith(".json"):
+                continue
+            with open(os.path.join(root, fyle)) as handle:
+                job_status = json.load(handle)
+            if job_status["command-return-code"]:
+                success = False
+    run_info["status"] = "success" if success else "failure"
+
+    with atomic_write(cache_dir / litani.CACHE_FILE) as handle:
+        print(json.dumps(run_info, indent=2), file=handle)
+
+    killer.set()
+    render_thread.join()
+    render_report(cache_dir, report_dir)
+
+    shutil.copytree(litani.get_artifacts_dir(), report_dir / "artifacts")
+
     logging.info("Status files have been written to %s", str(status_dir))
     sys.exit(1 if proc.returncode else 0)
 
@@ -393,6 +461,7 @@ def exec_job(args):
     out_data = {
         "wrapper-arguments": args_dict,
         "wrapper-return-code": 0,
+        "complete": False,
     }
     timestamp("start-time", out_data)
     with atomic_write(args.status_file) as handle:
@@ -419,6 +488,7 @@ def exec_job(args):
         out_data["timeout-reached"] = False
 
     out_data["command-return-code"] = proc.returncode
+    out_data["complete"] = True
     ok_returns = args.ok_returns if args.ok_returns else []
     ok_returns = [int(i) for i in ok_returns]
     ok_returns.append(0)
@@ -439,19 +509,35 @@ def exec_job(args):
 
     timestamp("end-time", out_data)
     out_str = json.dumps(out_data, indent=2)
-    logging.info(out_str)
+    logging.debug(out_str)
     with atomic_write(args.status_file) as handle:
         print(out_str, file=handle)
+
+    artifacts_dir = (litani.get_artifacts_dir() /
+         out_data["wrapper-arguments"]["pipeline_name"] /
+         out_data["wrapper-arguments"]["ci_stage"])
+    artifacts_dir.mkdir(parents=True, exist_ok=True)
+    for fyle in out_data["wrapper-arguments"]["outputs"]:
+        try:
+            shutil.copy(fyle, str(artifacts_dir))
+        except FileNotFoundError:
+            logging.warning(
+                "Output file '%s' of pipeline '%s' did not exist upon job "
+                "completion. Not copying to artifacts directory.", fyle,
+            out_data["wrapper-arguments"]["pipeline_name"])
+        except IsADirectoryError:
+            artifact_src = pathlib.Path(fyle)
+            shutil.copytree(fyle, str(artifacts_dir / artifact_src.name))
 
     if out_data["wrapper-return-code"] == 0:
         sys.exit(0)
 
-    logging.error(out_field["stdout"])
-    if not args.interleave_stdout_stderr:
-        logging.error(out_field["stderr"])
-    logging.error(
-        "Further details about this failed job are recorded in %s",
-        args.status_file)
+    #logging.error(" ".join(out_data["stdout"]))
+    #if not args.interleave_stdout_stderr:
+    #    logging.error(" ".join(out_data["stderr"]))
+    #logging.error(
+    #    "Further details about this failed job are recorded in %s",
+    #    args.status_file)
     sys.exit(out_data["wrapper-return-code"])
 
 

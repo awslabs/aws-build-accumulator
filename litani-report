@@ -1,0 +1,9 @@
+#!/usr/bin/env python3
+
+
+from lib import litani, litani_report
+
+
+def main():
+    report_dir = litani.get_litani_report_dir()
+    litani_report.render(report_dir)
