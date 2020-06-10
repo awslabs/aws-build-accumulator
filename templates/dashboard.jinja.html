@@ -1,5 +1,7 @@
 <html>
 <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>
     {{ run["project"] }} Proof Results&mdash;{{ run["run_id"] }}
   </title>
@@ -106,14 +108,17 @@ p {
   text-align: end;
   width: 13em;
 }
-.pipeline-link:hover {
-  color: #01579b;
-}
 .pipeline-link {
   justify-self: center;
   align-self: center;
   width: 1em;
   color: #29b6f6;
+}
+.pipeline-link p a:hover {
+  color: #01579b;
+}
+.pipeline-link p a {
+  text-decoration: none;
 }
 .pipeline-header {
   justify-content: space-around;
@@ -123,6 +128,14 @@ p {
   font-style: italic;
   font-size: larger;
   color: #26323899;
+}
+.graphs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+.graphs img {
+  margin-bottom: 6em;
 }
 </style>
 </head>
@@ -141,7 +154,7 @@ p {
   <div class=run-info>
     <ul>
       <li>{{ run["status"] }}</li>
-      <li>{{ run["start-time"] }}</li>
+      <li>{{ run["start_time"] }}</li>
       <li>{{ run["run_id"] }}</li>
     <ul>
   </div><!-- class=run-info -->
@@ -166,7 +179,7 @@ p {
     <div class="pipeline-row">
 
       <div class="pipeline-link">
-        <p><a href="{{ pipe['url'] }}">ⓘ </a></p>
+        <p><a href="{{ pipe['url'] }}">ⓘ</a></p>
       </div><!-- class="pipeline-link" -->
 
       <div class="pipeline-name">
@@ -194,6 +207,12 @@ p {
     {% endfor %}{# pipe in run["pipelines"] #}
 
   </div><!-- id="pipeline-table" -->
+
+  <div class="graphs">
+  {% for url in runtimes %}
+    <img src="{{ url }}" />
+  {% endfor %}{# url in urls #}
+  </div><!-- class="graphs" -->
 
 
 </div><!-- id="content" -->

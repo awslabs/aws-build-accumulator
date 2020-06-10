@@ -1,3 +1,4 @@
+import contextlib
 import logging
 import os
 import pathlib
@@ -7,6 +8,9 @@ import sys
 CACHE_FILE = "cache.json"
 CACHE_POINTER = ".litani_cache_dir"
 CI_STAGES = ["build", "test", "report"]
+RUN_FILE = "run.json"
+TIME_FORMAT_R = "%Y-%m-%dT%H:%M:%SZ"
+TIME_FORMAT_W = "%Y-%m-%dT%H:%M:%SZ"
 
 
 def get_cache_dir():
@@ -58,3 +62,24 @@ def get_artifacts_dir():
 
 def get_status_dir():
     return get_cache_dir() / "status"
+
+@contextlib.contextmanager
+def atomic_write(path, mode="w"):
+    try:
+        parent = pathlib.Path(path).parent
+        parent.mkdir(exist_ok=True, parents=True)
+        tmp = "%s~" % path
+        handle = open(tmp, mode)
+        yield handle
+    except RuntimeError:
+        try:
+            os.unlink(tmp)
+        except RuntimeError:
+            pass
+    else:
+        handle.flush()
+        handle.close()
+        try:
+            os.rename(tmp, path)
+        except RuntimeError:
+            os.unlink(tmp)

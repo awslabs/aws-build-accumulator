@@ -1,8 +1,14 @@
+import datetime
 import enum
 import functools
 import json
+import logging
+import os
 import pathlib
+import re
+import subprocess
 import sys
+import tempfile
 
 import jinja2
 
@@ -22,13 +28,12 @@ def get_run(cache_dir):
         except FileNotFoundError:
             status = {
                 "complete": False,
-                "wrapper-arguments": job,
+                "wrapper_arguments": job,
             }
 
-        pipeline_name = status["wrapper-arguments"]["pipeline_name"]
-        ci_stage = status["wrapper-arguments"]["ci_stage"]
+        pipeline_name = status["wrapper_arguments"]["pipeline_name"]
+        ci_stage = status["wrapper_arguments"]["ci_stage"]
 
-        # TODO: fill this out using a loop for goodness' sake
         try:
             ret["pipelines"][pipeline_name]["ci_stages"][ci_stage]["jobs"].append(status)
         except KeyError:
@@ -52,6 +57,7 @@ def get_run(cache_dir):
                             "ci_stages":  {ci_stage: {"jobs": [status]}},
                             "name": pipeline_name,
                         }
+    ret.pop("jobs")
     return ret
 
 
@@ -60,7 +66,11 @@ def job_sorter(j1, j2):
         return 0
     if not j1["complete"]:
         return -1
-    return j1["start-time"] < j2["start-time"]
+    if not "start_time" in j1 or "start_time" in j2:
+        return 0
+    if not "start_time" in j1:
+        return -1
+    return j1["start_time"] < j2["start_time"]
 
 
 class StageStatus(enum.IntEnum):
@@ -78,17 +88,17 @@ def add_stage_stats(stage, stage_name, pipeline_name):
         try:
             if not job["complete"]:
                 continue
-            elif job["wrapper-return-code"]:
+            elif job["wrapper_return_code"]:
                 status = StageStatus.FAIL
-            elif job["command-return-code"] and status == StageStatus.SUCCESS:
+            elif job["command_return_code"] and status == StageStatus.SUCCESS:
                 status = StageStatus.FAIL_IGNORED
-            elif job["timeout-reached"] and status == StageStatus.SUCCESS:
+            elif job["timeout_reached"] and status == StageStatus.SUCCESS:
                 status = StageStatus.FAIL_IGNORED
         except KeyError:
             print(json.dumps(stage, indent=2))
             sys.exit(1)
     stage["status"] = status.name.lower()
-    stage["url"] = "artifacts/%s/%s/index.html" % (pipeline_name, stage_name)
+    stage["url"] = "artifacts/%s/%s/" % (pipeline_name, stage_name)
     stage["name"] = stage_name
 
 
@@ -99,16 +109,16 @@ class PipeStatus(enum.IntEnum):
 
 
 def add_pipe_stats(pipe):
-    pipe["url"] = "artifacts/%s/index.html" % pipe["name"]
+    pipe["url"] = "pipelines/%s/index.html" % pipe["name"]
     incomplete = [s for s in pipe["ci_stages"] if not s["complete"]]
     if incomplete:
         pipe["status"] = PipeStatus.IN_PROGRESS
     else:
-        failed = [s for s in pipe["ci_stages"] if s["status"] != "success"]
-        if failed:
+        pipe["status"] = PipeStatus.SUCCESS
+    for stage in pipe["ci_stages"]:
+        if stage["status"] in ["fail", "fail_ignored"]:
             pipe["status"] = PipeStatus.FAIL
-        else:
-            pipe["status"] = PipeStatus.SUCCESS
+            break
 
 
 def add_run_stats(run):
@@ -120,6 +130,20 @@ def add_run_stats(run):
     run["status"] = status.name.lower()
     for pipe in run["pipelines"]:
         pipe["status"] = pipe["status"].name.lower()
+
+
+def add_job_stats(jobs):
+    for job in jobs:
+        if not ("start_time" in job and "end_time" in job):
+            job["duration_str"] = None
+        else:
+            s = datetime.datetime.strptime(
+                job["start_time"], litani.TIME_FORMAT_R)
+            e = datetime.datetime.strptime(
+                job["end_time"], litani.TIME_FORMAT_R)
+            seconds = (e - s).seconds
+            job["duration_str"] = s_to_hhmmss(seconds)
+            job["duration"] = seconds
 
 
 def sort_run(run):
@@ -134,6 +158,7 @@ def sort_run(run):
                 pipe["ci_stages"][stage] = {"jobs"}
                 pipeline_stage = pipe["ci_stages"][stage]
             jobs = sorted(pipeline_stage["jobs"], key=js)
+            add_job_stats(jobs)
             pipeline_stage["jobs"] = jobs
             add_stage_stats(pipeline_stage, stage, pipe["name"])
             stages.append(pipeline_stage)
@@ -146,14 +171,97 @@ def sort_run(run):
     add_run_stats(run)
 
 
-def render(cache_dir):
+def get_run_data(cache_dir):
+    run = get_run(cache_dir)
+    sort_run(run)
+    return run
+
+
+def s_to_hhmmss(s):
+    h, s = divmod(s, 3600)
+    m, s = divmod(s, 60)
+    if h:
+        return "{h:02d}h {m:02d}m {s:02d}s".format(h=h, m=m, s=s)
+    if m:
+        return "{m:02d}m {s:02d}s".format(m=m, s=s)
+    return "{s:02d}s".format(s=s)
+
+
+def get_stats_groups(run):
+    ret = {}
+    for pipe in run["pipelines"]:
+        for stage in pipe["ci_stages"]:
+            for job in stage["jobs"]:
+                if "tags" not in job["wrapper_arguments"]:
+                    continue
+                if not job["wrapper_arguments"]["tags"]:
+                    continue
+                stats_group = None
+                for tag in job["wrapper_arguments"]["tags"]:
+                    kv = tag.split(":")
+                    if kv[0] != "stats-group":
+                        continue
+                    stats_group = kv[1]
+                if not stats_group:
+                    continue
+
+                if "duration" not in job:
+                    continue
+                record = {
+                    "pipeline": job["wrapper_arguments"]["pipeline_name"],
+                    "duration": job["duration"]
+                }
+                try:
+                    ret[stats_group].append(record)
+                except KeyError:
+                    ret[stats_group] = [record]
+    return sorted([(k, v) for k, v in ret.items()])
+
+
+def to_id(string):
+    allowed = re.compile(r"[-a-zA-Z0-9\.]")
+    return "".join([c if allowed.match(c) else "_" for c in string])
+
+
+def render_runtimes(run, env, report_dir):
+    stats_groups = get_stats_groups(run)
+    urls = []
+    gnu_templ = env.get_template("runtime-box.jinja.gnu")
+    img_dir = report_dir / "runtimes"
+    img_dir.mkdir(exist_ok=True, parents=True)
+    for group_name, jobs in stats_groups:
+        if len(jobs) < 2:
+            continue
+        group_id = to_id(group_name)
+        url = img_dir / ("%s.svg" % group_id)
+        tmp_url = "%s~" % str(url)
+        gnu_file = gnu_templ.render(
+            group_name=group_name, jobs=jobs, url=tmp_url)
+        with tempfile.NamedTemporaryFile("w") as tmp:
+            print(gnu_file, file=tmp)
+            tmp.flush()
+            cmd = ["gnuplot", tmp.name]
+            subprocess.run(
+                cmd, check=True, stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL)
+        os.rename(tmp_url, url)
+        urls.append(str(url.relative_to(report_dir)))
+    return urls
+
+
+def render(run, report_dir):
     template_dir = pathlib.Path(__file__).parent.parent / "templates"
     env = jinja2.Environment(loader=jinja2.FileSystemLoader(str(template_dir)))
 
-    report_dir = litani.get_report_dir()
+    runtime_urls = render_runtimes(run, env, report_dir)
 
-    run = get_run(cache_dir)
-    sort_run(run)
-    templ = env.get_template("dashboard.jinja.html")
-    page = templ.render(run=run)
-    return page
+    dash_templ = env.get_template("dashboard.jinja.html")
+    page = dash_templ.render(run=run, runtimes=runtime_urls)
+    with litani.atomic_write(report_dir / "index.html") as handle:
+        print(page, file=handle)
+
+    pipe_templ = env.get_template("pipeline.jinja.html")
+    for pipe in run["pipelines"]:
+        page = pipe_templ.render(run=run, pipe=pipe)
+        with litani.atomic_write(report_dir / pipe["url"]) as handle:
+            print(page, file=handle)
