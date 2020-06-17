@@ -100,7 +100,7 @@ Litani consists of three user-facing commands:
 
 ### `litani init`
 ### `litani add-job`
-### `litani exec`
+### `litani run-build`
 
 
 Data Format Reference
