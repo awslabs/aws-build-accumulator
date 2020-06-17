@@ -1,3 +1,17 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License").
+# You may not use this file except in compliance with the License.
+# A copy of the License is located at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# or in the "license" file accompanying this file. This file is distributed
+# on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+# express or implied. See the License for the specific language governing
+# permissions and limitations under the License.
+
+
 import datetime
 import enum
 import functools
@@ -54,8 +68,12 @@ def get_run(cache_dir):
                         }
                     except KeyError:
                         ret["pipelines"][pipeline_name] = {
-                            "ci_stages":  {ci_stage: {"jobs": [status]}},
                             "name": pipeline_name,
+                            "ci_stages":  {
+                                ci_stage: {
+                                    "jobs": [status]
+                                }
+                            },
                         }
     ret.pop("jobs")
     return ret
@@ -81,8 +99,12 @@ class StageStatus(enum.IntEnum):
 
 def add_stage_stats(stage, stage_name, pipeline_name):
     n_complete_jobs = len([j for j in stage["jobs"] if j["complete"]])
-    stage["progress"] = int(n_complete_jobs * 100 / len(stage["jobs"]))
-    stage["complete"] = n_complete_jobs == len(stage["jobs"])
+    if len(stage["jobs"]):
+        stage["progress"] = int(n_complete_jobs * 100 / len(stage["jobs"]))
+        stage["complete"] = n_complete_jobs == len(stage["jobs"])
+    else:
+        stage["progress"] = 0
+        stage["complete"] = True
     status = StageStatus.SUCCESS
     for job in stage["jobs"]:
         try:
@@ -95,7 +117,9 @@ def add_stage_stats(stage, stage_name, pipeline_name):
             elif job["timeout_reached"] and status == StageStatus.SUCCESS:
                 status = StageStatus.FAIL_IGNORED
         except KeyError:
-            print(json.dumps(stage, indent=2))
+            logging.error(
+                "Could not find key in stage: %s",
+                json.dumps(stage, indent=2))
             sys.exit(1)
     stage["status"] = status.name.lower()
     stage["url"] = "artifacts/%s/%s/" % (pipeline_name, stage_name)
@@ -155,7 +179,7 @@ def sort_run(run):
             try:
                 pipeline_stage = pipe["ci_stages"][stage]
             except KeyError:
-                pipe["ci_stages"][stage] = {"jobs"}
+                pipe["ci_stages"][stage] = {"jobs": []}
                 pipeline_stage = pipe["ci_stages"][stage]
             jobs = sorted(pipeline_stage["jobs"], key=js)
             add_job_stats(jobs)

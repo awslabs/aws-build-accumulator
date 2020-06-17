@@ -31,10 +31,11 @@ import time
 import uuid
 
 import ninja_syntax
-import voluptuous
-import voluptuous.humanize
 
 from lib import litani, litani_report
+
+
+VALIDATE_DATA = False
 
 
 ################################################################################
@@ -187,6 +188,10 @@ def get_args():
             "metavar": "N",
             "help": "run N jobs in parallel. 0 means infinity, default is "
                     "based on the number of cores on this system.",
+    }, {
+            "flags": ["-o", "--out-file"],
+            "metavar": "F",
+            "help": "periodically write JSON representation of the run"
     }]:
         flags = arg.pop("flags")
         run_build_pars.add_argument(*flags, **arg)
@@ -223,7 +228,7 @@ def get_args():
 
 
 ################################################################################
-# Other utility functions
+# Data validation
 ################################################################################
 
 
@@ -236,8 +241,11 @@ def time_str(string):
             string, litani.TIME_FORMAT_R)
 
 
-def validate_run(run):
-    wrapper_arguments = {
+def get_single_job_arguments():
+    if not VALIDATE_DATA:
+        return
+    import voluptuous
+    return {
         "job_id": str,
         "command": str,
         "ci_stage": str,
@@ -260,7 +268,22 @@ def validate_run(run):
         "ignore_returns": voluptuous.Any([str], None),
         "subcommand": voluptuous.Any("exec", "add-job"),
     }
-    base_run = voluptuous.Schema({
+
+
+def validate_single_job(job):
+    if not VALIDATE_DATA:
+        return
+    import voluptuous
+    schema = voluptuous.Schema(
+        get_single_job_aguments(), required=True)
+    voluptuous.humanize.validate_with_humanized_errors(job, schema)
+
+
+def validate_run(run):
+    if not VALIDATE_DATA:
+        return
+    import voluptuous
+    schema = voluptuous.Schema({
         "version": 1,
         "run_id": str,
         "project": str,
@@ -279,12 +302,12 @@ def validate_run(run):
                 "progress": voluptuous.All(int, voluptuous.Range(min=0, max=100)),
                 "jobs": [voluptuous.Any({
                     "complete": False,
-                    "wrapper_arguments": wrapper_arguments,
+                    "wrapper_arguments": get_single_job_arguments(),
                     "duration_str": voluptuous.Any(str, None),
                 }, {
                     "complete": False,
                     "start_time": time_str,
-                    "wrapper_arguments": wrapper_arguments,
+                    "wrapper_arguments": get_single_job_arguments(),
                     "duration_str": voluptuous.Any(str, None),
                 }, {
                     "duration": int,
@@ -296,22 +319,30 @@ def validate_run(run):
                     "wrapper_return_code": int,
                     "stderr": voluptuous.Any([str], None),
                     "stdout": voluptuous.Any([str], None),
-                    "wrapper_arguments": wrapper_arguments,
+                    "wrapper_arguments": get_single_job_arguments(),
                     "duration_str": voluptuous.Any(str, None),
                 })]
             }]
         }]
 
     }, required=True)
-    voluptuous.humanize.validate_with_humanized_errors(run, base_run)
+    voluptuous.humanize.validate_with_humanized_errors(run, schema)
 
 
-def continuous_render_report(cache_dir, report_dir, killer):
+################################################################################
+# Other utility functions
+################################################################################
+
+
+def continuous_render_report(cache_dir, report_dir, killer, out_file):
     while True:
         run = litani_report.get_run_data(cache_dir)
         validate_run(run)
         with litani.atomic_write(cache_dir / litani.RUN_FILE) as handle:
             print(json.dumps(run, indent=2), file=handle)
+        if out_file is not None:
+            with litani.atomic_write(out_file) as handle:
+                print(json.dumps(run, indent=2), file=handle)
         litani_report.render(run, report_dir)
         if killer.is_set():
             break
@@ -489,7 +520,7 @@ def run_build(args):
     killer = threading.Event()
     render_thread = threading.Thread(
         group=None, target=continuous_render_report,
-        args=(cache_dir, report_dir, killer))
+        args=(cache_dir, report_dir, killer, args.out_file))
     render_thread.start()
 
     cmd = [
@@ -530,6 +561,9 @@ def run_build(args):
     litani_report.render(run, report_dir)
     with litani.atomic_write(cache_dir / litani.RUN_FILE) as handle:
         print(json.dumps(run, indent=2), file=handle)
+    if args.out_file:
+        with litani.atomic_write(out_file) as handle:
+            print(json.dumps(run, indent=2), file=handle)
 
     shutil.copytree(litani.get_artifacts_dir(), report_dir / "artifacts")
 
@@ -591,7 +625,7 @@ def exec_job(args):
 
     timestamp("end_time", out_data)
     out_str = json.dumps(out_data, indent=2)
-    logging.debug(out_str)
+    logging.debug("run status: %s", out_str)
     with litani.atomic_write(args.status_file) as handle:
         print(out_str, file=handle)
 
@@ -618,8 +652,22 @@ def exec_job(args):
 
 
 def main():
+    global VALIDATE_DATA
+
     args = get_args()
     set_up_logging(args)
+
+    try:
+        import voluptuous
+        import voluptuous.humanize
+        VALIDATE_DATA = True
+    except ImportError:
+        logging.warning(
+            "Litani requires the python module 'voluptuous' to be installed "
+            "to do data validation. Installing voluptuous with pip or your "
+            "system package manager is recommended. Continuing without data "
+            "validation.")
+
     args.func(args)
 
 
