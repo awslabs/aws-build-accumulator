@@ -1,4 +1,19 @@
-<html>
+{#-
+ # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ #
+ # Licensed under the Apache License, Version 2.0 (the "License").
+ # You may not use this file except in compliance with the License.
+ # A copy of the License is located at
+ #
+ #     http://www.apache.org/licenses/LICENSE-2.0
+ #
+ # or in the "license" file accompanying this file. This file is
+ # distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+ # ANY KIND, either express or implied. See the License for the specific
+ # language governing permissions and limitations under the License.
+-#}
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -125,7 +140,7 @@ p {
   overflow-x: auto;
   overflow-y: auto;
 }
-.output-box p{
+.output-box xmp{
   white-space: pre;
 }
 .stage-name p {
@@ -171,7 +186,7 @@ p {
       <li>Pipeline status: {{ pipe["status"] }}</li>
       <li>{{ run["start_time"] }}</li>
       <li>{{ run["run_id"] }}</li>
-    <ul>
+    </ul>
   </div><!-- class=run-info -->
 
   {% for stage in pipe["ci_stages"] %}
@@ -266,18 +281,20 @@ p {
           {% endif %}{# job["complete"] #}
 
           {% if job["stdout"] %}
-          <div class="output-box"><p>stdout:
+          <div class="output-box"><xmp>stdout:
             {% for line in job["stdout"] %}
-{{ line.strip() }}{% endfor %}{# line in job["stdout"] #}
-            </p>
+{{ line.strip() }}
+            {%- endfor %}{# line in job["stdout"] #}
+            </xmp>
           </div><!-- class="output-box" -->
           {% endif %}{# job["stdout"] #}
 
           {% if job["stderr"] %}
-          <div class="output-box"><p>stderr:
+          <div class="output-box"><xmp>stderr:
             {% for line in job["stdout"] %}
-{{ line.strip() }}{% endfor %}{# line in job["stderr"] #}
-            </p>
+{{ line.strip() }}
+            {%- endfor %}{# line in job["stderr"] #}
+            </xmp>
           </div><!-- class="output-box" -->
           {% endif %}{# job["stderr"] #}
 
