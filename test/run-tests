@@ -17,10 +17,14 @@
 import datetime
 import logging
 import os
+import math
 import pathlib
 import subprocess
 import sys
 import uuid
+
+
+TEST_DIR = "tests"
 
 
 def run_test(test, timestamp, results):
@@ -64,15 +68,24 @@ def main():
 
     stamp = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    for test in os.listdir("tests"):
-        run_test(pathlib.Path("tests") / test, stamp, results)
+    n_tests = len(os.listdir(TEST_DIR))
+    if not n_tests:
+        logging.error("No tests found inside %s", TEST_DIR)
+        sys.exit(1)
 
+    width = int(math.log10(n_tests)) + 1
+    cnt = 1
+    for test in os.listdir(TEST_DIR):
+        print("\rrunning test {cnt:{width}}/{n_tests}".format(
+            cnt=cnt, width=width, n_tests=n_tests), end="")
+        run_test(pathlib.Path(TEST_DIR) / test, stamp, results)
+
+    print()
     for result, tests in results.items():
         for test in tests:
             print("%s %s" % (result.upper(), test))
-    print("%d/%d tests passed" % (
-        len(results["pass"]), len(results["pass"]) + len(results["fail"])
-    ))
+    print("{n_pass:{width}}/{n_tests} tests passed".format(
+        n_pass=len(results["pass"]), width=width, n_tests=n_tests))
 
     sys.exit(1 if results["fail"] else 0)
 
