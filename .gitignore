@@ -1,0 +1,3 @@
+test/tests/*/logs
+test/tests/*/output
+.litani_cache_dir
