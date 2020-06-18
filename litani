@@ -36,6 +36,8 @@ from lib import litani, litani_report
 
 
 VALIDATE_DATA = False
+VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH = 1, 0, 0
+LITANI_VERSION = "%d.%d.%d" % (VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH)
 
 
 ################################################################################
@@ -162,6 +164,11 @@ def get_args():
             "flags": ["-w", "--very-verbose"],
             "action": "store_true",
             "help": "very verbose output",
+        }, {
+            "flags": ["-V", "--version"],
+            "action": "version",
+            "version": LITANI_VERSION,
+            "help": "print data format version and exit",
     }]:
         flags = arg.pop("flags")
         pars.add_argument(*flags, **arg)
@@ -284,7 +291,10 @@ def validate_run(run):
         return
     import voluptuous
     schema = voluptuous.Schema({
-        "version": 1,
+        "version": LITANI_VERSION,
+        "version_major": VERSION_MAJOR,
+        "version_minor": VERSION_MINOR,
+        "version_patch": VERSION_PATCH,
         "run_id": str,
         "project": str,
         "start_time": time_str,
@@ -439,7 +449,10 @@ def init(args):
     with litani.atomic_write(cache_dir / litani.CACHE_FILE) as handle:
         print(json.dumps({
             "project": args.project_name,
-            "version": 1,
+            "version": LITANI_VERSION,
+            "version_major": VERSION_MAJOR,
+            "version_minor": VERSION_MINOR,
+            "version_patch": VERSION_PATCH,
             "run_id": run_id,
             "start_time": now,
             "status": "in_progress",
