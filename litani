@@ -20,7 +20,6 @@ import json
 import logging
 import os
 import pathlib
-import re
 import shlex
 import shutil
 import subprocess
@@ -163,7 +162,7 @@ def get_args():
         }, {
             "flags": ["-w", "--very-verbose"],
             "action": "store_true",
-            "help": "very verbose output",
+            "help": "debug output",
         }, {
             "flags": ["-V", "--version"],
             "action": "version",
@@ -245,7 +244,7 @@ def time_str(string):
     except RuntimeError:
         raise ValueError(
             "Date '%s' was not in the right format (expected '%s')" %
-            string, litani.TIME_FORMAT_R)
+            (string, litani.TIME_FORMAT_R))
 
 
 def get_single_job_arguments():
@@ -282,7 +281,7 @@ def validate_single_job(job):
         return
     import voluptuous
     schema = voluptuous.Schema(
-        get_single_job_aguments(), required=True)
+        get_single_job_arguments(), required=True)
     voluptuous.humanize.validate_with_humanized_errors(job, schema)
 
 
@@ -360,10 +359,12 @@ def continuous_render_report(cache_dir, report_dir, killer, out_file):
 
 
 def set_up_logging(args):
-    if args.very_verbose or args.verbose:
+    if args.very_verbose:
         level = logging.DEBUG
-    else:
+    elif args.verbose:
         level = logging.INFO
+    else:
+        level = logging.WARNING
     logging.basicConfig(
         format="litani: %(message)s", level=level)
 
@@ -529,7 +530,7 @@ def run_build(args):
     run = litani_report.get_run_data(cache_dir)
     validate_run(run)
     litani_report.render(run, report_dir)
-    logging.info("Report will be rendered at file://%s/index.html", str(report_dir))
+    print("Report will be rendered at file://%s/index.html", str(report_dir))
     killer = threading.Event()
     render_thread = threading.Thread(
         group=None, target=continuous_render_report,
@@ -575,7 +576,7 @@ def run_build(args):
     with litani.atomic_write(cache_dir / litani.RUN_FILE) as handle:
         print(json.dumps(run, indent=2), file=handle)
     if args.out_file:
-        with litani.atomic_write(out_file) as handle:
+        with litani.atomic_write(args.out_file) as handle:
             print(json.dumps(run, indent=2), file=handle)
 
     shutil.copytree(litani.get_artifacts_dir(), report_dir / "artifacts")
@@ -665,19 +666,21 @@ def exec_job(args):
 
 
 def main():
+    # pylint: disable=global-statement
     global VALIDATE_DATA
 
     args = get_args()
     set_up_logging(args)
 
     try:
+        # pylint: disable=unused-import
         import voluptuous
         import voluptuous.humanize
         VALIDATE_DATA = True
     except ImportError:
         logging.warning(
             "Litani requires the python module 'voluptuous' to be installed "
-            "to do data validation. Installing voluptuous with pip or your "
+            "to validate data. Installing voluptuous with pip or your "
             "system package manager is recommended. Continuing without data "
             "validation.")
 
