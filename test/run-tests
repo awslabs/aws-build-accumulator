@@ -78,6 +78,8 @@ def main():
     for test in os.listdir(TEST_DIR):
         print("\rrunning test {cnt:{width}}/{n_tests}".format(
             cnt=cnt, width=width, n_tests=n_tests), end="")
+        sys.stdout.flush()
+        cnt += 1
         run_test(pathlib.Path(TEST_DIR) / test, stamp, results)
 
     print()
