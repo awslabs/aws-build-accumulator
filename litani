@@ -47,28 +47,28 @@ LITANI_VERSION = "%d.%d.%d" % (VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH)
 def get_add_job_args():
     return [(
         "describing the build graph", [{
-            "flags": ["-i", "--inputs"],
+            "flags": ["--inputs"],
             "nargs": "+",
             "metavar": "F",
-            "help": "list of files that this job depends on",
+            "help": "list of inputs that this job depends on",
         }, {
-            "flags": ["-c", "--command"],
+            "flags": ["--command"],
             "metavar": "C",
             "required": True,
             "help": "the command to run once all dependencies are satisfied",
         }, {
-            "flags": ["-o", "--outputs"],
+            "flags": ["--outputs"],
             "metavar": "F",
             "nargs": "+",
-            "help": "list of files that this job generates",
+            "help": "list of outputs that this job generates",
         }]), (
         "job control", [{
-            "flags": ["-p", "--pipeline-name"],
+            "flags": ["--pipeline-name"],
             "required": True,
             "metavar": "P",
             "help": "which pipeline this job is a member of",
         }, {
-            "flags": ["-s", "--ci-stage"],
+            "flags": ["--ci-stage"],
             "required": True,
             "metavar": "S",
             "choices": litani.CI_STAGES,
@@ -460,7 +460,7 @@ def init(args):
             "jobs": []
         }, indent=2), file=handle)
 
-    logging.debug("cache dir is at: %s", cache_dir)
+    logging.info("cache dir is at: %s", cache_dir)
 
     with litani.atomic_write(litani.CACHE_POINTER) as handle:
         print(str(cache_dir), file=handle)
