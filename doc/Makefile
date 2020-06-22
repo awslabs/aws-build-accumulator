@@ -11,9 +11,14 @@
 # express or implied. See the License for the specific language governing
 # permissions and limitations under the License.
 
-index.html: head.html index.tmp.html foot.html
-	cat $^ > $@
+HTML_DEPS = head.html index.tmp.html foot.html
+
+index.html: $(HTML_DEPS) litani-flow.svg
+	cat $(HTML_DEPS) > $@
 
 .INTERMEDIATE: index.tmp.html
 index.tmp.html: index.md
 	markdown $^ > $@
+
+litani-flow.svg: litani-flow.dot
+	dot -Tsvg $^ > $@
