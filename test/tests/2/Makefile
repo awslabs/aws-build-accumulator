@@ -11,13 +11,10 @@
 # express or implied. See the License for the specific language governing
 # permissions and limitations under the License.
 
-LITANI = ../../../litani add-job
-OUT_DIR = output
-
 default: $(OUT_DIR)/all.txt
 
 $(OUT_DIR)/1.txt:
-	$(LITANI)               \
+	$(LITANI) add-job       \
 	  --outputs $@          \
 	  --ci-stage build      \
 	  --pipeline 1          \
@@ -25,7 +22,7 @@ $(OUT_DIR)/1.txt:
 	  #
 
 $(OUT_DIR)/2.txt:
-	$(LITANI)               \
+	$(LITANI) add-job       \
 	  --outputs $@          \
 	  --ci-stage test       \
 	  --pipeline 2          \
@@ -33,7 +30,7 @@ $(OUT_DIR)/2.txt:
 	  #
 
 $(OUT_DIR)/3.txt:
-	$(LITANI)               \
+	$(LITANI) add-job       \
 	  --outputs $@          \
 	  --ci-stage build      \
 	  --pipeline 3          \
@@ -41,7 +38,7 @@ $(OUT_DIR)/3.txt:
 	  #
 
 $(OUT_DIR)/all.txt: $(OUT_DIR)/1.txt $(OUT_DIR)/2.txt $(OUT_DIR)/3.txt
-	$(LITANI)             \
+	$(LITANI) add-job     \
 	  --inputs $^         \
 	  --outputs $@        \
 	  --stdout-file $@    \

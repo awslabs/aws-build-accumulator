@@ -14,12 +14,13 @@
 # permissions and limitations under the License.
 
 
+import asyncio
 import datetime
 import logging
 import os
 import math
 import pathlib
-import subprocess
+import shutil
 import sys
 import uuid
 
@@ -27,27 +28,63 @@ import uuid
 TEST_DIR = "tests"
 
 
-def run_test(test, timestamp, results):
+def print_result(counter):
+    print(
+        "\rpass: {succ:{width}}, fail: {fail:{width}}, "
+        "complete: {complete:{width}}, "
+        "total: {total:{width}}".format(**counter), end="")
+    sys.stdout.flush()
 
+
+def evaluate_result(test, proc, counter):
+    def success(counter):
+        counter["succ"] += 1
+        counter["succs"].append(test)
+    def fail(counter):
+        counter["fail"] += 1
+        counter["fails"].append(test)
+    if proc.returncode:
+        return fail(counter)
+
+    return success(counter)
+
+
+async def run_test(test, timestamp, counter):
+    print_result(counter)
     (test / "logs").mkdir(exist_ok=True)
 
-    proc = subprocess.Popen(
-        ["./litani-test.sh"], cwd=test, stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT, text=True)
-    stdout, _ = proc.communicate()
+    out_dir = test / "output"
+    litani = pathlib.Path(__file__).resolve().parent.parent / "litani"
+
+    try:
+        shutil.rmtree(out_dir)
+    except FileNotFoundError:
+        pass
+
+    env = dict(os.environ)
+    env.update({
+        "OUT_DIR": str(out_dir.resolve()),
+        "LITANI": str(litani),
+    })
+
+    proc = await asyncio.create_subprocess_exec(
+        "./litani-test.sh", cwd=test, stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.STDOUT, env=env)
+    stdout, _ = await proc.communicate()
+    stdout = stdout.decode("utf-8")
+
     log_file = (test / "logs" / ("%s.txt" % timestamp)).resolve()
     with open(log_file, "w") as handle:
         print(stdout, file=handle)
     tmp_link = test / "logs" / ("latest-%s" % uuid.uuid4())
     os.symlink(log_file, tmp_link)
     os.rename(tmp_link, test / "logs" / "latest")
-    if proc.returncode:
-        results["fail"].append(test)
-    else:
-        results["pass"].append(test)
+    counter["complete"] += 1
+    print_result(counter)
+    evaluate_result(test, proc, counter)
 
 
-def main():
+async def main():
     logging.basicConfig(
         level=logging.INFO, format="litani-test: %(message)s")
 
@@ -61,11 +98,6 @@ def main():
             "manager.")
         sys.exit(1)
 
-    results = {
-        "pass": [],
-        "fail": [],
-    }
-
     stamp = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
 
     n_tests = len(os.listdir(TEST_DIR))
@@ -73,24 +105,29 @@ def main():
         logging.error("No tests found inside %s", TEST_DIR)
         sys.exit(1)
 
-    width = int(math.log10(n_tests)) + 1
-    cnt = 1
-    for test in os.listdir(TEST_DIR):
-        print("\rrunning test {cnt:{width}}/{n_tests}".format(
-            cnt=cnt, width=width, n_tests=n_tests), end="")
-        sys.stdout.flush()
-        cnt += 1
-        run_test(pathlib.Path(TEST_DIR) / test, stamp, results)
-
+    counter = {
+        "total": n_tests,
+        "complete": 0,
+        "succ": 0,
+        "fail": 0,
+        "succs": [],
+        "fails": [],
+        "width": int(math.log10(n_tests)) + 1,
+    }
+    tests = [
+        run_test(pathlib.Path(TEST_DIR) / test, stamp, counter)
+        for test in os.listdir(TEST_DIR)
+    ]
+    await asyncio.gather(*tests)
+    print_result(counter)
     print()
-    for result, tests in results.items():
-        for test in tests:
-            print("%s %s" % (result.upper(), test))
-    print("{n_pass:{width}}/{n_tests} tests passed".format(
-        n_pass=len(results["pass"]), width=width, n_tests=n_tests))
 
-    sys.exit(1 if results["fail"] else 0)
+    if counter["fail"]:
+        logging.error("Fails: %s", ", ".join(
+            [str(f) for f in counter["fails"]]))
+
+    sys.exit(1 if counter["fail"] else 0)
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

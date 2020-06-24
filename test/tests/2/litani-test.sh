@@ -12,11 +12,11 @@
 # express or implied. See the License for the specific language governing
 # permissions and limitations under the License.
 
-../../../litani init --project test-1
+"${LITANI}" init --project test-1
 if [ "$?" != 0 ]; then kill $$; exit 1; fi
 
 make -B
 if [ "$?" != 0 ]; then kill $$; exit 1; fi
 
-../../../litani run-build
+"${LITANI}" run-build -o "${OUT_DIR}/run.json"
 if [ "$?" != 0 ]; then kill $$; exit 1; fi
