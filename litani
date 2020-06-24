@@ -530,7 +530,7 @@ def run_build(args):
     run = litani_report.get_run_data(cache_dir)
     validate_run(run)
     litani_report.render(run, report_dir)
-    print("Report will be rendered at file://%s/index.html", str(report_dir))
+    print("Report will be rendered at file://%s/index.html" % str(report_dir))
     killer = threading.Event()
     render_thread = threading.Thread(
         group=None, target=continuous_render_report,
