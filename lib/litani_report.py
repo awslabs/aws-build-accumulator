@@ -122,7 +122,7 @@ def add_stage_stats(stage, stage_name, pipeline_name):
                 json.dumps(stage, indent=2))
             sys.exit(1)
     stage["status"] = status.name.lower()
-    stage["url"] = "artifacts/%s/%s/" % (pipeline_name, stage_name)
+    stage["url"] = "artifacts/%s/%s/index.html" % (pipeline_name, stage_name)
     stage["name"] = stage_name
 
 
@@ -288,4 +288,19 @@ def render(run, report_dir):
     for pipe in run["pipelines"]:
         page = pipe_templ.render(run=run, pipe=pipe)
         with litani.atomic_write(report_dir / pipe["url"]) as handle:
+            print(page, file=handle)
+
+def render_artifact_indexes(artifact_dir):
+    def dirs_needing_indexes():
+        for root, dirs, fyles in os.walk(artifact_dir):
+            if "index.html" not in fyles:
+                yield pathlib.Path(root), dirs, fyles
+
+    template_dir = pathlib.Path(__file__).parent.parent / "templates"
+    env = jinja2.Environment(loader=jinja2.FileSystemLoader(str(template_dir)))
+    index_templ = env.get_template("file-list.jinja.html")
+    for dyr, dirs, files in dirs_needing_indexes():
+        page = index_templ.render(
+            file_list=sorted(files), dir_list=sorted(dirs), root=str(dyr))
+        with litani.atomic_write(dyr / "index.html") as handle:
             print(page, file=handle)

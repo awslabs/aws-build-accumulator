@@ -580,6 +580,7 @@ def run_build(args):
             print(json.dumps(run, indent=2), file=handle)
 
     shutil.copytree(litani.get_artifacts_dir(), report_dir / "artifacts")
+    litani_report.render_artifact_indexes(report_dir / "artifacts")
 
     sys.exit(1 if proc.returncode else 0)
 
