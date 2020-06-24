@@ -89,8 +89,8 @@ async def main():
         level=logging.INFO, format="litani-test: %(message)s")
 
     try:
+        # pylint: disable=unused-import
         import voluptuous
-        voluptuous.Schema({})({})   # shut the linter up
     except ImportError:
         logging.error(
             "The 'voluptuous' module is required for validating test "
