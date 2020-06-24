@@ -201,6 +201,23 @@ def get_args():
     }]:
         flags = arg.pop("flags")
         run_build_pars.add_argument(*flags, **arg)
+    mutex = run_build_pars.add_mutually_exclusive_group()
+    for arg in [{
+            "flags": ["-p", "--pipelines"],
+            "metavar": "P",
+            "nargs": "+",
+            "help": "only run jobs that are in the specified pipelines"
+    }, {
+            "flags": ["-s", "--ci-stage"],
+            "metavar": "S",
+            "choices": litani.CI_STAGES,
+            "help": (
+                "only run jobs that are part of the specified ci stage. S "
+                "must be one of %(choices)s."
+            )
+    }]:
+        flags = arg.pop("flags")
+        mutex.add_argument(*flags, **arg)
 
     add_job_pars = subs.add_parser("add-job")
     add_job_pars.set_defaults(func=add_job)
@@ -428,6 +445,43 @@ def make_litani_exec_command(add_args):
     return " ".join(cmd)
 
 
+def fill_out_ninja(cache, rules, builds):
+    phonies = {
+        "pipeline_name": {},
+        "ci_stage": {},
+    }
+    for entry in cache["jobs"]:
+        if "description" in entry:
+            description = entry["description"]
+        else:
+            description = f"Running '{entry['command']}...'"
+        rule_name = entry["job_id"]
+        rules.append({
+            "name": rule_name,
+            "description": description,
+            "command": make_litani_exec_command(entry)
+        })
+        builds.append({
+            "inputs": entry["inputs"],
+            "outputs": entry["outputs"] + [entry["status_file"]],
+            "rule": rule_name
+        })
+        if entry["outputs"]:
+            for phony in phonies:
+                try:
+                    phonies[phony][entry[phony]].update(entry["outputs"])
+                except KeyError:
+                    phonies[phony][entry[phony]] = set(entry["outputs"])
+
+    for phony, jobs in phonies.items():
+        for job_name, inputs in jobs.items():
+            builds.append({
+                "inputs": sorted(list(inputs)),
+                "outputs": ["__litani_%s_%s" % (phony, job_name)],
+                "rule": "phony",
+            })
+
+
 ################################################################################
 # Entry points
 # ``````````````````````````````````````````````````````````````````````````````
@@ -495,26 +549,7 @@ def run_build(args):
 
     rules = []
     builds = []
-    for entry in cache["jobs"]:
-
-        if "description" in entry:
-            description = entry["description"]
-        else:
-            description = f"Running '{entry['command']}...'"
-
-        rule_name = entry["job_id"]
-
-        rules.append({
-            "name": rule_name,
-            "description": description,
-            "command": make_litani_exec_command(entry)
-        })
-
-        builds.append({
-            "inputs": entry["inputs"],
-            "outputs": entry["outputs"] + [entry["status_file"]],
-            "rule": rule_name
-        })
+    fill_out_ninja(cache, rules, builds)
 
     ninja_file = cache_dir / "litani.ninja"
     with litani.atomic_write(ninja_file) as handle:
@@ -546,6 +581,14 @@ def run_build(args):
         cmd.extend(["-j", args.parallel])
     if args.dry_run:
         cmd.append("-n")
+
+    if args.pipelines:
+        targets = ["__litani_pipeline_name_%s" % p for p in args.pipelines]
+        cmd.extend(targets)
+    elif args.ci_stage:
+        targets = ["__litani_ci_stage_%s" % p for p in args.ci_stage]
+        cmd.extend(targets)
+
     proc = subprocess.run(cmd)
 
     now = datetime.datetime.utcnow().strftime(litani.TIME_FORMAT_W)

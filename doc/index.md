@@ -326,7 +326,9 @@ include them all in the JSON report for the run.
 
 ### `litani run-build`
 
-`litani run-build [-h] [-n] [-j N] [-o F]`
+    litani run-build [-h] [-n] [-j N] [-o F]
+                     [--pipelines P [P ...] |
+                      --ci-stage <build|test|report>]
 
 Create a new run for jobs to be added to. Litani output from subsequent
 commands, as well as job artifacts and output files, will be written to
@@ -361,6 +363,26 @@ Periodically write a JSON file describing the run so far to `F`. Litani
 already writes such a file to the run directory created by `litani
 init`; this flag specifies an additional, more easily-accessible file to
 write to.
+</p><!-- class="flag-desc" -->
+
+
+<p class="flag-name">
+`-p P [P ...], --pipelines P [P ...]`
+</p><!-- class="flag-name" -->
+
+<p class="flag-desc">
+Only run the jobs that are associated with the pipeline `P`. This allows
+you to run a subset of the jobs from start to finish.
+</p><!-- class="flag-desc" -->
+
+
+<p class="flag-name">
+`-s <build|test|report>, --ci-stage <build|test|report>`
+</p><!-- class="flag-name" -->
+
+<p class="flag-desc">
+Only run the jobs that are part of the CI stage `S`. This allows you to
+run all jobs up to and including a particular stage.
 </p><!-- class="flag-desc" -->
 
 
