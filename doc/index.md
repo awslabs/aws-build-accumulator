@@ -20,7 +20,7 @@ unified build graph.
 control of return codes), as well as grouping of job artifacts into
 stages.
 
-[Source code repository](https://github.com/awslabs/litani)
+[Source code repository](https://github.com/awslabs/aws-build-accumulator)
 
 
 Overview
