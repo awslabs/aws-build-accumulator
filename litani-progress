@@ -23,6 +23,7 @@ from lib import litani
 from os import path
 from time import sleep
 
+
 SLEEP_INTERVAL = 5
 TIMEOUT = 1
 cache_dir = litani.get_cache_dir()
