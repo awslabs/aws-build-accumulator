@@ -84,10 +84,12 @@ def job_sorter(j1, j2):
         return 0
     if not j1["complete"]:
         return -1
-    if not "start_time" in j1 or "start_time" in j2:
+    if not ("start_time" in j1 or "start_time" in j2):
         return 0
     if not "start_time" in j1:
         return -1
+    if not "start_time" in j2:
+        return 1
     return j1["start_time"] < j2["start_time"]
 
 
@@ -289,6 +291,7 @@ def render(run, report_dir):
         page = pipe_templ.render(run=run, pipe=pipe)
         with litani.atomic_write(report_dir / pipe["url"]) as handle:
             print(page, file=handle)
+
 
 def render_artifact_indexes(artifact_dir):
     def dirs_needing_indexes():
