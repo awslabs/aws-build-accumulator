@@ -22,6 +22,7 @@ import sys
 CACHE_FILE = "cache.json"
 CACHE_POINTER = ".litani_cache_dir"
 CI_STAGES = ["build", "test", "report"]
+JOBS_DIR = "jobs"
 RUN_FILE = "run.json"
 TIME_FORMAT_R = "%Y-%m-%dT%H:%M:%SZ"
 TIME_FORMAT_W = "%Y-%m-%dT%H:%M:%SZ"

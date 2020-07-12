@@ -519,31 +519,37 @@ def init(args):
 
 
 def add_job(args):
-    litani_cache_dir = litani.get_cache_dir()
+    jobs_dir = litani.get_cache_dir() / litani.JOBS_DIR
+    jobs_dir.mkdir(exist_ok=True, parents=True)
 
-    with open(litani_cache_dir / litani.CACHE_FILE) as handle:
-        cache = json.load(handle)
-
-    args_dict = vars(args)
-    args_dict.pop("func")
+    job = vars(args)
+    job.pop("func")
 
     job_id = str(uuid.uuid4())
-    args_dict["job_id"] = job_id
-    args_dict["status_file"] = str(litani.get_status_dir() /
-                                   ("%s.json" % job_id))
+    job["job_id"] = job_id
+    job["status_file"] = str(
+        litani.get_status_dir() / ("%s.json" % job_id))
 
-    logging.debug("Adding job: %s", json.dumps(args_dict, indent=2))
-    cache["jobs"].append(args_dict)
+    logging.debug("Adding job: %s", json.dumps(job, indent=2))
 
-    with litani.atomic_write(litani_cache_dir / litani.CACHE_FILE) as handle:
-        json.dump(cache, handle, indent=2)
+    with litani.atomic_write(jobs_dir / ("%s.json" % job_id)) as handle:
+        print(json.dumps(job, indent=2), file=handle)
 
 
 def run_build(args):
     cache_dir = litani.get_cache_dir()
 
+    jobs = []
+    jobs_dir = cache_dir / litani.JOBS_DIR
+    for job_file in os.listdir(jobs_dir):
+        with open(jobs_dir / job_file) as handle:
+            jobs.append(json.load(handle))
+
     with open(cache_dir / litani.CACHE_FILE) as handle:
         cache = json.load(handle)
+    cache["jobs"] = jobs
+    with litani.atomic_write(cache_dir / litani.CACHE_FILE) as handle:
+        print(json.dumps(cache, indent=2), file=handle)
 
     rules = []
     builds = []
