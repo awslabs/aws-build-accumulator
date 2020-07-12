@@ -15,13 +15,9 @@
 
 
 import json
-import logging
-import os
-import sys
+import time
 
 from lib import litani
-from os import path
-from time import sleep
 
 
 SLEEP_INTERVAL = 5
@@ -40,14 +36,16 @@ pipelines = {}
 run_json = None
 
 timer = 0
-while not path.exists(cache_dir / "run.json"):
-    sleep(SLEEP_INTERVAL)
-    timer+=SLEEP_INTERVAL
+while not (cache_dir / "run.json").exists():
+    time.sleep(SLEEP_INTERVAL)
+    timer += SLEEP_INTERVAL
     if timer > TIMEOUT:
-        raise Exception(f"Timed out waiting for run.json to be generated. Could not find file {cache_dir / 'run.json'}")
+        raise Exception(
+            f"Timed out waiting for run.json to be generated. "
+            f"Could not find file {cache_dir / 'run.json'}")
 
 with open(cache_dir / "run.json") as f:
-    run_json = json.loads(f.read())
+    run_json = json.load(f)
 if not run_json:
     raise Exception("Failed to parse run.json")
 
