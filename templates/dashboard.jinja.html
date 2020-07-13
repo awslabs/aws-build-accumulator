@@ -80,9 +80,11 @@ p {
 }
 .pipeline-progress {
   display: flex;
-  flex-grow: 1;
   justify-content: space-between;
   margin-left: 1%;
+  width: 20em;
+  flex-grow: 0;
+  flex-shrink: 0;
 }
 .pipeline-stage {
   display: flex;
@@ -118,10 +120,17 @@ p {
   background-color: #3f51b5;
 }
 
+.pipeline-name p{
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .pipeline-name {
   align-self: center;
   text-align: end;
-  width: 13em;
+  flex-grow: 1;
+  flex-shrink: 1;
+  overflow: hidden;
 }
 .pipeline-link {
   justify-self: center;
@@ -143,6 +152,7 @@ p {
   font-style: italic;
   font-size: larger;
   color: #26323899;
+  width: 16em;
 }
 .graphs {
   display: flex;
