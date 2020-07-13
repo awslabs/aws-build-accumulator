@@ -20,6 +20,7 @@ import logging
 import os
 import pathlib
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -281,6 +282,12 @@ def render_runtimes(run, env, report_dir):
 
 
 def render(run, report_dir):
+    artifacts_dst = report_dir / "artifacts"
+    if artifacts_dst.exists():
+        shutil.rmtree(report_dir / "artifacts")
+    shutil.copytree(litani.get_artifacts_dir(), report_dir / "artifacts")
+    render_artifact_indexes(artifacts_dst)
+
     template_dir = pathlib.Path(__file__).parent.parent / "templates"
     env = jinja2.Environment(loader=jinja2.FileSystemLoader(str(template_dir)))
 

@@ -537,6 +537,9 @@ def add_job(args):
 
 
 def run_build(args):
+    artifacts_dir = litani.get_artifacts_dir()
+    artifacts_dir.mkdir(parents=True, exist_ok=True)
+
     cache_dir = litani.get_cache_dir()
 
     jobs = []
@@ -625,9 +628,6 @@ def run_build(args):
     if args.out_file:
         with litani.atomic_write(args.out_file) as handle:
             print(json.dumps(run, indent=2), file=handle)
-
-    shutil.copytree(litani.get_artifacts_dir(), report_dir / "artifacts")
-    litani_report.render_artifact_indexes(report_dir / "artifacts")
 
     sys.exit(1 if proc.returncode else 0)
 
