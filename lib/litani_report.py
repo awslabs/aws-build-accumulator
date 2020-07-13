@@ -272,7 +272,10 @@ def render_runtimes(run, env, report_dir):
                 stderr=subprocess.DEVNULL)
         os.rename(tmp_url, url)
         with open(url) as handle:
-            lines = handle.read().splitlines()
+            lines = [
+                l for l in handle.read().splitlines()
+                if "<?xml version" not in l
+            ]
         svgs.append(lines)
     return svgs
 

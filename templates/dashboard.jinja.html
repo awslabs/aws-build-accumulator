@@ -160,7 +160,7 @@ p {
   flex-wrap: wrap;
   align-items: flex-start;
 }
-.graphs img {
+.graph {
   margin-bottom: 6em;
 }
 @media (max-width: 640px){
@@ -274,10 +274,12 @@ p {
 
   <div class="graphs">
   {% for svg in svgs %}
-    {% for line in svg %}
+  <div class="graph">
+    {% for line in svg -%}
     {{ line }}
     {% endfor %}{# line in svg #}
-  {% endfor %}{# svg in svgs #}
+  </div><!-- class="graph" -->
+  {% endfor -%}{# svg in svgs #}
   </div><!-- class="graphs" -->
 
 

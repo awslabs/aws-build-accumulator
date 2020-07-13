@@ -20,16 +20,16 @@ $data << EOD
 EOD
 
 set output "{{ url }}"
-set terminal svg noenhanced size 400,400
+set terminal svg noenhanced size 400,800
 
 set border 2 linecolor "#263238"
-set ytics nomirror tc "#263238" font "Helvetica,12"
+set ytics nomirror tc "#263238" font "Helvetica,14"
 unset xtics
 unset key
 
-set ylabel "seconds" tc "#263238" font "Helvetica,12"
+set ylabel "seconds" tc "#263238" font "Helvetica,14"
 
-set title "Runtime for {{ group_name }}" tc "#263238" font "Helvetica,12"
+set title "Runtime for {{ group_name }}" tc "#263238" font "Helvetica,14"
 
 set xrange [0:1]
 
