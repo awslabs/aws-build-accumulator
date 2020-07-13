@@ -163,6 +163,17 @@ p {
 .graphs img {
   margin-bottom: 6em;
 }
+@media (max-width: 640px){
+  .pipeline-progress {
+    width: 10em;
+  }
+  #build-title:after  { content: 'B'; visibility: visible; margin-left: -1.5em}
+  #test-title:after   { content: 'T'; visibility: visible; margin-left: -2.5em}
+  #report-title:after { content: 'R'; visibility: visible; margin-left: -3.5em}
+  #build-title        { visibility: hidden; }
+  #test-title         { visibility: hidden; }
+  #report-title       { visibility: hidden; }
+}
 @media (prefers-color-scheme: dark){
   .pipeline-header {
     color: #eceff1;
@@ -208,9 +219,9 @@ p {
       </div><!-- class="pipeline-name" -->
 
       <div class="pipeline-progress pipeline-header">
-        <p>Build</p>
-        <p>Test</p>
-        <p>Report</p>
+        <p id="build-title">Build</p>
+        <p id="test-title">Test</p>
+        <p id="report-title">Report</p>
       </div><!-- class="pipeline-progress" -->
     </div><!-- class="pipeline-row" -->
 
