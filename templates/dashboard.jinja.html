@@ -186,6 +186,20 @@ p {
     color: #babdbe;
     background-color: #263238;
   }
+  /* SVG graphs */
+  path {
+    stroke: #eceff1;
+  }
+  g {
+    stroke: #fff0;
+  }
+  g text {
+    fill: #eceff1;
+    stroke: #fff0;
+  }
+  circle {
+    stroke: #eceff1;
+  }
 }
 </style>
 </head>
@@ -259,11 +273,11 @@ p {
   </div><!-- id="pipeline-table" -->
 
   <div class="graphs">
-  {% for url in runtimes %}
-    <img src="{{ url }}"
-         alt="runtime graph"
-    />
-  {% endfor %}{# url in urls #}
+  {% for svg in svgs %}
+    {% for line in svg %}
+    {{ line }}
+    {% endfor %}{# line in svg #}
+  {% endfor %}{# svg in svgs #}
   </div><!-- class="graphs" -->
 
 

@@ -251,7 +251,7 @@ def to_id(string):
 
 def render_runtimes(run, env, report_dir):
     stats_groups = get_stats_groups(run)
-    urls = []
+    svgs = []
     gnu_templ = env.get_template("runtime-box.jinja.gnu")
     img_dir = report_dir / "runtimes"
     img_dir.mkdir(exist_ok=True, parents=True)
@@ -271,18 +271,20 @@ def render_runtimes(run, env, report_dir):
                 cmd, check=True, stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL)
         os.rename(tmp_url, url)
-        urls.append(str(url.relative_to(report_dir)))
-    return urls
+        with open(url) as handle:
+            lines = handle.read().splitlines()
+        svgs.append(lines)
+    return svgs
 
 
 def render(run, report_dir):
     template_dir = pathlib.Path(__file__).parent.parent / "templates"
     env = jinja2.Environment(loader=jinja2.FileSystemLoader(str(template_dir)))
 
-    runtime_urls = render_runtimes(run, env, report_dir)
+    svgs = render_runtimes(run, env, report_dir)
 
     dash_templ = env.get_template("dashboard.jinja.html")
-    page = dash_templ.render(run=run, runtimes=runtime_urls)
+    page = dash_templ.render(run=run, svgs=svgs)
     with litani.atomic_write(report_dir / "index.html") as handle:
         print(page, file=handle)
 
