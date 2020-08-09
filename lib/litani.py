@@ -28,9 +28,9 @@ TIME_FORMAT_R = "%Y-%m-%dT%H:%M:%SZ"
 TIME_FORMAT_W = "%Y-%m-%dT%H:%M:%SZ"
 
 
-def _get_cache_dir():
+def _get_cache_dir(path=os.getcwd()):
     def cache_pointer_dirs():
-        current = pathlib.Path(os.getcwd()).resolve(strict=True)
+        current = pathlib.Path(path).resolve(strict=True)
         yield current
         while current.parent != current:
             current = current.parent
@@ -67,9 +67,9 @@ def _get_cache_dir():
     raise FileNotFoundError
 
 
-def get_cache_dir():
+def get_cache_dir(path=os.getcwd()):
     try:
-        return _get_cache_dir()
+        return _get_cache_dir(path)
     except FileNotFoundError:
         sys.exit(1)
 
