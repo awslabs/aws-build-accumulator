@@ -28,7 +28,7 @@ TIME_FORMAT_R = "%Y-%m-%dT%H:%M:%SZ"
 TIME_FORMAT_W = "%Y-%m-%dT%H:%M:%SZ"
 
 
-def get_cache_dir():
+def _get_cache_dir():
     def cache_pointer_dirs():
         current = pathlib.Path(os.getcwd()).resolve(strict=True)
         yield current
@@ -64,7 +64,14 @@ def get_cache_dir():
     logging.error(
         "Could not find a pointer to a litani cache. Did you forget "
         "to run `litani init`?")
-    sys.exit(1)
+    raise FileNotFoundError
+
+
+def get_cache_dir():
+    try:
+        return _get_cache_dir()
+    except FileNotFoundError:
+        sys.exit(1)
 
 
 def get_report_dir():
