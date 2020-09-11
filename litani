@@ -453,6 +453,9 @@ def fill_out_ninja(cache, rules, builds):
         "ci_stage": {},
     }
     for entry in cache["jobs"]:
+        outs = entry["outputs"] or []
+        ins = entry["inputs"] or []
+
         if "description" in entry:
             description = entry["description"]
         else:
@@ -464,21 +467,22 @@ def fill_out_ninja(cache, rules, builds):
             "command": make_litani_exec_command(entry)
         })
         builds.append({
-            "inputs": entry["inputs"],
-            "outputs": entry["outputs"] + [entry["status_file"]],
+            "inputs": ins,
+            "outputs": outs + [entry["status_file"]],
             "rule": rule_name
         })
-        if entry["outputs"]:
+        if outs:
             for phony in phonies:
                 try:
-                    phonies[phony][entry[phony]].update(entry["outputs"])
+                    phonies[phony][entry[phony]].update(outs)
                 except KeyError:
-                    phonies[phony][entry[phony]] = set(entry["outputs"])
+                    phonies[phony][entry[phony]] = set(outs)
 
     for phony, jobs in phonies.items():
         for job_name, inputs in jobs.items():
+            ins = inputs or []
             builds.append({
-                "inputs": sorted(list(inputs)),
+                "inputs": sorted(list(ins)),
                 "outputs": ["__litani_%s_%s" % (phony, job_name)],
                 "rule": "phony",
             })
@@ -702,7 +706,7 @@ def exec_job(args):
          out_data["wrapper_arguments"]["pipeline_name"] /
          out_data["wrapper_arguments"]["ci_stage"])
     artifacts_dir.mkdir(parents=True, exist_ok=True)
-    for fyle in out_data["wrapper_arguments"]["outputs"]:
+    for fyle in out_data["wrapper_arguments"]["outputs"] or []:
         try:
             shutil.copy(fyle, str(artifacts_dir))
         except FileNotFoundError:
