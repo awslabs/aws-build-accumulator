@@ -121,6 +121,41 @@ p {
   background-color: #3f51b5;
 }
 
+.status-icon-cross {
+  fill: #f44336;
+    width: 16px;
+    height: 16px;
+    padding-left: 0.5em;
+}
+.status-icon-tick {
+  fill: #3f51b5;
+  stroke: #ffffff77;
+  stroke-width: 1px;
+  width: 16px;
+  height: 16px;
+  padding-left: 0.5em;
+}
+
+.status-icon-in-progress {
+  fill: #333;
+  width: 16px;
+  height: 16px;
+  padding-left: 0.5em;
+}
+
+.status-icon-in-progress circle {
+  stroke: #333;
+  stroke-width: 2px;
+  fill: none
+}
+
+.pipeline-icon {
+  fill: #29b6f6;
+}
+.pipeline-icon:hover {
+  fill: #ec407a;
+}
+
 .pipeline-name p{
   overflow: hidden;
   text-overflow: ellipsis;
@@ -136,14 +171,8 @@ p {
 .pipeline-link {
   justify-self: center;
   align-self: center;
-  width: 1em;
   color: #29b6f6;
-}
-.pipeline-link p a:hover {
-  color: #01579b;
-}
-.pipeline-link p a {
-  text-decoration: none;
+  padding-left: 0.2em;
 }
 .pipeline-header {
   justify-content: space-around;
@@ -153,8 +182,9 @@ p {
   font-style: italic;
   font-size: larger;
   color: #26323899;
-  width: 16em;
+  width: 18em;
 }
+
 .graphs {
   display: flex;
   flex-wrap: wrap;
@@ -175,6 +205,9 @@ p {
   #report-title       { visibility: hidden; }
 }
 @media (prefers-color-scheme: dark){
+  .status-icon-in-progress { fill: #ddd; }
+  .status-icon-in-progress circle { stroke: #ddd; }
+
   .pipeline-header {
     color: #eceff1;
   }
@@ -226,7 +259,7 @@ p {
   <div id="pipeline-table">
 
     <div class="pipeline-row first-row">
-      <div class="pipeline-link">
+      <div class="pipeline-link" style="padding-left: 0em">
       </div><!-- class="pipeline-link" -->
 
       <div class="pipeline-name">
@@ -243,7 +276,17 @@ p {
     <div class="pipeline-row">
 
       <div class="pipeline-link">
-        <p><em><a href="{{ pipe['url'] }}">i</a></em></p>
+            <svg height="16px" width="32px" class="pipeline-icon">
+              <a href="{{ pipe['url'] }}">
+                <polygon points="0,0 0,16 16,32 32,0"
+                         style="fill:#ffffff01"></polygon>
+                <polygon points="
+                  0,6 0,14 2,14 2,13 30,13 30,14 32,14 32,6 30,6 30,7 19,7
+                  19,6 17,6 17,4 19,4 19,3 20,3 20,2 13,2 13,3 14,3 14,4
+                  16,4 16,6 14,6 14,7 2,7 2,6 0,6">
+                </polygon>
+              </a>
+            </svg>
       </div><!-- class="pipeline-link" -->
 
       <div class="pipeline-name">
@@ -266,6 +309,29 @@ p {
         {% endfor %}{# stage in pipe["stages"] #}
 
       </div><!-- class="pipeline-progress" -->
+
+      <div class="pipeline-status-icon">
+        {% if pipe["status"] == "fail" %}
+        <svg height="16px" width="16px" class="status-icon-cross">
+          <polygon points="
+              1,3 7,8 1,13 3,15 8,9 13,15 15,13 9,8 15,3 13,1 8,7 3,1">
+          </polygon>
+        </svg>
+
+        {% elif pipe["status"] == "success" %}
+        <svg height="16px" class="status-icon-tick">
+          <polygon points="1,11 6,15 15,3 13,1 6,12 3,8"></polygon>
+        </svg>
+
+        {% elif pipe["status"] == "in_progress" %}
+        <svg height="16px" width="16px" class="status-icon-in-progress">
+          <polygon points="7,8 8,9 9,8 8,1"> </polygon>
+          <polygon points="8,8 8,9 11,11 9,8"> </polygon>
+          <circle cx="8" cy="8" r="7"></circle>
+        </svg>
+        {% endif %}{# pipe["status"] == "in_progress" #}
+
+      </div><!-- class="pipeline-status-icon" -->
 
     </div><!-- class="pipeline-row" -->
     {% endfor %}{# pipe in run["pipelines"] #}
