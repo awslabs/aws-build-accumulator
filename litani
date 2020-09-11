@@ -684,17 +684,19 @@ def exec_job(args):
     if proc.returncode not in ignore_returns:
         out_data["wrapper_return_code"] = 1
 
-    for out_field, proc_pipe, arg_file, add_to_out in [
-        ("stdout", proc_out, args.stdout_file, True),
-        ("stderr", proc_err, args.stderr_file, args.interleave_stdout_stderr)
+    for out_field, proc_pipe, arg_file in [
+        ("stdout", proc_out, args.stdout_file),
+        ("stderr", proc_err, args.stderr_file)
     ]:
-        if add_to_out and proc_pipe:
+        if proc_pipe:
             out_data[out_field] = proc_pipe.splitlines()
         else:
             out_data[out_field] = []
+
         if arg_file:
+            out_str = proc_pipe if proc_pipe else ""
             with litani.atomic_write(arg_file) as handle:
-                print(proc_pipe, file=handle)
+                print(out_str, file=handle)
 
     timestamp("end_time", out_data)
     out_str = json.dumps(out_data, indent=2)

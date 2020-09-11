@@ -291,7 +291,7 @@ p {
 
           {% if job["stderr"] %}
           <div class="output-box"><xmp>stderr:
-            {% for line in job["stdout"] %}
+            {% for line in job["stderr"] %}
 {{ line.strip() }}
             {%- endfor %}{# line in job["stderr"] #}
             </xmp>
