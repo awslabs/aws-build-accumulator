@@ -456,7 +456,7 @@ def fill_out_ninja(cache, rules, builds):
         if "description" in entry:
             description = entry["description"]
         else:
-            description = f"Running '{entry['command']}...'"
+            description = f"Running {entry['command']}..."
         rule_name = entry["job_id"]
         rules.append({
             "name": rule_name,
