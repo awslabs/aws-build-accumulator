@@ -81,17 +81,23 @@ def get_run(cache_dir):
 
 
 def job_sorter(j1, j2):
-    if not (j1["complete"] or j2["complete"]):
-        return 0
-    if not j1["complete"]:
-        return -1
+    if j1 is None or j2 is None:
+        raise ValueError("Jobs must be non-None")
     if not ("start_time" in j1 or "start_time" in j2):
         return 0
     if not "start_time" in j1:
-        return -1
-    if not "start_time" in j2:
         return 1
-    return j1["start_time"] < j2["start_time"]
+    if not "start_time" in j2:
+        return -1
+    if j1["start_time"] != j2["start_time"]:
+        return -1 if j1["start_time"] < j2["start_time"] else 1
+    if not ("end_time" in j1 or "end_time" in j2):
+        return 0
+    if not "end_time" in j1:
+        return 1
+    if not "end_time" in j2:
+        return -1
+    return -1 if j1["end_time"] < j2["end_time"] else 1
 
 
 class StageStatus(enum.IntEnum):
