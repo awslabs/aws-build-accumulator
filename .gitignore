@@ -3,3 +3,4 @@ test/tests/*/output
 .litani_cache_dir
 doc/index.html
 doc/litani-flow.svg
+__pycache__/
