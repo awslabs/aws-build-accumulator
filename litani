@@ -197,9 +197,9 @@ def get_args():
             "metavar": "F",
             "help": "periodically write JSON representation of the run"
     }, {
-            "flags": ["--exit-zero-on-fail"],
+            "flags": ["--fail-on-pipeline-failure"],
             "action": "store_true",
-            "help": "exit with return code 0 even if some pipelines failed"
+            "help": "exit with a non-zero return code if some pipelines failed"
     }]:
         flags = arg.pop("flags")
         run_build_pars.add_argument(*flags, **arg)
@@ -637,10 +637,10 @@ def run_build(args):
         with litani.atomic_write(args.out_file) as handle:
             print(json.dumps(run, indent=2), file=handle)
 
-    if args.exit_zero_on_fail:
-        sys.exit(0)
+    if args.fail_on_pipeline_failure:
+        sys.exit(1 if proc.returncode else 0)
 
-    sys.exit(1 if proc.returncode else 0)
+    sys.exit(0)
 
 
 def exec_job(args):
