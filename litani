@@ -496,7 +496,11 @@ def fill_out_ninja(cache, rules, builds):
 
 
 def init(args):
-    run_id = str(uuid.uuid4())
+    try:
+        run_id = os.environ["LITANI_RUN_ID"]
+    except KeyError:
+        run_id = str(uuid.uuid4())
+
     cache_dir = pathlib.Path(
         tempfile.gettempdir()) / "litani" / "runs" / run_id
     cache_dir.mkdir(parents=True)
