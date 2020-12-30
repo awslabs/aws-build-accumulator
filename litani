@@ -36,6 +36,8 @@ VALIDATE_DATA = False
 VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH = 1, 0, 0
 LITANI_VERSION = "%d.%d.%d" % (VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH)
 
+NINJA_ELAPSED_TIME = any([os.getenv("NINJA_ELAPSED_TIME")])
+
 
 ################################################################################
 # Argument parsing
@@ -608,7 +610,13 @@ def run_build(args):
         targets = ["__litani_ci_stage_%s" % p for p in args.ci_stage]
         cmd.extend(targets)
 
-    proc = subprocess.run(cmd)
+    env = dict(os.environ)
+    if NINJA_ELAPSED_TIME:
+        env["NINJA_STATUS"] = "[%es %f/%t] "
+    else:
+        env["NINJA_STATUS"] = "[%f/%t] "
+
+    proc = subprocess.run(cmd, env=env)
 
     now = datetime.datetime.utcnow().strftime(litani.TIME_FORMAT_W)
 
