@@ -33,8 +33,6 @@ from lib import litani, litani_report, ninja_syntax
 
 
 VALIDATE_DATA = False
-VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH = 1, 0, 0
-LITANI_VERSION = "%d.%d.%d" % (VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH)
 
 
 ################################################################################
@@ -164,7 +162,7 @@ def get_args():
         }, {
             "flags": ["-V", "--version"],
             "action": "version",
-            "version": LITANI_VERSION,
+            "version": litani.VERSION,
             "help": "print data format version and exit",
     }]:
         flags = arg.pop("flags")
@@ -309,10 +307,10 @@ def validate_run(run):
         return
     import voluptuous
     schema = voluptuous.Schema({
-        "version": LITANI_VERSION,
-        "version_major": VERSION_MAJOR,
-        "version_minor": VERSION_MINOR,
-        "version_patch": VERSION_PATCH,
+        "version": litani.VERSION,
+        "version_major": litani.VERSION_MAJOR,
+        "version_minor": litani.VERSION_MINOR,
+        "version_patch": litani.VERSION_PATCH,
         "run_id": str,
         "project": str,
         "start_time": time_str,
@@ -514,10 +512,10 @@ def init(args):
     with litani.atomic_write(cache_dir / litani.CACHE_FILE) as handle:
         print(json.dumps({
             "project": args.project_name,
-            "version": LITANI_VERSION,
-            "version_major": VERSION_MAJOR,
-            "version_minor": VERSION_MINOR,
-            "version_patch": VERSION_PATCH,
+            "version": litani.VERSION,
+            "version_major": litani.VERSION_MAJOR,
+            "version_minor": litani.VERSION_MINOR,
+            "version_patch": litani.VERSION_PATCH,
             "run_id": run_id,
             "start_time": now,
             "status": "in_progress",
@@ -635,6 +633,7 @@ def run_build(args):
     run = litani_report.get_run_data(cache_dir)
     validate_run(run)
     litani_report.render(run, report_dir)
+
     with litani.atomic_write(cache_dir / litani.RUN_FILE) as handle:
         print(json.dumps(run, indent=2), file=handle)
     if args.out_file:

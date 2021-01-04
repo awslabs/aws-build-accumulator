@@ -287,6 +287,17 @@ def render_runtimes(run, env, report_dir):
     return svgs
 
 
+def get_git_hash():
+    try:
+        cmd = ["git", "show", "--no-patch", "--pretty=format:%h"]
+        litani_dir = pathlib.Path(os.path.realpath(__file__)).parent
+        proc = subprocess.run(
+            cmd, text=True, stdout=subprocess.PIPE, check=True, cwd=litani_dir)
+        return proc.stdout.strip()
+    except RuntimeError:
+        return None
+
+
 def render(run, report_dir):
     artifacts_dst = report_dir / "artifacts"
     if artifacts_dst.exists():
@@ -300,9 +311,14 @@ def render(run, report_dir):
     svgs = render_runtimes(run, env, report_dir)
 
     dash_templ = env.get_template("dashboard.jinja.html")
-    page = dash_templ.render(run=run, svgs=svgs)
+    page = dash_templ.render(
+        run=run, svgs=svgs, litani_hash=get_git_hash(),
+        litani_version=litani.VERSION)
     with litani.atomic_write(report_dir / "index.html") as handle:
         print(page, file=handle)
+
+    with litani.atomic_write(report_dir / litani.RUN_FILE) as handle:
+        print(json.dumps(run, indent=2), file=handle)
 
     pipe_templ = env.get_template("pipeline.jinja.html")
     for pipe in run["pipelines"]:

@@ -21,6 +21,13 @@
     {{ run["project"] }} Proof Results&mdash;{{ run["run_id"] }}
   </title>
 <style>
+.footer {
+  margin-top: 4em;
+  margin-bottom: 1em;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
 #title{
   background-color: #ec407a;
   color: white;
@@ -219,6 +226,12 @@ p {
     color: #babdbe;
     background-color: #263238;
   }
+  p {
+    color: #babdbe;
+  }
+  #subtitle {
+    color: #fff;
+  }
   /* SVG graphs */
   path {
     stroke: #eceff1;
@@ -348,6 +361,24 @@ p {
   {% endfor -%}{# svg in svgs #}
   </div><!-- class="graphs" -->
 
+  <div class="footer">
+    <div class="footer-cell">
+      <p>
+        Report generated with
+        <a href="https://github.com/awslabs/aws-build-accumulator">Litani</a>
+        {{ litani_version }}
+        {% if litani_hash is not none %}
+        (<code>{{ litani_hash }}</code>)
+        {% endif %}{# litani_hash is not none #}
+      </p>
+    </div><!-- class="footer-cell" -->
+    <div class="footer-cell">
+      <p>
+        Raw data for this run: <code><a
+         href="run.json">run.json</a></code>.
+      </p>
+    </div><!-- class="footer-cell" -->
+  </div><!-- class="footer" -->
 
 </div><!-- id="content" -->
 </body>
