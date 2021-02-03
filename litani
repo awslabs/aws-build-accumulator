@@ -30,6 +30,7 @@ import time
 import uuid
 
 from lib import litani, litani_report, ninja_syntax
+import lib.graph
 
 
 VALIDATE_DATA = False
@@ -178,6 +179,18 @@ def get_args():
     }]:
         flags = arg.pop("flags")
         run_build_pars.add_argument(*flags, **arg)
+
+    graph_pars = subs.add_parser("graph")
+    graph_pars.set_defaults(func=lib.graph.print_graph)
+    for arg in [{
+            "flags": ["-p", "--pipelines"],
+            "help": "only display the graph for these pipelines (default: all)",
+            "nargs": "+",
+            "metavar": "P",
+    }]:
+        flags = arg.pop("flags")
+        graph_pars.add_argument(*flags, **arg)
+
 
     run_build_pars = subs.add_parser("run-build")
     run_build_pars.set_defaults(func=run_build)
@@ -551,18 +564,10 @@ def run_build(args):
     artifacts_dir.mkdir(parents=True, exist_ok=True)
 
     cache_dir = litani.get_cache_dir()
-
-    jobs = []
-    jobs_dir = cache_dir / litani.JOBS_DIR
-    for job_file in os.listdir(jobs_dir):
-        with open(jobs_dir / job_file) as handle:
-            jobs.append(json.load(handle))
+    litani.add_jobs_to_cache()
 
     with open(cache_dir / litani.CACHE_FILE) as handle:
         cache = json.load(handle)
-    cache["jobs"] = jobs
-    with litani.atomic_write(cache_dir / litani.CACHE_FILE) as handle:
-        print(json.dumps(cache, indent=2), file=handle)
 
     rules = []
     builds = []

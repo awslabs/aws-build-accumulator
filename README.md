@@ -22,5 +22,11 @@ Hosted [here](https://awslabs.github.io/aws-build-accumulator/).
   * `apt-get install gnuplot`, `brew install gnuplot`
 * [Jinja](https://jinja.palletsprojects.com/en/2.11.x/)
   * `pip3 install jinja2`
-* [Voluptuous](https://pypi.org/project/voluptuous/)
+
+Optional:
+
+* [Voluptuous](https://pypi.org/project/voluptuous/) to perform
+  sanity-checking on internal data structures
   * `pip3 install voluptuous`
+* [Graphviz DOT](https://graphviz.org/) to run `litani graph`
+  * `apt-get install graphviz`, `brew install graphviz`

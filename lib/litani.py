@@ -13,6 +13,7 @@
 
 
 import contextlib
+import json
 import logging
 import os
 import pathlib
@@ -26,7 +27,7 @@ JOBS_DIR = "jobs"
 RUN_FILE = "run.json"
 TIME_FORMAT_R = "%Y-%m-%dT%H:%M:%SZ"
 TIME_FORMAT_W = "%Y-%m-%dT%H:%M:%SZ"
-VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH = 1, 0, 0
+VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH = 1, 1, 0
 VERSION = "%d.%d.%d" % (VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH)
 
 
@@ -87,6 +88,7 @@ def get_artifacts_dir():
 def get_status_dir():
     return get_cache_dir() / "status"
 
+
 @contextlib.contextmanager
 def atomic_write(path, mode="w"):
     try:
@@ -107,3 +109,25 @@ def atomic_write(path, mode="w"):
             os.rename(tmp, path)
         except RuntimeError:
             os.unlink(tmp)
+
+
+def add_jobs_to_cache():
+    """Adds individual Litani jobs in the jobs directory to the cache file
+
+    `litani add-job` adds jobs to individual JSON files so that it's possible to
+    run multiple parallel invocations of `litani add-job`. When all jobs have
+    been added, this method should be called so that all of the individual JSON
+    job files get added to the single cache file, ready to be run.
+    """
+    jobs = []
+    cache_dir = get_cache_dir()
+    jobs_dir = cache_dir / JOBS_DIR
+    for job_file in os.listdir(jobs_dir):
+        with open(jobs_dir / job_file) as handle:
+            jobs.append(json.load(handle))
+
+    with open(cache_dir / CACHE_FILE) as handle:
+        cache = json.load(handle)
+    cache["jobs"] = jobs
+    with atomic_write(cache_dir / CACHE_FILE) as handle:
+        print(json.dumps(cache, indent=2), file=handle)
