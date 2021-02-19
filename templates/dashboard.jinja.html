@@ -399,13 +399,14 @@ p {
           href="run.json">run.json</a></code>
         </p>
       </li>
-      {% if litani_zip_path is not none %}
+      {% if litani_report_archive_path is not none %}
       <li>
         <p>HTML report: <code><a
-          href={{litani_zip_path}} download>{{litani_zip_path}}</a></code>
+          href="{{ litani_report_archive_path }}" download>
+          {{ litani_report_archive_path }}</a></code>
         </p>
       </li>
-      {% endif %}
+      {% endif %}{# litani_report_archive_path is not none #}
     </ul>
   </div>
 
