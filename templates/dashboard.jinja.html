@@ -97,6 +97,7 @@ p {
   padding-left: 0.2em;
   padding-right: 0.2em;
   border-radius: 5px;
+  line-height: 1.5;
 }
 .downloads a {
   color: #3f51b5;
@@ -389,18 +390,24 @@ p {
   {% endfor -%}{# svg in svgs #}
   </div><!-- class="graphs" -->
 
-  {% if litani_zip_path is not none %}
   <h2 class="downloads-header">Downloads</h2>
   <div class="downloads">
     <ul>
       <li>
-        <p>HTML report:
-          <a href={{litani_zip_path}} download>{{litani_zip_path}}</a>
+        <p>
+          Raw data for this run: <code><a
+          href="run.json">run.json</a></code>
         </p>
       </li>
+      {% if litani_zip_path is not none %}
+      <li>
+        <p>HTML report: <code><a
+          href={{litani_zip_path}} download>{{litani_zip_path}}</a></code>
+        </p>
+      </li>
+      {% endif %}
     </ul>
   </div>
-  {% endif %}
 
   <div class="footer">
     <div class="footer-cell">
@@ -411,12 +418,6 @@ p {
         {% if litani_hash is not none %}
         (<code>{{ litani_hash }}</code>)
         {% endif %}{# litani_hash is not none #}
-      </p>
-    </div><!-- class="footer-cell" -->
-    <div class="footer-cell">
-      <p>
-        Raw data for this run: <code><a
-         href="run.json">run.json</a></code>.
       </p>
     </div><!-- class="footer-cell" -->
   </div><!-- class="footer" -->
