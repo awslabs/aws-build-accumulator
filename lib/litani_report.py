@@ -24,6 +24,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import uuid
 
 import jinja2
 
@@ -299,16 +300,13 @@ def get_git_hash():
 
 
 def render(run, report_dir):
-    artifacts_dst = report_dir / "artifacts"
-    if artifacts_dst.exists():
-        shutil.rmtree(report_dir / "artifacts")
-    shutil.copytree(litani.get_artifacts_dir(), report_dir / "artifacts")
-    render_artifact_indexes(artifacts_dst)
+    temporary_report_dir = pathlib.Path(tempfile.gettempdir()) / str(uuid.uuid4())
+    render_artifact_indexes(temporary_report_dir / "artifacts")
 
     template_dir = pathlib.Path(__file__).parent.parent / "templates"
     env = jinja2.Environment(loader=jinja2.FileSystemLoader(str(template_dir)))
 
-    svgs = render_runtimes(run, env, report_dir)
+    svgs = render_runtimes(run, env, temporary_report_dir)
 
     litani_report_archive_path = os.getenv("LITANI_REPORT_ARCHIVE_PATH")
 
@@ -319,14 +317,18 @@ def render(run, report_dir):
     with litani.atomic_write(report_dir / "index.html") as handle:
         print(page, file=handle)
 
-    with litani.atomic_write(report_dir / litani.RUN_FILE) as handle:
+    with litani.atomic_write(temporary_report_dir / litani.RUN_FILE) as handle:
         print(json.dumps(run, indent=2), file=handle)
 
     pipe_templ = env.get_template("pipeline.jinja.html")
     for pipe in run["pipelines"]:
         page = pipe_templ.render(run=run, pipe=pipe)
-        with litani.atomic_write(report_dir / pipe["url"]) as handle:
+        with litani.atomic_write(temporary_report_dir / pipe["url"]) as handle:
             print(page, file=handle)
+
+    temp_symlink_dir = report_dir.with_name(report_dir.name + "-tmp")
+    os.symlink(temporary_report_dir, temp_symlink_dir)
+    os.rename(temp_symlink_dir, report_dir)
 
 
 def render_artifact_indexes(artifact_dir):
@@ -334,6 +336,10 @@ def render_artifact_indexes(artifact_dir):
         for root, dirs, fyles in os.walk(artifact_dir):
             if "index.html" not in fyles:
                 yield pathlib.Path(root), dirs, fyles
+
+    if artifact_dir.exists():
+        shutil.rmtree(artifact_dir)
+    shutil.copytree(litani.get_artifacts_dir(), artifact_dir)
 
     template_dir = pathlib.Path(__file__).parent.parent / "templates"
     env = jinja2.Environment(loader=jinja2.FileSystemLoader(str(template_dir)))
