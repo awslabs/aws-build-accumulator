@@ -310,12 +310,12 @@ def render(run, report_dir):
 
     svgs = render_runtimes(run, env, report_dir)
 
-    litani_zip_path = os.environ.get("LITANI_ZIP_PATH")
+    litani_report_archive_path = os.getenv("LITANI_REPORT_ARCHIVE_PATH")
 
     dash_templ = env.get_template("dashboard.jinja.html")
     page = dash_templ.render(
         run=run, svgs=svgs, litani_hash=get_git_hash(),
-        litani_version=litani.VERSION, litani_zip_path=litani_zip_path)
+        litani_version=litani.VERSION, litani_report_archive_path=litani_report_archive_path)
     with litani.atomic_write(report_dir / "index.html") as handle:
         print(page, file=handle)
 
