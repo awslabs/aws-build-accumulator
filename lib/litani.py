@@ -81,6 +81,9 @@ def get_report_dir():
     return get_cache_dir() / "html"
 
 
+def get_report_data_dir():
+    return get_cache_dir() / "report_data"
+
 def get_artifacts_dir():
     return get_cache_dir() / "artifacts"
 

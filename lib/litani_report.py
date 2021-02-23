@@ -300,8 +300,12 @@ def get_git_hash():
 
 
 def render(run, report_dir):
-    temporary_report_dir = pathlib.Path(tempfile.gettempdir()) / str(uuid.uuid4())
-    render_artifact_indexes(temporary_report_dir / "artifacts")
+    temporary_report_dir = litani.get_report_data_dir() / str(uuid.uuid4())
+
+    artifact_dir = temporary_report_dir / "artifacts"
+    shutil.copytree(litani.get_artifacts_dir(), artifact_dir)
+
+    render_artifact_indexes(artifact_dir)
 
     template_dir = pathlib.Path(__file__).parent.parent / "templates"
     env = jinja2.Environment(loader=jinja2.FileSystemLoader(str(template_dir)))
@@ -314,7 +318,7 @@ def render(run, report_dir):
     page = dash_templ.render(
         run=run, svgs=svgs, litani_hash=get_git_hash(),
         litani_version=litani.VERSION, litani_report_archive_path=litani_report_archive_path)
-    with litani.atomic_write(report_dir / "index.html") as handle:
+    with litani.atomic_write(temporary_report_dir / "index.html") as handle:
         print(page, file=handle)
 
     with litani.atomic_write(temporary_report_dir / litani.RUN_FILE) as handle:
@@ -326,7 +330,7 @@ def render(run, report_dir):
         with litani.atomic_write(temporary_report_dir / pipe["url"]) as handle:
             print(page, file=handle)
 
-    temp_symlink_dir = report_dir.with_name(report_dir.name + "-tmp")
+    temp_symlink_dir = report_dir.with_name(report_dir.name + str(uuid.uuid4()))
     os.symlink(temporary_report_dir, temp_symlink_dir)
     os.rename(temp_symlink_dir, report_dir)
 
@@ -336,10 +340,6 @@ def render_artifact_indexes(artifact_dir):
         for root, dirs, fyles in os.walk(artifact_dir):
             if "index.html" not in fyles:
                 yield pathlib.Path(root), dirs, fyles
-
-    if artifact_dir.exists():
-        shutil.rmtree(artifact_dir)
-    shutil.copytree(litani.get_artifacts_dir(), artifact_dir)
 
     template_dir = pathlib.Path(__file__).parent.parent / "templates"
     env = jinja2.Environment(loader=jinja2.FileSystemLoader(str(template_dir)))
