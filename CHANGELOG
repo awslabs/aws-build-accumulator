@@ -1,6 +1,15 @@
                               CHANGELOG
                               `````````
 
+Version 1.3.0 -- 2021-02-24
+---------------------------
+
+- Litani now has a top-level command called `print-capabilities` that
+  prints out a list of features in either human or machine-readable format.
+  The intention is that any new API-changing features will be accompanied by a
+  new entry in this list
+
+
 Version 1.2.0 -- 2021-02-24
 ---------------------------
 
