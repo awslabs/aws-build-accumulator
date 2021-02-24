@@ -30,6 +30,7 @@ import time
 import uuid
 
 from lib import litani, litani_report, ninja_syntax
+import lib.capabilities
 import lib.graph
 
 
@@ -191,6 +192,16 @@ def get_args():
         flags = arg.pop("flags")
         graph_pars.add_argument(*flags, **arg)
 
+    caps_pars = subs.add_parser("print-capabilities",
+        help="Print out Litani's capabilities in a list")
+    caps_pars.set_defaults(func=lib.capabilities.dump)
+    for arg in [{
+            "flags": ["-r", "--human-readable"],
+            "help": "also print out capabilities with their descriptions",
+            "action": "store_true"
+    }]:
+        flags = arg.pop("flags")
+        caps_pars.add_argument(*flags, **arg)
 
     run_build_pars = subs.add_parser("run-build")
     run_build_pars.set_defaults(func=run_build)
