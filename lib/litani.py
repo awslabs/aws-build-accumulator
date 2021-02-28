@@ -31,6 +31,23 @@ VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH = 1, 3, 0
 VERSION = "%d.%d.%d" % (VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH)
 
 
+
+class ExpireableDirectory:
+    """This class is to mark directories as being safe for garbage collection"""
+
+    def __init__(self, path: pathlib.Path):
+        self._touchfile = path.resolve() / ".litani-expired"
+
+
+    def expire(self):
+        self._touchfile.touch()
+
+
+    def is_expired(self):
+        return self._touchfile.exists()
+
+
+
 def _get_cache_dir(path=os.getcwd()):
     def cache_pointer_dirs():
         current = pathlib.Path(path).resolve(strict=True)
