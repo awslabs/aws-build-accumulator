@@ -16,6 +16,7 @@ import json
 
 _CAPABILITIES = {
     "atomic_report_update": "Report directory is rendered atomically",
+    "report_expire": "Old report directories will contain a .litani-expired file",
 }
 
 

@@ -301,6 +301,8 @@ def get_git_hash():
 
 def render(run, report_dir):
     temporary_report_dir = litani.get_report_data_dir() / str(uuid.uuid4())
+    old_report_dir = litani.ExpireableDirectory(
+        litani.get_report_dir().resolve())
 
     artifact_dir = temporary_report_dir / "artifacts"
     shutil.copytree(litani.get_artifacts_dir(), artifact_dir)
@@ -334,6 +336,7 @@ def render(run, report_dir):
     temp_symlink_dir = report_dir.with_name(report_dir.name + str(uuid.uuid4()))
     os.symlink(temporary_report_dir, temp_symlink_dir)
     os.rename(temp_symlink_dir, report_dir)
+    old_report_dir.expire()
 
 
 def render_artifact_indexes(artifact_dir):
