@@ -317,7 +317,8 @@ def render(run, report_dir):
     dash_templ = env.get_template("dashboard.jinja.html")
     page = dash_templ.render(
         run=run, svgs=svgs, litani_hash=get_git_hash(),
-        litani_version=litani.VERSION, litani_report_archive_path=litani_report_archive_path)
+        litani_version=litani.VERSION,
+        litani_report_archive_path=litani_report_archive_path)
     with litani.atomic_write(temporary_report_dir / "index.html") as handle:
         print(page, file=handle)
 
