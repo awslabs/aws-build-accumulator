@@ -242,3 +242,18 @@ def add_jobs_to_cache():
     cache["jobs"] = jobs
     with atomic_write(cache_dir / CACHE_FILE) as handle:
         print(json.dumps(cache, indent=2), file=handle)
+
+
+def unlink_expired():
+    """Delete all report directories that are expired and unlocked"""
+
+    for data_dir in get_report_data_dir().iterdir():
+        lock_dir = LockableDirectory(data_dir)
+        if not lock_dir.acquire():
+            continue
+        expire_dir = ExpireableDirectory(data_dir)
+        if expire_dir.is_expired():
+            shutil.rmtree(data_dir)
+            # No need to release lock after deletion
+        else:
+            lock_dir.release()
