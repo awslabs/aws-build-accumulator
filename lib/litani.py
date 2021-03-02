@@ -12,11 +12,13 @@
 # permissions and limitations under the License.
 
 
+import asyncio
 import contextlib
 import json
 import logging
 import os
 import pathlib
+import shutil
 import sys
 
 
@@ -46,6 +48,95 @@ class ExpireableDirectory:
     def is_expired(self):
         return self._touchfile.exists()
 
+
+
+class AcquisitionFailed(Exception):
+    pass
+
+
+
+class TimeoutExpired(Exception):
+    pass
+
+
+
+class LockableDirectory:
+    """POSIX-compliant directory locking"""
+
+
+    def __init__(self, path: pathlib.Path):
+        """Directory is initially released"""
+
+        self.path = path.resolve()
+        self._lock_file = self.path / ".litani-lock"
+        self.release()
+
+
+    # Non-blocking =============================================================
+
+
+    def acquire(self):
+        """Return True if acquisition was successful, False otherwise"""
+        try:
+            self._lock_file.unlink()
+        except OSError:
+            return False
+        else:
+            return True
+
+
+    def release(self):
+        self._lock_file.touch()
+
+
+    @contextlib.contextmanager
+    def try_acquire(self):
+        """Automatically releases directory at the end of a block. Usage:
+
+                try:
+                    with lock_dir.try_acquire():
+                        # do stuff with locked dir
+                except report_directories.AcquisitionFailed:
+                    # deal with it
+        """
+
+        if not self.acquire():
+            raise AcquisitionFailed("directory: '%s'" % self.path)
+        yield
+        self.release()
+
+
+    # Async ====================================================================
+
+
+    async def acquire_wait(self, timeout=0):
+        """Block until acquisition succeeds or timeout expires"""
+
+        while True:
+            if self.acquire():
+                return
+            timeout -= 1
+            if timeout == 0:
+                raise TimeoutExpired(
+                    "directory: '%s', timeout: %d" % (self.path, timeout))
+            await asyncio.sleep(1)
+
+
+    @contextlib.contextmanager
+    async def try_acquire_wait(self, timeout=0):
+        """Enter a context manager as soon as acquisition succeeds. Directory
+        will be released upon exit from context manager. Usage:
+
+                try:
+                    with await lock_dir.try_acquire_wait(timeout=10):
+                        # do stuff with locked dir
+                except report_directories.TimeoutExpired:
+                    # deal with it
+        """
+
+        with await self.acquire_wait(timeout):
+            yield
+        self.release()
 
 
 def _get_cache_dir(path=os.getcwd()):
