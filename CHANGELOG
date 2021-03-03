@@ -1,6 +1,21 @@
                               CHANGELOG
                               `````````
 
+Version 1.4.0 -- 2021-03-02
+---------------------------
+
+- lib.litani now exposes a LockableDirectory API that can be used to
+  lock directories against concurrent access by more than one process.
+  External processes can use this API to lock report directories while
+  reading or copying them.
+
+- Litani now touches a file called `.litani-expired` in HTML report
+  directories as soon as a new report directory has been written, and
+  after the `html` symbolic link has been updated to point to the new
+  directory. Litani then deletes all report directories that are both
+  expired and unlocked.
+
+
 Version 1.3.0 -- 2021-02-24
 ---------------------------
 
