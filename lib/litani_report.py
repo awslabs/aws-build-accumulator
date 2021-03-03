@@ -336,6 +336,10 @@ def render(run, report_dir):
     temp_symlink_dir = report_dir.with_name(report_dir.name + str(uuid.uuid4()))
     os.symlink(temporary_report_dir, temp_symlink_dir)
     os.rename(temp_symlink_dir, report_dir)
+
+    # Release lock so that other processes can read from this directory
+    new_report_dir = litani.LockableDirectory(report_dir.resolve())
+
     old_report_dir.expire()
     litani.unlink_expired()
 
