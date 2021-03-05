@@ -737,7 +737,13 @@ def exec_job(args):
             out_data["wrapper_arguments"]["pipeline_name"])
         except IsADirectoryError:
             artifact_src = pathlib.Path(fyle)
-            shutil.copytree(fyle, str(artifacts_dir / artifact_src.name))
+            try:
+                shutil.copytree(
+                    fyle, str(artifacts_dir / artifact_src.name))
+            except FileExistsError:
+                logging.warning(
+                    "Multiple files with same name in artifacts directory")
+                pass
 
     if out_data["wrapper_return_code"] == 0:
         sys.exit(0)
