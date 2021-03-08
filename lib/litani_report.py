@@ -301,8 +301,9 @@ def get_git_hash():
 
 def render(run, report_dir):
     temporary_report_dir = litani.get_report_data_dir() / str(uuid.uuid4())
-    old_report_dir = litani.ExpireableDirectory(
-        litani.get_report_dir().resolve())
+    temporary_report_dir.mkdir(parents=True)
+    old_report_dir_path = litani.get_report_dir().resolve()
+    old_report_dir = litani.ExpireableDirectory(old_report_dir_path)
 
     artifact_dir = temporary_report_dir / "artifacts"
     shutil.copytree(litani.get_artifacts_dir(), artifact_dir)
@@ -341,7 +342,8 @@ def render(run, report_dir):
     new_report_dir = litani.LockableDirectory(report_dir.resolve())
     new_report_dir.release()
 
-    old_report_dir.expire()
+    if old_report_dir_path.exists():
+        old_report_dir.expire()
     litani.unlink_expired()
 
 
