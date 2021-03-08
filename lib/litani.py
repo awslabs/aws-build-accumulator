@@ -65,11 +65,10 @@ class LockableDirectory:
 
 
     def __init__(self, path: pathlib.Path):
-        """Directory is initially released"""
+        """Directory is initially locked"""
 
         self.path = path.resolve()
         self._lock_file = self.path / ".litani-lock"
-        self.release()
 
 
     # Non-blocking =============================================================
