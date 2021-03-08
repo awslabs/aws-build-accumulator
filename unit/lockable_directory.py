@@ -31,13 +31,14 @@ class TestLockableDirectory(unittest.TestCase):
         self.temp_dir.cleanup()
 
 
-    def test_can_initially_acquire(self):
+    def test_cannot_initially_acquire(self):
         lock_dir = lib.litani.LockableDirectory(self.temp_dir_p)
-        self.assertTrue(lock_dir.acquire())
+        self.assertFalse(lock_dir.acquire())
 
 
     def test_can_acquire_after_release(self):
         lock_dir = lib.litani.LockableDirectory(self.temp_dir_p)
+        lock_dir.release()
         self.assertTrue(lock_dir.acquire())
         lock_dir.release()
         self.assertTrue(lock_dir.acquire())
@@ -45,12 +46,14 @@ class TestLockableDirectory(unittest.TestCase):
 
     def test_no_double_acquire(self):
         lock_dir = lib.litani.LockableDirectory(self.temp_dir_p)
+        lock_dir.release()
         self.assertTrue(lock_dir.acquire())
         self.assertFalse(lock_dir.acquire())
 
 
     def test_repeat_no_double_acquire(self):
         lock_dir = lib.litani.LockableDirectory(self.temp_dir_p)
+        lock_dir.release()
         self.assertTrue(lock_dir.acquire())
         self.assertFalse(lock_dir.acquire())
 
@@ -62,12 +65,14 @@ class TestLockableDirectory(unittest.TestCase):
 
     def test_try_acquire(self):
         lock_dir = lib.litani.LockableDirectory(self.temp_dir_p)
+        lock_dir.release()
         with lock_dir.try_acquire():
             pass # No exception
 
 
     def test_no_double_try_acquire(self):
         lock_dir = lib.litani.LockableDirectory(self.temp_dir_p)
+        lock_dir.release()
         with lock_dir.try_acquire():
             with self.assertRaises(lib.litani.AcquisitionFailed):
                 with lock_dir.try_acquire():
@@ -76,13 +81,13 @@ class TestLockableDirectory(unittest.TestCase):
 
     def test_no_try_acquire_acquire(self):
         lock_dir = lib.litani.LockableDirectory(self.temp_dir_p)
+        lock_dir.release()
         with lock_dir.try_acquire():
             self.assertFalse(lock_dir.acquire())
 
 
     def test_no_acquire_try_acquire(self):
         lock_dir = lib.litani.LockableDirectory(self.temp_dir_p)
-        lock_dir.acquire()
         with self.assertRaises(lib.litani.AcquisitionFailed):
             with lock_dir.try_acquire():
                 pass
@@ -90,6 +95,7 @@ class TestLockableDirectory(unittest.TestCase):
 
     def test_context_manager_releases(self):
         lock_dir = lib.litani.LockableDirectory(self.temp_dir_p)
+        lock_dir.release()
         with lock_dir.try_acquire():
             pass
         self.assertTrue(lock_dir.acquire())

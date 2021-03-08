@@ -339,6 +339,7 @@ def render(run, report_dir):
 
     # Release lock so that other processes can read from this directory
     new_report_dir = litani.LockableDirectory(report_dir.resolve())
+    new_report_dir.release()
 
     old_report_dir.expire()
     litani.unlink_expired()
