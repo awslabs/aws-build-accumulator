@@ -1,6 +1,14 @@
                               CHANGELOG
                               `````````
 
+Version 1.5.0 -- 2021-03-08
+---------------------------
+
+- The implementation of directory locking no longer releases the lock
+  upon creation. This fixes a problem where external processes could
+  release a lock that a different process had acquired.
+
+
 Version 1.4.0 -- 2021-03-02
 ---------------------------
 
