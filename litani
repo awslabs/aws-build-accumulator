@@ -27,6 +27,7 @@ import sys
 import tempfile
 import threading
 import time
+import traceback
 import uuid
 
 from lib import litani, litani_report, ninja_syntax
@@ -385,19 +386,23 @@ def validate_run(run):
 
 
 def continuous_render_report(cache_dir, report_dir, killer, out_file):
-    while True:
-        run = litani_report.get_run_data(cache_dir)
-        validate_run(run)
-        with litani.atomic_write(cache_dir / litani.RUN_FILE) as handle:
-            print(json.dumps(run, indent=2), file=handle)
-        if out_file is not None:
-            with litani.atomic_write(out_file) as handle:
+    try:
+        while True:
+            run = litani_report.get_run_data(cache_dir)
+            validate_run(run)
+            with litani.atomic_write(cache_dir / litani.RUN_FILE) as handle:
                 print(json.dumps(run, indent=2), file=handle)
-        litani_report.render(run, report_dir)
-        if killer.is_set():
-            break
-        time.sleep(2)
-
+            if out_file is not None:
+                with litani.atomic_write(out_file) as handle:
+                    print(json.dumps(run, indent=2), file=handle)
+            litani_report.render(run, report_dir)
+            if killer.is_set():
+                break
+            time.sleep(2)
+    except Exception as e:
+        logging.error("Continuous render function crashed")
+        logging.error(str(e))
+        traceback.print_exc()
 
 def set_up_logging(args):
     if args.very_verbose:
