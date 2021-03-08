@@ -252,6 +252,7 @@ def unlink_expired():
             continue
         expire_dir = ExpireableDirectory(data_dir)
         if expire_dir.is_expired():
+            logging.debug("Unlinking %s", str(data_dir))
             shutil.rmtree(data_dir)
             # No need to release lock after deletion
         else:
