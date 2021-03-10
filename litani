@@ -451,7 +451,7 @@ def make_litani_exec_command(add_args):
     ]:
         if arg in add_args and add_args[arg]:
             cmd.append("--%s" % arg.replace("_", "-"))
-            cmd.append(shlex.quote(add_args[arg].strip()))
+            cmd.append(shlex.quote(str(add_args[arg]).strip()))
 
     # lists
     for arg in [
@@ -462,7 +462,7 @@ def make_litani_exec_command(add_args):
             continue
         cmd.append("--%s" % arg.replace("_", "-"))
         for item in add_args[arg]:
-            cmd.append(shlex.quote(item.strip()))
+            cmd.append(shlex.quote(str(item).strip()))
 
     # switches
     for arg in [
