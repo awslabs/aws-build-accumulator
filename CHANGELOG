@@ -1,6 +1,13 @@
                               CHANGELOG
                               `````````
 
+Version 1.6.0 -- 2021-03-10
+---------------------------
+
+This release fixes a bug where litani would crash when given the
+`--timeout` option.
+
+
 Version 1.5.0 -- 2021-03-08
 ---------------------------
 
