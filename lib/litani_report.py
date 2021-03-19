@@ -132,7 +132,7 @@ def add_stage_stats(stage, stage_name, pipeline_name):
                 json.dumps(stage, indent=2))
             sys.exit(1)
     stage["status"] = status.name.lower()
-    stage["url"] = "artifacts/%s/%s/index.html" % (pipeline_name, stage_name)
+    stage["url"] = "artifacts/%s/%s" % (pipeline_name, stage_name)
     stage["name"] = stage_name
 
 
@@ -143,7 +143,7 @@ class PipeStatus(enum.IntEnum):
 
 
 def add_pipe_stats(pipe):
-    pipe["url"] = "pipelines/%s/index.html" % pipe["name"]
+    pipe["url"] = "pipelines/%s" % pipe["name"]
     incomplete = [s for s in pipe["ci_stages"] if not s["complete"]]
     if incomplete:
         pipe["status"] = PipeStatus.IN_PROGRESS
