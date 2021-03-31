@@ -33,6 +33,7 @@ import uuid
 from lib import litani, litani_report, ninja_syntax
 import lib.capabilities
 import lib.graph
+import lib.job_outcome
 
 
 VALIDATE_DATA = False
@@ -103,6 +104,11 @@ def get_add_job_args():
             "nargs": "+",
             "help": "if the job exits with one of the listed return codes, "
                     "continue the build but fail at the end"
+        }, {
+            "flags": ["--outcome-table"],
+            "metavar": "F",
+            "help": "path to a JSON outcome table that determines the outcome "
+                    "of this job"
         }, {
             "flags": ["--interleave-stdout-stderr"],
             "action": "store_true",
@@ -313,6 +319,7 @@ def get_single_job_arguments():
         "stderr_file": voluptuous.Any(str, None),
         "stdout_file": voluptuous.Any(str, None),
         "ok_returns": voluptuous.Any([str], None),
+        "outcome_table": voluptuous.Any(str, None),
         "ignore_returns": voluptuous.Any([str], None),
         "subcommand": voluptuous.Any("exec", "add-job"),
     }
@@ -331,6 +338,7 @@ def validate_run(run):
     if not VALIDATE_DATA:
         return
     import voluptuous
+    outcome = voluptuous.Any("success", "fail", "fail_ignored")
     schema = voluptuous.Schema({
         "run_id": str,
         "project": str,
@@ -363,6 +371,7 @@ def validate_run(run):
                 }, {
                     "duration": int,
                     "complete": True,
+                    "outcome": outcome,
                     "end_time": time_str,
                     "start_time": time_str,
                     "timeout_reached": bool,
@@ -371,6 +380,7 @@ def validate_run(run):
                     "stderr": voluptuous.Any([str], None),
                     "stdout": voluptuous.Any([str], None),
                     "duration_str": voluptuous.Any(str, None),
+                    "loaded_outcome_dict": voluptuous.Any(dict, None),
                 })]
             }]
         }]
@@ -446,7 +456,7 @@ def make_litani_exec_command(add_args):
     for arg in [
             "command", "pipeline_name", "ci_stage", "cwd", "job_id",
             "stdout_file", "stderr_file", "description", "timeout",
-            "status_file",
+            "status_file", "outcome_table",
     ]:
         if arg in add_args and add_args[arg]:
             cmd.append("--%s" % arg.replace("_", "-"))
@@ -641,7 +651,7 @@ def run_build(args):
                 continue
             with open(os.path.join(root, fyle)) as handle:
                 job_status = json.load(handle)
-            if job_status["command_return_code"]:
+            if job_status["outcome"] != "success":
                 success = False
     run_info["status"] = "success" if success else "failure"
 
@@ -686,26 +696,15 @@ def exec_job(args):
         args=args.command, shell=True, universal_newlines=True,
         stdout=subprocess.PIPE, stderr=stderr, cwd=args.cwd)
 
-    out_data["wrapper_return_code"] = 0
-
+    timeout_reached = False
     try:
         proc_out, proc_err = proc.communicate(timeout=args.timeout)
     except subprocess.TimeoutExpired:
         proc.kill()
         proc_out, proc_err = proc.communicate()
-        out_data["timeout_reached"] = True
-        if not args.timeout_ignore:
-            out_data["wrapper_return_code"] = 1
-    else:
-        out_data["timeout_reached"] = False
+        timeout_reached = True
 
-    out_data["command_return_code"] = proc.returncode
-    out_data["complete"] = True
-    ignore_returns = args.ignore_returns if args.ignore_returns else []
-    ignore_returns = [int(i) for i in ignore_returns]
-    ignore_returns.append(0)
-    if proc.returncode not in ignore_returns:
-        out_data["wrapper_return_code"] = 1
+    lib.job_outcome.fill_in_result(proc, timeout_reached, out_data, args)
 
     for out_field, proc_pipe, arg_file in [
         ("stdout", proc_out, args.stdout_file),
@@ -747,10 +746,6 @@ def exec_job(args):
             except FileExistsError:
                 logging.warning(
                     "Multiple files with same name in artifacts directory")
-                pass
-
-    if out_data["wrapper_return_code"] == 0:
-        sys.exit(0)
 
     sys.exit(out_data["wrapper_return_code"])
 

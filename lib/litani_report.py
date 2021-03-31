@@ -12,6 +12,7 @@
 # permissions and limitations under the License.
 
 
+import dataclasses
 import datetime
 import enum
 import functools
@@ -120,11 +121,9 @@ def add_stage_stats(stage, stage_name, pipeline_name):
         try:
             if not job["complete"]:
                 continue
-            elif job["wrapper_return_code"]:
+            elif job["outcome"] == "fail":
                 status = StageStatus.FAIL
-            elif job["command_return_code"] and status == StageStatus.SUCCESS:
-                status = StageStatus.FAIL_IGNORED
-            elif job["timeout_reached"] and status == StageStatus.SUCCESS:
+            elif job["outcome"] == "fail_ignored" and status == StageStatus.SUCCESS:
                 status = StageStatus.FAIL_IGNORED
         except KeyError:
             logging.error(
@@ -299,6 +298,38 @@ def get_git_hash():
         return None
 
 
+
+@dataclasses.dataclass
+class OutcomeTableRenderer:
+    out_dir: pathlib.Path
+    jinja_env: jinja2.Environment
+    html_url: str = None
+    json_url: str = None
+
+
+    def get_json_url(self):
+        return self.json_url
+
+
+    def get_html_url(self):
+        return self.html_url
+
+
+    def render(self, table):
+        templ = self.jinja_env.get_template("outcome_table.jinja.html")
+        page = templ.render(table=table)
+
+        self.out_dir.mkdir(exist_ok=True, parents=True)
+        self.html_url = self.out_dir / "outcome.html"
+        with open(self.html_url, "w") as handle:
+            print(page, file=handle)
+
+        self.json_url = self.out_dir / "outcome.json"
+        with open(self.json_url, "w") as handle:
+            print(json.dumps(table, indent=2), file=handle)
+
+
+
 def render(run, report_dir):
     temporary_report_dir = litani.get_report_data_dir() / str(uuid.uuid4())
     temporary_report_dir.mkdir(parents=True)
@@ -330,9 +361,21 @@ def render(run, report_dir):
 
     pipe_templ = env.get_template("pipeline.jinja.html")
     for pipe in run["pipelines"]:
-        page = pipe_templ.render(run=run, pipe=pipe)
-        with litani.atomic_write(temporary_report_dir / pipe["url"]) as handle:
-            print(page, file=handle)
+        for stage in pipe["ci_stages"]:
+            for job in stage["jobs"]:
+                if job["complete"] and job["loaded_outcome_dict"]:
+                    otr = OutcomeTableRenderer(
+                        out_dir=temporary_report_dir / pipe["url"],
+                        jinja_env=env)
+                    otr.render(table=job["loaded_outcome_dict"])
+                    job["outcome_table_html_url"] = str(otr.get_html_url())
+                    job["outcome_table_json_url"] = str(otr.get_json_url())
+
+        pipe_page = pipe_templ.render(run=run, pipe=pipe)
+        with litani.atomic_write(
+                temporary_report_dir / pipe["url"] / "index.html") as handle:
+            print(pipe_page, file=handle)
+
 
     temp_symlink_dir = report_dir.with_name(report_dir.name + str(uuid.uuid4()))
     os.symlink(temporary_report_dir, temp_symlink_dir)
