@@ -167,10 +167,26 @@ p {
   margin-bottom: 3em;
 }
 
+.outcome-table-info-box {
+  margin-top: 0.4em;
+  margin-bottom: 0.2em;
+  padding: 1em;
+  color: #000a12;
+  background-color: #ffee58;
+  border-radius: 0.5em;
+}
+.outcome-table-info-box .outcome{
+  font-weight: bold;
+}
+
+
 @media (prefers-color-scheme: dark){
   body {
     color: #babdbe;
     background-color: #263238;
+  }
+  .outcome-table-info-box p{
+    color: #000a12;
   }
   p {
     color: #babdbe;
@@ -237,7 +253,7 @@ p {
     <div class="command-table">
       {% if not job["complete"] %}
       <div class="in-progress">
-      {% elif not job["command_return_code"] %}
+      {% elif job["outcome"] == "success" %}
       <div class="success">
       {% else %}
       <div class="fail">
@@ -307,15 +323,29 @@ p {
             <div class="command-stats-row">
               <p>Command successful:
               <span class="value">
-              {% if job["command_return_code"] %}
-              no
-              {% else %}
+              {% if job["outcome"] == "success" %}
               yes
-              {% endif %}{# job["command_return_code"] #}
+              {% else %}
+              no
+              {% endif %}{# job["outcome"] == "success"#}
               </span></p>
             </div><!-- class="command-stats-row" -->
           </div><!-- class="command-stats-table" -->
           {% endif %}{# job["complete"] #}
+
+          {% if job["complete"] and job["loaded_outcome_dict"] %}
+          <div class="outcome-table-info-box">
+            <p>
+              An outcome table decided the outcome
+              &lsquo;<span class="outcome">{{ job["outcome"] }}</span>&rsquo;
+              for this job. View the table
+              <a href="{{ job['outcome_table_html_url'] }}">here</a>
+              (or view the
+              <a href="{{ job['outcome_table_json_url'] }}">raw JSON</a>).
+            </p>
+          </div><!-- class="outcome-table-info-box" -->
+          {% endif %}{# job["loaded_outcome_dict"] #}
+
 
           {% if job["stdout"] %}
           <div class="output-box"><xmp>stdout:
