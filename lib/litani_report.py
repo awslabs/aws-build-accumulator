@@ -109,7 +109,7 @@ class StageStatus(enum.IntEnum):
 
 def add_stage_stats(stage, stage_name, pipeline_name):
     n_complete_jobs = len([j for j in stage["jobs"] if j["complete"]])
-    if len(stage["jobs"]):
+    if stage["jobs"]:
         stage["progress"] = int(n_complete_jobs * 100 / len(stage["jobs"]))
         stage["complete"] = n_complete_jobs == len(stage["jobs"])
     else:
