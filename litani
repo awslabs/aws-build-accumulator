@@ -332,13 +332,13 @@ def validate_run(run):
         return
     import voluptuous
     schema = voluptuous.Schema({
+        "run_id": str,
+        "project": str,
+        "start_time": time_str,
         "version": litani.VERSION,
         "version_major": litani.VERSION_MAJOR,
         "version_minor": litani.VERSION_MINOR,
         "version_patch": litani.VERSION_PATCH,
-        "run_id": str,
-        "project": str,
-        "start_time": time_str,
         voluptuous.Optional("end_time"): time_str,
         "status": voluptuous.Any("in_progress", "fail", "success"),
         "pipelines": [{
@@ -353,13 +353,13 @@ def validate_run(run):
                 "progress": voluptuous.All(int, voluptuous.Range(min=0, max=100)),
                 "jobs": [voluptuous.Any({
                     "complete": False,
-                    "wrapper_arguments": get_single_job_arguments(),
                     "duration_str": voluptuous.Any(str, None),
+                    "wrapper_arguments": get_single_job_arguments(),
                 }, {
                     "complete": False,
                     "start_time": time_str,
-                    "wrapper_arguments": get_single_job_arguments(),
                     "duration_str": voluptuous.Any(str, None),
+                    "wrapper_arguments": get_single_job_arguments(),
                 }, {
                     "duration": int,
                     "complete": True,
@@ -370,7 +370,6 @@ def validate_run(run):
                     "wrapper_return_code": int,
                     "stderr": voluptuous.Any([str], None),
                     "stdout": voluptuous.Any([str], None),
-                    "wrapper_arguments": get_single_job_arguments(),
                     "duration_str": voluptuous.Any(str, None),
                 })]
             }]
