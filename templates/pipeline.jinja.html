@@ -264,6 +264,28 @@ a:visited:active {
   align-content: flex-start;
 }
 
+#depgraph {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  align-content: flex-start;
+  flex-shrink: 7;
+}
+
+#depgraph-title p {
+  text-align: center;
+  font-variant: small-caps;
+  text-transform: lowercase;
+}
+
+#depgraph-preview img {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+#depgraph-preview {
+  padding: 1em;
+}
 
 @media (prefers-color-scheme: dark){
   a:link {
@@ -403,6 +425,22 @@ a:visited:active {
       {% endfor %}{# stage in pipe["ci_stages"] #}
     </div><!-- id="toc" -->
 
+
+    {% if "dependencies_url" in pipe %}
+    <div id="depgraph">
+      <div id="depgraph-title">
+        <p>Dependency graph for pipeline</p>
+        <p>(click for larger version)</p>
+      </div><!-- id="depgraph-title" -->
+      <a href="{{ pipe['dependencies_url'] }}">
+        <div id="depgraph-preview">
+          <img
+             src="{{ pipe['dependencies_url'] }}"
+             alt="pipeline dependency graph" />
+        </div><!-- id="depgraph-preview" -->
+      </a><!-- href="{{ dependencies_url }}" -->
+    </div><!-- id="depgraph" -->
+    {% endif %}{# "depgraph_preview" in job #}
 
   </div><!-- id="contents-container" -->
 

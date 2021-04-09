@@ -30,6 +30,83 @@ import uuid
 import jinja2
 
 from lib import litani
+import lib.graph
+
+
+
+# ______________________________________________________________________________
+# Job renderers
+# ``````````````````````````````````````````````````````````````````````````````
+# These classes takes a single job, stage, or pipeline, and renders some
+# auxiliary page that will be linked to from the pipeline page. The classes then
+# add to the job dict the URL where the page was rendered.
+# ______________________________________________________________________________
+
+
+@dataclasses.dataclass
+class PipelineDepgraphRenderer:
+    pipe: dict
+
+
+    def render_to_file(self, out_file):
+        dot_graph = lib.graph.SinglePipelineGraph.render(self.pipe)
+        out_file.parent.mkdir(exist_ok=True, parents=True)
+        with open(out_file, "w") as handle:
+            proc = subprocess.Popen(
+                ["dot", "-Tsvg"], text=True, stdin=subprocess.PIPE,
+                stdout=handle)
+            proc.communicate(input=dot_graph)
+        return False if proc.returncode else True
+
+
+    @staticmethod
+    def render(render_root, pipe_url, pipe):
+        pdr = PipelineDepgraphRenderer(pipe)
+        out_rel = pipe_url / f"dependencies.svg"
+        out_file = render_root / out_rel
+        success = pdr.render_to_file(out_file=out_file)
+        if success:
+            pipe[f"dependencies_url"] = "dependencies.svg"
+
+
+
+@dataclasses.dataclass
+class JobOutcomeTableRenderer:
+    out_dir: pathlib.Path
+    jinja_env: jinja2.Environment
+    html_url: str = None
+    json_url: str = None
+
+
+    def get_json_url(self):
+        return self.json_url
+
+
+    def get_html_url(self):
+        return self.html_url
+
+
+    def render_table(self, table):
+        templ = self.jinja_env.get_template("outcome_table.jinja.html")
+        page = templ.render(table=table)
+
+        self.out_dir.mkdir(exist_ok=True, parents=True)
+        self.html_url = self.out_dir / "outcome.html"
+        with open(self.html_url, "w") as handle:
+            print(page, file=handle)
+
+        self.json_url = self.out_dir / "outcome.json"
+        with open(self.json_url, "w") as handle:
+            print(json.dumps(table, indent=2), file=handle)
+
+
+    @staticmethod
+    def render(out_dir, jinja_env, job):
+        otr = JobOutcomeTableRenderer(out_dir=out_dir, jinja_env=jinja_env)
+        otr.render_table(table=job["loaded_outcome_dict"])
+        job["outcome_table_html_url"] = str(otr.get_html_url())
+        job["outcome_table_json_url"] = str(otr.get_json_url())
+
 
 
 def get_run(cache_dir):
@@ -298,38 +375,6 @@ def get_git_hash():
         return None
 
 
-
-@dataclasses.dataclass
-class OutcomeTableRenderer:
-    out_dir: pathlib.Path
-    jinja_env: jinja2.Environment
-    html_url: str = None
-    json_url: str = None
-
-
-    def get_json_url(self):
-        return self.json_url
-
-
-    def get_html_url(self):
-        return self.html_url
-
-
-    def render(self, table):
-        templ = self.jinja_env.get_template("outcome_table.jinja.html")
-        page = templ.render(table=table)
-
-        self.out_dir.mkdir(exist_ok=True, parents=True)
-        self.html_url = self.out_dir / "outcome.html"
-        with open(self.html_url, "w") as handle:
-            print(page, file=handle)
-
-        self.json_url = self.out_dir / "outcome.json"
-        with open(self.json_url, "w") as handle:
-            print(json.dumps(table, indent=2), file=handle)
-
-
-
 def render(run, report_dir):
     temporary_report_dir = litani.get_report_data_dir() / str(uuid.uuid4())
     temporary_report_dir.mkdir(parents=True)
@@ -361,15 +406,15 @@ def render(run, report_dir):
 
     pipe_templ = env.get_template("pipeline.jinja.html")
     for pipe in run["pipelines"]:
+        PipelineDepgraphRenderer.render(
+            render_root=temporary_report_dir,
+            pipe_url=pathlib.Path(pipe["url"]), pipe=pipe)
         for stage in pipe["ci_stages"]:
             for job in stage["jobs"]:
                 if job["complete"] and job["loaded_outcome_dict"]:
-                    otr = OutcomeTableRenderer(
+                    JobOutcomeTableRenderer.render(
                         out_dir=temporary_report_dir / pipe["url"],
-                        jinja_env=env)
-                    otr.render(table=job["loaded_outcome_dict"])
-                    job["outcome_table_html_url"] = str(otr.get_html_url())
-                    job["outcome_table_json_url"] = str(otr.get_json_url())
+                        jinja_env=env, job=job)
 
         pipe_page = pipe_templ.render(run=run, pipe=pipe)
         with litani.atomic_write(

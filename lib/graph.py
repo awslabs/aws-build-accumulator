@@ -36,17 +36,19 @@ class Node:
 
 
 class DependencyNode(Node):
-    def __init__(self, fyle):
+    def __init__(self, fyle, **style):
         self.file = fyle
         self.id = hash(fyle)
 
         path = pathlib.Path(fyle)
         _, ext = os.path.splitext(path.name)
 
+        self.style = style
+
         if len(path.name) + len(ext) > 20:
-            self.label = path.name[:(19 - len(ext))] + "…" + ext
+            self.style["label"] = path.name[:(19 - len(ext))] + "…" + ext
         else:
-            self.label = path.name
+            self.style["label"] = path.name
 
 
     def __hash__(self):
@@ -58,20 +60,24 @@ class DependencyNode(Node):
 
 
     def __str__(self):
-        return '"{id}" [label="{label}"];'.format(
-            id=self.id, label=Node.escape(self.label))
+        return '"{id}" [{style}];'.format(
+            id=self.id, style=",".join([
+                f'"{key}"="{Node.escape(value)}"'
+                for key, value in self.style.items()]))
 
 
 
 class CommandNode(Node):
-    def __init__(self, command):
+    def __init__(self, command, **style):
         self.command = command
         self.id = hash(command)
+        self.style = style
 
         if len(command) > 15:
-            self.label = command[:14] + "…"
+            self.style["label"] = command[:14] + "…"
         else:
-            self.label = command
+            self.style["label"] = command
+        self.style["shape"] = "box"
 
 
     def __hash__(self):
@@ -83,15 +89,19 @@ class CommandNode(Node):
 
 
     def __str__(self):
-        return '"{id}" [shape=box, label="{label}"];'.format(
-            id=self.id, label=Node.escape(self.label))
+        return '"{id}" [{style}];'.format(
+            id=self.id, style=",".join([
+                f'{key}="{Node.escape(value)}"'
+                for key, value in self.style.items()
+            ]))
 
 
 
-@dataclasses.dataclass
 class Edge:
-    src: Node
-    dst: Node
+    def __init__(self, src, dst, **style):
+        self.src = src
+        self.dst = dst
+        self.style = style
 
     def __eq__(self, other):
         return all((self.src == other.src, self.dst == other.dst))
@@ -102,8 +112,73 @@ class Edge:
 
 
     def __str__(self):
-        return '"{src}" -> "{dst}" [style=bold];'.format(
-            src=self.src.id, dst=self.dst.id)
+        return '"{src}" -> "{dst}" [{style}];'.format(
+            src=self.src.id, dst=self.dst.id,
+            style=",".join([
+                f'"{key}"="{value}"' for key, value in self.style.items()]))
+
+
+
+@dataclasses.dataclass
+class SinglePipelineGraph:
+    pipe: dict
+    nodes: set = dataclasses.field(default_factory=set)
+    edges: set = dataclasses.field(default_factory=set)
+
+
+    def iter_jobs(self):
+        for stage in self.pipe["ci_stages"]:
+            for job in stage["jobs"]:
+                yield job
+
+
+    def build(self):
+        for job in self.iter_jobs():
+            args = job["wrapper_arguments"]
+            cmd_node = self._make_cmd_node(
+                job["complete"], job.get("outcome", None), args["command"])
+            self.nodes.add(cmd_node)
+
+            for inputt in args.get("inputs", []):
+                in_node = lib.graph.DependencyNode(inputt)
+                self.nodes.add(in_node)
+                self.edges.add(lib.graph.Edge(src=in_node, dst=cmd_node))
+
+            for output in args.get("outputs", []):
+                out_node = lib.graph.DependencyNode(output)
+                self.nodes.add(out_node)
+                self.edges.add(lib.graph.Edge(src=cmd_node, dst=out_node))
+
+
+    def _make_cmd_node(self, complete, outcome, command):
+        cmd_style = {"style": "filled"}
+        if complete and outcome == "success":
+            cmd_style["fillcolor"] = "#90caf9"
+        elif complete and outcome == "fail_ignored":
+            cmd_style["fillcolor"] = "#ffecb3"
+        elif complete and outcome == "fail":
+            cmd_style["fillcolor"] = "#ef9a9a"
+        elif complete:
+            raise RuntimeError("Unknown outcome '%s'" % outcome)
+        else:
+            cmd_style["fillcolor"] = "#eceff1"
+        return lib.graph.CommandNode(command, **cmd_style)
+
+
+    def as_dot(self):
+        buf = ["digraph G {"]
+        buf.append('bgcolor="transparent"')
+        buf.extend([("  %s" % str(n)) for n in self.nodes])
+        buf.extend([("  %s" % str(e)) for e in self.edges])
+        buf.append("}")
+        return "\n".join(buf)
+
+
+    @staticmethod
+    def render(pipe):
+        spg = SinglePipelineGraph(pipe)
+        spg.build()
+        return spg.as_dot()
 
 
 
