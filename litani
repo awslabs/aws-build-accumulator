@@ -763,7 +763,7 @@ def main():
         import voluptuous.humanize
         VALIDATE_DATA = True
     except ImportError:
-        logging.warning(
+        logging.info(
             "Litani requires the python module 'voluptuous' to be installed "
             "to validate data. Installing voluptuous with pip or your "
             "system package manager is recommended. Continuing without data "
