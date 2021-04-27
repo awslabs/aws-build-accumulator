@@ -20,6 +20,8 @@ _CAPABILITIES = {
     "dir_lock_api": "Deprecated",
     "dir_lock_api_v2": "lib.litani contains the LockableDirectory API",
     "outcome_table": "The --outcome-table flag is supported",
+    "output_directory_flags": "The --output-directory --output-symlink and "
+        "--output-prefix flags are supported",
 }
 
 

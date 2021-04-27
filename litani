@@ -185,16 +185,25 @@ def get_args():
             "help": "Project that this proof run is associated with",
             "metavar": "NAME",
         }, {
-            "flags": ["--output-directory"],
-            "help": "Write Litani output to specified directory",
-            "metavar": "DIR"
-        }, {
             "flags": ["--output-symlink"],
             "help": "Create a symbolic link from DIR to litani's output directory",
             "metavar": "DIR"
     }]:
         flags = arg.pop("flags")
         run_build_pars.add_argument(*flags, **arg)
+    run_build_output_flags = run_build_pars.add_mutually_exclusive_group()
+    for arg in [{
+            "flags": ["--output-directory"],
+            "help": "Write Litani output to specified directory",
+            "metavar": "DIR"
+        }, {
+            "flags": ["--output-prefix"],
+            "help": "Directory prefix to write Litani output to",
+            "metavar": "DIR"
+    }]:
+        flags = arg.pop("flags")
+        run_build_output_flags.add_argument(*flags, **arg)
+
 
     graph_pars = subs.add_parser("graph")
     graph_pars.set_defaults(func=lib.graph.print_graph)
@@ -546,12 +555,19 @@ def init(args):
         run_id = str(uuid.uuid4())
 
     if args.output_directory:
-        output_directory = pathlib.Path(args.output_directory).resolve()
+        cache_dir = pathlib.Path(args.output_directory).resolve()
     else:
-        output_directory = pathlib.Path(tempfile.gettempdir())
+        if args.output_prefix:
+            output_prefix = pathlib.Path(args.output_prefix).resolve()
+        else:
+            output_prefix = pathlib.Path(tempfile.gettempdir())
+        cache_dir = output_prefix / "litani" / "runs" / run_id
 
-    cache_dir = output_directory / "litani" / "runs" / run_id
-    cache_dir.mkdir(parents=True)
+    try:
+        cache_dir.mkdir(parents=True)
+    except FileExistsError:
+        logging.error("Output directory '%s' already exists", cache_dir)
+        sys.exit(1)
 
     if args.output_symlink:
         latest_symlink = pathlib.Path(args.output_symlink).absolute()
