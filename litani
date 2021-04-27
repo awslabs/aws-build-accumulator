@@ -184,6 +184,14 @@ def get_args():
             "required": True,
             "help": "Project that this proof run is associated with",
             "metavar": "NAME",
+        }, {
+            "flags": ["--output-directory"],
+            "help": "Write Litani output to specified directory",
+            "metavar": "DIR"
+        }, {
+            "flags": ["--output-symlink"],
+            "help": "Create a symbolic link from DIR to litani's output directory",
+            "metavar": "DIR"
     }]:
         flags = arg.pop("flags")
         run_build_pars.add_argument(*flags, **arg)
@@ -537,13 +545,23 @@ def init(args):
     except KeyError:
         run_id = str(uuid.uuid4())
 
-    cache_dir = pathlib.Path(
-        tempfile.gettempdir()) / "litani" / "runs" / run_id
+    if args.output_directory:
+        output_directory = pathlib.Path(args.output_directory).resolve()
+    else:
+        output_directory = pathlib.Path(tempfile.gettempdir())
+
+    cache_dir = output_directory / "litani" / "runs" / run_id
     cache_dir.mkdir(parents=True)
 
-    latest_symlink = cache_dir.parent / ("latest-%s" % uuid.uuid4())
-    os.symlink(cache_dir, latest_symlink, target_is_directory=True)
-    os.rename(latest_symlink, cache_dir.parent / "latest")
+    if args.output_symlink:
+        latest_symlink = pathlib.Path(args.output_symlink).absolute()
+    else:
+        latest_symlink = cache_dir.parent / ("latest")
+    temp_symlink = latest_symlink.with_name(
+        f"{latest_symlink.name}-{str(uuid.uuid4())}")
+    os.symlink(cache_dir, temp_symlink, target_is_directory=True)
+    os.rename(temp_symlink, latest_symlink)
+
 
     now = datetime.datetime.utcnow().strftime(litani.TIME_FORMAT_W)
 
