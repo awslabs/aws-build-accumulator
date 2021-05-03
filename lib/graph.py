@@ -15,6 +15,7 @@
 import dataclasses
 import os
 import pathlib
+import re
 
 import lib.litani
 import lib.litani_report
@@ -22,7 +23,15 @@ import lib.litani_report
 
 
 class Node:
-    pass
+    @staticmethod
+    def escape(string):
+        for match, repl in [(
+            '"', '\\"'
+        ), (
+            ';', '\\;'
+        )]:
+            string = re.sub(match, repl, string)
+        return string
 
 
 
@@ -50,7 +59,7 @@ class DependencyNode(Node):
 
     def __str__(self):
         return '"{id}" [label="{label}"];'.format(
-            id=self.id, label=self.label)
+            id=self.id, label=Node.escape(self.label))
 
 
 
@@ -75,7 +84,7 @@ class CommandNode(Node):
 
     def __str__(self):
         return '"{id}" [shape=box, label="{label}"];'.format(
-            id=self.id, label=self.label)
+            id=self.id, label=Node.escape(self.label))
 
 
 
