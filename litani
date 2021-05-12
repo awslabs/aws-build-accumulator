@@ -34,6 +34,7 @@ from lib import litani, litani_report, ninja_syntax
 import lib.capabilities
 import lib.graph
 import lib.job_outcome
+import lib.validation
 
 
 VALIDATE_DATA = False
@@ -299,114 +300,6 @@ def get_args():
 
 
 ################################################################################
-# Data validation
-################################################################################
-
-
-def time_str(string):
-    try:
-        datetime.datetime.strptime(string, litani.TIME_FORMAT_R)
-    except RuntimeError:
-        raise ValueError(
-            "Date '%s' was not in the right format (expected '%s')" %
-            (string, litani.TIME_FORMAT_R))
-
-
-def get_single_job_arguments():
-    if not VALIDATE_DATA:
-        return
-    import voluptuous
-    return {
-        "job_id": str,
-        "command": str,
-        "ci_stage": str,
-        "verbose": bool,
-        "timeout_ok": bool,
-        "pipeline_name": str,
-        "very_verbose": bool,
-        "timeout_ignore": bool,
-        "cwd": voluptuous.Any(str, None),
-        "interleave_stdout_stderr": bool,
-        "tags": voluptuous.Any([str], None),
-        "timeout": voluptuous.Any(int, None),
-        "inputs": voluptuous.Any([str], None),
-        "outputs": voluptuous.Any([str], None),
-        "description": voluptuous.Any(str, None),
-        "status_file": voluptuous.Any(str, None),
-        "stderr_file": voluptuous.Any(str, None),
-        "stdout_file": voluptuous.Any(str, None),
-        "ok_returns": voluptuous.Any([str], None),
-        "outcome_table": voluptuous.Any(str, None),
-        "ignore_returns": voluptuous.Any([str], None),
-        "subcommand": voluptuous.Any("exec", "add-job"),
-    }
-
-
-def validate_single_job(job):
-    if not VALIDATE_DATA:
-        return
-    import voluptuous
-    schema = voluptuous.Schema(
-        get_single_job_arguments(), required=True)
-    voluptuous.humanize.validate_with_humanized_errors(job, schema)
-
-
-def validate_run(run):
-    if not VALIDATE_DATA:
-        return
-    import voluptuous
-    outcome = voluptuous.Any("success", "fail", "fail_ignored")
-    schema = voluptuous.Schema({
-        "run_id": str,
-        "project": str,
-        "start_time": time_str,
-        "version": litani.VERSION,
-        "version_major": litani.VERSION_MAJOR,
-        "version_minor": litani.VERSION_MINOR,
-        "version_patch": litani.VERSION_PATCH,
-        voluptuous.Optional("end_time"): time_str,
-        "status": voluptuous.Any("in_progress", "fail", "success"),
-        "pipelines": [{
-            "url": str,
-            "name": str,
-            "status": voluptuous.Any("in_progress", "fail", "success"),
-            "ci_stages": [{
-                "url": str,
-                "complete": bool,
-                "name": voluptuous.Any("build", "test", "report"),
-                "status": voluptuous.Any("fail", "fail_ignored", "success"),
-                "progress": voluptuous.All(int, voluptuous.Range(min=0, max=100)),
-                "jobs": [voluptuous.Any({
-                    "complete": False,
-                    "duration_str": voluptuous.Any(str, None),
-                    "wrapper_arguments": get_single_job_arguments(),
-                }, {
-                    "complete": False,
-                    "start_time": time_str,
-                    "duration_str": voluptuous.Any(str, None),
-                    "wrapper_arguments": get_single_job_arguments(),
-                }, {
-                    "duration": int,
-                    "complete": True,
-                    "outcome": outcome,
-                    "end_time": time_str,
-                    "start_time": time_str,
-                    "timeout_reached": bool,
-                    "command_return_code": int,
-                    "wrapper_return_code": int,
-                    "stderr": voluptuous.Any([str], None),
-                    "stdout": voluptuous.Any([str], None),
-                    "duration_str": voluptuous.Any(str, None),
-                    "loaded_outcome_dict": voluptuous.Any(dict, None),
-                })]
-            }]
-        }]
-
-    }, required=True)
-    voluptuous.humanize.validate_with_humanized_errors(run, schema)
-
-
-################################################################################
 # Other utility functions
 ################################################################################
 
@@ -415,7 +308,7 @@ def continuous_render_report(cache_dir, report_dir, killer, out_file):
     try:
         while True:
             run = litani_report.get_run_data(cache_dir)
-            validate_run(run)
+            lib.validation.validate_run(run)
             with litani.atomic_write(cache_dir / litani.RUN_FILE) as handle:
                 print(json.dumps(run, indent=2), file=handle)
             if out_file is not None:
@@ -644,7 +537,7 @@ def run_build(args):
 
     report_dir = litani.get_report_dir()
     run = litani_report.get_run_data(cache_dir)
-    validate_run(run)
+    lib.validation.validate_run(run)
     litani_report.render(run, report_dir)
     print("Report will be rendered at file://%s/index.html" % str(report_dir))
     killer = threading.Event()
@@ -695,7 +588,7 @@ def run_build(args):
     killer.set()
     render_thread.join()
     run = litani_report.get_run_data(cache_dir)
-    validate_run(run)
+    lib.validation.validate_run(run)
     litani_report.render(run, report_dir)
 
     with litani.atomic_write(cache_dir / litani.RUN_FILE) as handle:
