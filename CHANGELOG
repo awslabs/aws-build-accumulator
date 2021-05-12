@@ -1,6 +1,31 @@
                               CHANGELOG
                               `````````
 
+Version 1.7.0 -- 2021-05-12
+---------------------------
+
+- The --outcome-table flag can be used to specify a JSON file that
+  Litani uses to decide whether a job was successful.
+
+- The --output-directory flag can be used to specify where Litani should
+  write its output files.
+
+- The --output-symlink flag can be used to create a symbolic link to the
+  output directory.
+
+- The --output-prefix flag is an alternative to --output-directory that
+  specifies a directory, into which Litani will create a unique
+  directory for writing its output files.
+
+- Litani now displays a table of contents on each pipeline page. Each
+  entry in the table of contents is a hyperlink that points to a job on
+  the page.
+
+- Litani now renders each pipeline as a graph and displays that graph on
+  the pipeline page, allowing users to see the dependency layout of all
+  the jobs in the pipeline.
+
+
 Version 1.6.0 -- 2021-03-10
 ---------------------------
 
