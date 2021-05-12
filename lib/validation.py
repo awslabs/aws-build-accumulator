@@ -109,6 +109,7 @@ def validate_run(run):
                     "stderr": voluptuous.Any([str], None),
                     "stdout": voluptuous.Any([str], None),
                     "duration_str": voluptuous.Any(str, None),
+                    "wrapper_arguments": _get_single_job_arguments(),
                     "loaded_outcome_dict": voluptuous.Any(dict, None),
                 })]
             }]
