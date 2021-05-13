@@ -139,12 +139,12 @@ class SinglePipelineGraph:
                 job["complete"], job.get("outcome", None), args["command"])
             self.nodes.add(cmd_node)
 
-            for inputt in args.get("inputs", []):
+            for inputt in args.get("inputs") or []:
                 in_node = lib.graph.DependencyNode(inputt)
                 self.nodes.add(in_node)
                 self.edges.add(lib.graph.Edge(src=in_node, dst=cmd_node))
 
-            for output in args.get("outputs", []):
+            for output in args.get("outputs") or []:
                 out_node = lib.graph.DependencyNode(output)
                 self.nodes.add(out_node)
                 self.edges.add(lib.graph.Edge(src=cmd_node, dst=out_node))
