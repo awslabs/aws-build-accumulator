@@ -1,6 +1,12 @@
                               CHANGELOG
                               `````````
 
+Version 1.7.1 -- 2021-05-13
+---------------------------
+
+- This minor release fixes a bug with the graph renderer.
+
+
 Version 1.7.0 -- 2021-05-12
 ---------------------------
 
