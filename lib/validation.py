@@ -39,6 +39,7 @@ def _get_single_job_arguments():
         "timeout_ignore": bool,
         "cwd": voluptuous.Any(str, None),
         "interleave_stdout_stderr": bool,
+        "pool": voluptuous.Any(str, None),
         "tags": voluptuous.Any([str], None),
         "timeout": voluptuous.Any(int, None),
         "inputs": voluptuous.Any([str], None),
@@ -69,6 +70,7 @@ def validate_run(run):
     schema = voluptuous.Schema({
         "run_id": str,
         "project": str,
+        "pools": {str: int},
         "start_time": _time_str,
         "version": lib.litani.VERSION,
         "version_major": lib.litani.VERSION_MAJOR,

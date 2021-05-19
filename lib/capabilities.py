@@ -22,6 +22,7 @@ _CAPABILITIES = {
     "outcome_table": "The --outcome-table flag is supported",
     "output_directory_flags": "The --output-directory --output-symlink and "
         "--output-prefix flags are supported",
+    "pools": "Jobs can be added to task pools to limit parallelism",
 }
 
 

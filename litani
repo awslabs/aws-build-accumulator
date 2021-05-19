@@ -122,6 +122,10 @@ def get_add_job_args():
             "flags": ["--stderr-file"],
             "metavar": "FILE",
             "help": "file to redirect stderr to"
+        }, {
+            "flags": ["--pool"],
+            "metavar": "NAME",
+            "help": "pool to which this job should be added"
         }]), (
         "misc", [{
             "flags": ["--description"],
@@ -185,6 +189,12 @@ def get_args():
             "required": True,
             "help": "Project that this proof run is associated with",
             "metavar": "NAME",
+        }, {
+            "flags": ["--pools"],
+            "help":
+                "Job pools to which jobs can be added, with depth of each pool",
+            "metavar": "NAME:DEPTH",
+            "nargs": "+",
         }, {
             "flags": ["--output-symlink"],
             "help": "Create a symbolic link from DIR to litani's output directory",
@@ -366,7 +376,7 @@ def make_litani_exec_command(add_args):
     for arg in [
             "command", "pipeline_name", "ci_stage", "cwd", "job_id",
             "stdout_file", "stderr_file", "description", "timeout",
-            "status_file", "outcome_table",
+            "status_file", "outcome_table", "pool",
     ]:
         if arg in add_args and add_args[arg]:
             cmd.append("--%s" % arg.replace("_", "-"))
@@ -393,11 +403,15 @@ def make_litani_exec_command(add_args):
     return " ".join(cmd)
 
 
-def fill_out_ninja(cache, rules, builds):
+def fill_out_ninja(cache, rules, builds, pools):
     phonies = {
         "pipeline_name": {},
         "ci_stage": {},
     }
+
+    for name, depth in cache["pools"].items():
+        pools[name] = depth
+
     for entry in cache["jobs"]:
         outs = entry["outputs"] or []
         ins = entry["inputs"] or []
@@ -406,16 +420,30 @@ def fill_out_ninja(cache, rules, builds):
             description = entry["description"]
         else:
             description = f"Running {entry['command']}..."
+
+        pool_name = entry.get("pool")
+        if pool_name:
+            if pool_name not in pools:
+                logging.error(
+                    "Job '%s' was added to a pool '%s' that was not "
+                    "specified to `litani init`", description, pool_name)
+                sys.exit(1)
+            pool = {"pool": pool_name}
+        else:
+            pool = {}
+
         rule_name = entry["job_id"]
         rules.append({
             "name": rule_name,
             "description": description,
-            "command": make_litani_exec_command(entry)
+            "command": make_litani_exec_command(entry),
+            **pool,
         })
         builds.append({
             "inputs": ins,
             "outputs": outs + [entry["status_file"]],
-            "rule": rule_name
+            "rule": rule_name,
+            **pool,
         })
         if outs:
             for phony in phonies:
@@ -432,6 +460,37 @@ def fill_out_ninja(cache, rules, builds):
                 "outputs": ["__litani_%s_%s" % (phony, job_name)],
                 "rule": "phony",
             })
+
+
+def get_pools(args):
+    ret = {}
+    if not args.pools:
+        return ret
+    for pool in args.pools:
+        pair = pool.split(":")
+        if len(pair) != 2:
+            logging.error(
+                "Cannot parse pool '%s'. The correct format is a space-"
+                "separated list of POOL_NAME:DEPTH", pool)
+            sys.exit(1)
+        name, depth = pair
+        if name in ret:
+            logging.error(
+                "Pool name '%s' given twice (pool names must be unique)", name)
+            sys.exit(1)
+        try:
+            ret[name] = int(depth)
+        except TypeError:
+            logging.error(
+                "Pool depth '%s' cannot be parsed into an int", depth)
+            sys.exit(1)
+
+        if ret[name] < 1:
+            logging.error(
+                "Pool depth cannot be less than 1 for pool '%s'", name)
+            sys.exit(1)
+
+    return ret
 
 
 ################################################################################
@@ -484,6 +543,7 @@ def init(args):
             "run_id": run_id,
             "start_time": now,
             "status": "in_progress",
+            "pools": get_pools(args),
             "jobs": []
         }, indent=2), file=handle)
 
@@ -523,11 +583,15 @@ def run_build(args):
 
     rules = []
     builds = []
-    fill_out_ninja(cache, rules, builds)
+    pools = {}
+    fill_out_ninja(cache, rules, builds, pools)
 
     ninja_file = cache_dir / "litani.ninja"
     with litani.atomic_write(ninja_file) as handle:
         ninja = ninja_syntax.Writer(handle, width=70)
+        for name, depth in pools.items():
+            logging.debug("pool %s: %d", name, depth)
+            ninja.pool(name, depth)
         for rule in rules:
             logging.debug(rule)
             ninja.rule(**rule)
