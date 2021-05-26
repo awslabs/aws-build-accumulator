@@ -41,7 +41,7 @@ def _machine_readable_dump():
     print(json.dumps(list(_CAPABILITIES.keys()), indent=2))
 
 
-def dump(args):
+async def dump(args):
     if args.human_readable:
         _human_readable_dump()
     else:

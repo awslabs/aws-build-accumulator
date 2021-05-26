@@ -15,6 +15,7 @@
 
 
 import argparse
+import asyncio
 import datetime
 import json
 import logging
@@ -501,7 +502,7 @@ def get_pools(args):
 ################################################################################
 
 
-def init(args):
+async def init(args):
     try:
         run_id = os.environ["LITANI_RUN_ID"]
     except KeyError:
@@ -554,7 +555,7 @@ def init(args):
         print(str(cache_dir), file=handle)
 
 
-def add_job(args):
+async def add_job(args):
     jobs_dir = litani.get_cache_dir() / litani.JOBS_DIR
     jobs_dir.mkdir(exist_ok=True, parents=True)
 
@@ -572,7 +573,7 @@ def add_job(args):
         print(json.dumps(job, indent=2), file=handle)
 
 
-def run_build(args):
+async def run_build(args):
     artifacts_dir = litani.get_artifacts_dir()
     artifacts_dir.mkdir(parents=True, exist_ok=True)
 
@@ -668,7 +669,7 @@ def run_build(args):
     sys.exit(0)
 
 
-def exec_job(args):
+async def exec_job(args):
     args_dict = vars(args)
     args_dict.pop("func")
     out_data = {
@@ -742,7 +743,7 @@ def exec_job(args):
     sys.exit(out_data["wrapper_return_code"])
 
 
-def main():
+async def main():
     # pylint: disable=global-statement
     global VALIDATE_DATA
 
@@ -761,8 +762,8 @@ def main():
             "system package manager is recommended. Continuing without data "
             "validation.")
 
-    args.func(args)
+    await args.func(args)
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

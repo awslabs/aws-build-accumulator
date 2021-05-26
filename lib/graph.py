@@ -236,7 +236,7 @@ class Graph:
 
 
 
-def print_graph(args):
+async def print_graph(args):
     lib.litani.add_jobs_to_cache()
     run = lib.litani_report.get_run_data(lib.litani.get_cache_dir())
 
