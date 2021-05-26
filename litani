@@ -333,6 +333,7 @@ def continuous_render_report(cache_dir, report_dir, killer, out_file):
         logging.error(str(e))
         traceback.print_exc()
 
+
 def set_up_logging(args):
     if args.very_verbose:
         level = logging.DEBUG
