@@ -387,18 +387,24 @@ p {
 
     </div><!-- class="pipeline-row" -->
     {% endfor %}{# pipe in run["pipelines"] #}
-
   </div><!-- id="pipeline-table" -->
 
-  <div class="graphs">
-  {% for svg in svgs %}
-  <div class="graph">
-    {% for line in svg -%}
-    {{ line }}
-    {% endfor %}{# line in svg #}
-  </div><!-- class="graph" -->
-  {% endfor -%}{# svg in svgs #}
-  </div><!-- class="graphs" -->
+
+  {% for title, svg_list in svgs.items() %}
+    {% if svg_list %}
+      <h2 class="downloads-header">{{ title }}</h2>
+      <div class="graphs">
+      {% for svg in svg_list %}
+        <div class="graph">
+          {% for line in svg -%}
+          {{ line }}
+          {% endfor %}{# line in svg #}
+        </div><!-- class="graph" -->
+      {% endfor %}{# svg in svg_list #}
+      </div><!-- class="graphs" -->
+    {% endif %}{# svg_list #}
+  {% endfor -%}{# title, svg_list in svgs #}
+
 
   <h2 class="downloads-header">Downloads</h2>
   <div class="downloads">

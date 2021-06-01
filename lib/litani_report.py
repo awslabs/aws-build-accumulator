@@ -24,7 +24,6 @@ import re
 import shutil
 import subprocess
 import sys
-import tempfile
 import uuid
 
 import jinja2
@@ -302,71 +301,102 @@ def s_to_hhmmss(s):
     return "{s:02d}s".format(s=s)
 
 
-def get_stats_groups(run):
-    ret = {}
+def run_gnuplot(gnu_file, out_file=None):
+    cmd = ["gnuplot"]
+    proc = subprocess.Popen(
+        cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL, text=True)
+    out, _ = proc.communicate(input=gnu_file)
+    if proc.returncode:
+        logging.error("Failed to render gnuplot file:")
+        logging.error(gnu_file)
+        sys.exit(1)
+    lines = [
+        l for l in out.splitlines()
+        if "<?xml version" not in l
+    ]
+    if out_file:
+        with litani.atomic_write(out_file) as handle:
+            print("\n".join(lines), file=handle)
+    return lines
+
+
+def jobs_of(run):
     for pipe in run["pipelines"]:
         for stage in pipe["ci_stages"]:
             for job in stage["jobs"]:
-                if "tags" not in job["wrapper_arguments"]:
+                yield job
+
+
+@dataclasses.dataclass
+class StatsGroupRenderer:
+    """Renders graphs for jobs that are part of a 'stats group'."""
+    run: dict
+    env: jinja2.Environment
+    report_dir: pathlib.Path
+
+
+    @staticmethod
+    def to_id(string):
+        allowed = re.compile(r"[-a-zA-Z0-9\.]")
+        return "".join([c if allowed.match(c) else "_" for c in string])
+
+
+    def get_stats_groups(self, job_filter):
+        ret = {}
+        for job in jobs_of(self.run):
+            if "tags" not in job["wrapper_arguments"]:
+                continue
+            if not job["wrapper_arguments"]["tags"]:
+                continue
+            stats_group = None
+            for tag in job["wrapper_arguments"]["tags"]:
+                kv = tag.split(":")
+                if kv[0] != "stats-group":
                     continue
-                if not job["wrapper_arguments"]["tags"]:
+                if len(kv) != 2:
+                    logging.warning(
+                        "No value for stats-group in job '%s'",
+                        job["wrapper_arguments"]["description"])
                     continue
-                stats_group = None
-                for tag in job["wrapper_arguments"]["tags"]:
-                    kv = tag.split(":")
-                    if kv[0] != "stats-group":
-                        continue
-                    stats_group = kv[1]
-                if not stats_group:
-                    continue
+                stats_group = kv[1]
+                break
 
-                if "duration" not in job:
-                    continue
-                record = {
-                    "pipeline": job["wrapper_arguments"]["pipeline_name"],
-                    "duration": job["duration"]
-                }
-                try:
-                    ret[stats_group].append(record)
-                except KeyError:
-                    ret[stats_group] = [record]
-    return sorted([(k, v) for k, v in ret.items()])
+            if not (stats_group and job_filter(job)):
+                continue
+
+            try:
+                ret[stats_group].append(job)
+            except KeyError:
+                ret[stats_group] = [job]
+
+        return sorted([(k, v) for k, v in ret.items()])
 
 
-def to_id(string):
-    allowed = re.compile(r"[-a-zA-Z0-9\.]")
-    return "".join([c if allowed.match(c) else "_" for c in string])
+    def render(self, job_filter, template_name, out_dir):
+        stats_groups = self.get_stats_groups(job_filter)
+        svgs = []
+        gnu_templ = self.env.get_template(template_name)
+        img_dir = self.report_dir / out_dir
+        img_dir.mkdir(exist_ok=True, parents=True)
+        for group_name, jobs in stats_groups:
+            if len(jobs) < 2:
+                continue
+            group_id = self.to_id(group_name)
+            gnu_file = gnu_templ.render(
+                group_name=group_name, jobs=jobs)
+            svg_lines = run_gnuplot(gnu_file)
+            svgs.append(svg_lines)
+        return svgs
 
 
-def render_runtimes(run, env, report_dir):
-    stats_groups = get_stats_groups(run)
-    svgs = []
-    gnu_templ = env.get_template("runtime-box.jinja.gnu")
-    img_dir = report_dir / "runtimes"
-    img_dir.mkdir(exist_ok=True, parents=True)
-    for group_name, jobs in stats_groups:
-        if len(jobs) < 2:
-            continue
-        group_id = to_id(group_name)
-        url = img_dir / ("%s.svg" % group_id)
-        tmp_url = "%s~" % str(url)
-        gnu_file = gnu_templ.render(
-            group_name=group_name, jobs=jobs, url=tmp_url)
-        with tempfile.NamedTemporaryFile("w") as tmp:
-            print(gnu_file, file=tmp)
-            tmp.flush()
-            cmd = ["gnuplot", tmp.name]
-            subprocess.run(
-                cmd, check=True, stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL)
-        os.rename(tmp_url, url)
-        with open(url) as handle:
-            lines = [
-                l for l in handle.read().splitlines()
-                if "<?xml version" not in l
-            ]
-        svgs.append(lines)
-    return svgs
+
+def get_dashboard_svgs(run, env, temporary_report_dir):
+    stats_renderer = StatsGroupRenderer(run, env, temporary_report_dir)
+    return {
+        "Runtime": stats_renderer.render(
+            lambda j: "duration" in j, "runtime-box.jinja.gnu", "runtimes"),
+    }
 
 
 def get_git_hash():
@@ -394,7 +424,7 @@ def render(run, report_dir):
     template_dir = pathlib.Path(__file__).parent.parent / "templates"
     env = jinja2.Environment(loader=jinja2.FileSystemLoader(str(template_dir)))
 
-    svgs = render_runtimes(run, env, temporary_report_dir)
+    svgs = get_dashboard_svgs(run, env, temporary_report_dir)
 
     litani_report_archive_path = os.getenv("LITANI_REPORT_ARCHIVE_PATH")
 
