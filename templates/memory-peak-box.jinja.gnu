@@ -15,20 +15,20 @@
 
 $data << EOD
 {% for job in jobs -%}
-0.4 {{ job["duration"] }} {{ job["wrapper_arguments"]["pipeline_name"] }}
+0.4 {{ job["memory_trace"]["peak"]["rss"] }} {{ job["wrapper_arguments"]["pipeline_name"] }}
 {% endfor %}{# job in jobs #}
 EOD
 
 set terminal svg noenhanced size 400,800
+
+set format y '%.1s%cB'
 
 set border 2 linecolor "#263238"
 set ytics nomirror tc "#263238" font "Helvetica,14"
 unset xtics
 unset key
 
-set ylabel "seconds" tc "#263238" font "Helvetica,14"
-
-set title "Runtime for {{ group_name }}" tc "#263238" font "Helvetica,14"
+set title "Peak resident memory for {{ group_name }}" tc "#263238" font "Helvetica,14"
 
 set xrange [0:1]
 

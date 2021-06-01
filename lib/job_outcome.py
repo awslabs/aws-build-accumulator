@@ -221,6 +221,7 @@ def fill_in_result(runner, job_data, args):
     job_data["complete"] = True
     job_data["timeout_reached"] = runner.reached_timeout()
     job_data["command_return_code"] = runner.get_proc().returncode
+    job_data["memory_trace"] = runner.get_memory_trace()
 
     # These get set by the deciders
     job_data["loaded_outcome_dict"] = None

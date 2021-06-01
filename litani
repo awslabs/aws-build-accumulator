@@ -134,6 +134,17 @@ def get_add_job_args():
             "metavar": "DESC",
             "help": "string to print when this job is being run",
         }, {
+            "flags": ["--profile-memory"],
+            "action": "store_true",
+            "default": False,
+            "help": "profile the memory usage of this job"
+        }, {
+            "flags": ["--profile-memory-interval"],
+            "metavar": "N",
+            "default": 10,
+            "type": int,
+            "help": "seconds between memory profile polls"
+        }, {
             "flags": ["--tags"],
             "metavar": "TAG",
             "nargs": "+",
@@ -380,6 +391,7 @@ def make_litani_exec_command(add_args):
             "command", "pipeline_name", "ci_stage", "cwd", "job_id",
             "stdout_file", "stderr_file", "description", "timeout",
             "status_file", "outcome_table", "pool",
+            "profile_memory_interval",
     ]:
         if arg in add_args and add_args[arg]:
             cmd.append("--%s" % arg.replace("_", "-"))
@@ -398,7 +410,8 @@ def make_litani_exec_command(add_args):
 
     # switches
     for arg in [
-            "timeout_ignore", "timeout_ok", "interleave_stdout_stderr"
+            "timeout_ignore", "timeout_ok", "interleave_stdout_stderr",
+            "profile_memory",
     ]:
         if arg in add_args and add_args[arg]:
             cmd.append("--%s" % arg.replace("_", "-"))
@@ -683,7 +696,7 @@ async def exec_job(args):
 
     run = lib.process.Runner(
         args.command, args.interleave_stdout_stderr, args.cwd,
-        args.timeout)
+        args.timeout, args.profile_memory, args.profile_memory_interval)
     await run()
     lib.job_outcome.fill_in_result(run, out_data, args)
 

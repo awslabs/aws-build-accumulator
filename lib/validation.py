@@ -37,6 +37,8 @@ def _get_single_job_arguments():
         "pipeline_name": str,
         "very_verbose": bool,
         "timeout_ignore": bool,
+        "profile_memory": bool,
+        "profile_memory_interval": int,
         "cwd": voluptuous.Any(str, None),
         "interleave_stdout_stderr": bool,
         "pool": voluptuous.Any(str, None),
@@ -111,6 +113,18 @@ def validate_run(run):
                     "duration_str": voluptuous.Any(str, None),
                     "wrapper_arguments": _get_single_job_arguments(),
                     "loaded_outcome_dict": voluptuous.Any(dict, None),
+                    "memory_trace": {
+                        voluptuous.Optional("peak"): {
+                            "rss": int,
+                            "vsz": int,
+                            "human_readable_rss": str,
+                            "human_readable_vsz": str,
+                        },
+                        voluptuous.Optional("trace"): [{
+                            "rss": int,
+                            "vsz": int,
+                            "time": _time_str,
+                    }]},
                 })]
             }]
         }]

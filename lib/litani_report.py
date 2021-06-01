@@ -70,6 +70,32 @@ class PipelineDepgraphRenderer:
 
 
 @dataclasses.dataclass
+class MemoryTraceRenderer:
+    jinja_env: jinja2.Environment
+
+
+    @staticmethod
+    def should_render(job):
+        return job.get("memory_trace") \
+            and job["memory_trace"].get("trace") \
+            and len(job["memory_trace"]["trace"]) > 2
+
+
+    def render_preview(self, job):
+        templ = self.jinja_env.get_template("memory-trace.jinja.gnu")
+        gnu_file = templ.render(job=job)
+        lines = run_gnuplot(gnu_file)
+        job["memory_trace_preview"] = lines
+
+
+    @staticmethod
+    def render(out_dir, jinja_env, job):
+        mtr = MemoryTraceRenderer(jinja_env=jinja_env)
+        mtr.render_preview(job)
+
+
+
+@dataclasses.dataclass
 class JobOutcomeTableRenderer:
     out_dir: pathlib.Path
     jinja_env: jinja2.Environment
@@ -396,6 +422,11 @@ def get_dashboard_svgs(run, env, temporary_report_dir):
     return {
         "Runtime": stats_renderer.render(
             lambda j: "duration" in j, "runtime-box.jinja.gnu", "runtimes"),
+        "Memory Usage": stats_renderer.render(
+            lambda j: j.get("memory_trace") and \
+                j["memory_trace"].get("peak") and \
+                j["memory_trace"]["peak"].get("rss"),
+            "memory-peak-box.jinja.gnu", "memory-peaks"),
     }
 
 
@@ -448,6 +479,10 @@ def render(run, report_dir):
             for job in stage["jobs"]:
                 if JobOutcomeTableRenderer.should_render(job):
                     JobOutcomeTableRenderer.render(
+                        out_dir=temporary_report_dir / pipe["url"],
+                        jinja_env=env, job=job)
+                if MemoryTraceRenderer.should_render(job):
+                    MemoryTraceRenderer.render(
                         out_dir=temporary_report_dir / pipe["url"],
                         jinja_env=env, job=job)
 

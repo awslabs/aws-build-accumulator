@@ -14,25 +14,27 @@
 -#}
 
 $data << EOD
-{% for job in jobs -%}
-0.4 {{ job["duration"] }} {{ job["wrapper_arguments"]["pipeline_name"] }}
-{% endfor %}{# job in jobs #}
+{% for sample in job["memory_trace"]["trace"] -%}
+{{ sample["time"] }} {{ sample["rss"] }} {{ sample["vsz"] }}
+{% endfor %}{# sample in job["memory_trace"]["trace"] #}
 EOD
 
-set terminal svg noenhanced size 400,800
+set terminal svg noenhanced size 565,96
 
 set border 2 linecolor "#263238"
-set ytics nomirror tc "#263238" font "Helvetica,14"
+
+set log y 10
+set format y "%.1s%cB"
+set ytics nomirror tc "#263238" font "Helvetica,9"
+
+set xdata time
+set timefmt "%Y-%m-%dT%H:%M:%SZ"
 unset xtics
 unset key
 
-set ylabel "seconds" tc "#263238" font "Helvetica,14"
+set style line 100 lt 1 lc "#00000000" lw 2
+set style line 101 lt 1 lc rgb "#ee000000" lw 1
+set grid mxtics mytics ls 100, ls 101
 
-set title "Runtime for {{ group_name }}" tc "#263238" font "Helvetica,14"
-
-set xrange [0:1]
-
-set boxwidth 0.2
-
-plot '$data' using (0.2):2 with boxplot lc "#263238", \
-      '' using 1:2:3 with labels left tc "#263238" font "Helvetica,10"
+plot '$data' using 1:2 with lines lc "#ab47bc", \
+      '' using 1:3 with lines lc "#4caf50"

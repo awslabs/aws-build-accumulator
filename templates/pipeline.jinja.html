@@ -287,6 +287,46 @@ a:visited:active {
   padding: 1em;
 }
 
+.memory-box {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5em;
+  align-items: center;
+}
+.memory-preview {
+  width: 75%;
+}
+.memory-preview svg {
+  margin-left: -1em;
+  margin-right: -2em;
+}
+.memory-table {
+}
+.memory-title {
+  text-align: center;
+  font-style: bold;
+}
+.memory-subtitle {
+  text-transform: lowercase;
+  font-variant: small-caps;
+  text-align: center;
+  opacity: 0.8;
+}
+.memory-pad {
+  width: 1.5em;
+}
+.memory-value {
+  text-align: center;
+  margin-right: 2em;
+}
+.rss {
+  color: #ab47bc;
+}
+.vsz {
+  color: #4caf50;
+}
+
+
 @media (prefers-color-scheme: dark){
   a:link {
     color: #29b6f6;
@@ -350,6 +390,12 @@ a:visited:active {
   }
   .status-icon-in-progress { fill: #ddd; }
   .status-icon-in-progress circle { stroke: #ddd; }
+
+  /* SVG graphs */
+  g text {
+    fill: #eceff1;
+    stroke: #fff0;
+  }
 }
 </style>
 </head>
@@ -548,6 +594,46 @@ a:visited:active {
             </p>
           </div><!-- class="outcome-table-info-box" -->
           {% endif %}{# job["loaded_outcome_dict"] #}
+
+
+          {% if  job["memory_trace"] and "peak" in job["memory_trace"] %}
+            <div class="memory-box">
+              <div class="memory-preview">
+              {% if "memory_trace_preview" in job %}
+              {% for line in job["memory_trace_preview"] %}
+                {{ line }}
+              {% endfor %}{# line in job["memory_trace_preview"] #}
+              {% endif %}{# "memory_trace_preview" in job #}
+              </div><!--  class="memory-preview" -->
+              <div class="memory-table">
+                <table>
+                  <tr>
+                    <td class="memory-title" colspan="3">
+                      <p>Peak Memory Usage</p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="memory-subtitle"><p>Resident</p></td>
+                    <td class="memory-pad"></td>
+                    <td class="memory-subtitle"><p>Virtual</p></td>
+                  </tr>
+                  <tr>
+                    <td class="memory-value">
+                      <p class="rss">
+                        {{ job["memory_trace"]["peak"]["human_readable_rss"] }}
+                      </p>
+                    </td>
+                    <td class="memory-pad"></td>
+                    <td class="memory-value">
+                      <p class="vsz">
+                        {{ job["memory_trace"]["peak"]["human_readable_vsz"] }}
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </div><!--  class="memory-table" -->
+            </div><!--  class="memory-box" -->
+          {% endif %}{# job["memory_trace"] and "peak" in job["memory_trace"] #}
 
 
           {% if job["stdout"] %}
