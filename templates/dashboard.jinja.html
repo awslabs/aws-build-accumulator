@@ -105,6 +105,9 @@ p {
 .downloads a:hover {
   color: #ec407a;
 }
+.downloads a:active {
+  color: #ffeb3b;
+}
 .pipeline-progress {
   display: flex;
   justify-content: space-between;
@@ -132,16 +135,19 @@ p {
   border: 1px solid #cfd8dc;
 }
 
+.fail_ignored .stage-bar .progress:active{ background-color: #ffeb3b; }
 .fail_ignored .stage-bar .progress:hover{ background-color: #e65100; }
 .fail_ignored .stage-bar .progress {
   background-color: #ff9800;
 }
 
+.fail .stage-bar .progress:active{ background-color: #ffeb3b; }
 .fail .stage-bar .progress:hover{ background-color: #b61c1c; }
 .fail .stage-bar .progress {
   background-color: #f44336;
 }
 
+.success .stage-bar .progress:active{ background-color: #ffeb3b; }
 .success .stage-bar .progress:hover{ background-color: #1a237e; }
 .success .stage-bar .progress {
   background-color: #3f51b5;
@@ -180,6 +186,10 @@ p {
 }
 .pipeline-icon:hover {
   fill: #ec407a;
+}
+
+.pipeline-icon:active {
+  fill: #ffeb3b;
 }
 
 .pipeline-name p{
