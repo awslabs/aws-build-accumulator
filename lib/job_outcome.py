@@ -203,7 +203,7 @@ def _get_outcome_table_job_decider(args, proc, timeout_reached):
 ################################################################################
 
 
-def fill_in_result(proc, timeout_reached, job_data, args):
+def fill_in_result(runner, job_data, args):
     """Add fields pertaining to job result to job_data dict
 
     The 'result' of a job can be evaluated in several ways. The most simple
@@ -219,13 +219,14 @@ def fill_in_result(proc, timeout_reached, job_data, args):
     """
 
     job_data["complete"] = True
-    job_data["timeout_reached"] = timeout_reached
-    job_data["command_return_code"] = proc.returncode
+    job_data["timeout_reached"] = runner.reached_timeout()
+    job_data["command_return_code"] = runner.get_proc().returncode
 
     # These get set by the deciders
     job_data["loaded_outcome_dict"] = None
 
-    decider = _get_outcome_table_job_decider(args, proc, timeout_reached)
+    decider = _get_outcome_table_job_decider(
+        args, runner.get_proc(), runner.reached_timeout())
 
     fields = decider.get_job_fields()
     for k, v in fields.items():

@@ -35,6 +35,7 @@ from lib import litani, litani_report, ninja_syntax
 import lib.capabilities
 import lib.graph
 import lib.job_outcome
+import lib.process
 import lib.validation
 
 
@@ -680,28 +681,15 @@ async def exec_job(args):
     with litani.atomic_write(args.status_file) as handle:
         print(json.dumps(out_data, indent=2), file=handle)
 
-    if args.interleave_stdout_stderr:
-        stderr = subprocess.STDOUT
-    else:
-        stderr = subprocess.PIPE
-
-    proc = subprocess.Popen(
-        args=args.command, shell=True, universal_newlines=True,
-        stdout=subprocess.PIPE, stderr=stderr, cwd=args.cwd)
-
-    timeout_reached = False
-    try:
-        proc_out, proc_err = proc.communicate(timeout=args.timeout)
-    except subprocess.TimeoutExpired:
-        proc.kill()
-        proc_out, proc_err = proc.communicate()
-        timeout_reached = True
-
-    lib.job_outcome.fill_in_result(proc, timeout_reached, out_data, args)
+    run = lib.process.Runner(
+        args.command, args.interleave_stdout_stderr, args.cwd,
+        args.timeout)
+    await run()
+    lib.job_outcome.fill_in_result(run, out_data, args)
 
     for out_field, proc_pipe, arg_file in [
-        ("stdout", proc_out, args.stdout_file),
-        ("stderr", proc_err, args.stderr_file)
+        ("stdout", run.get_stdout(), args.stdout_file),
+        ("stderr", run.get_stderr(), args.stderr_file)
     ]:
         if proc_pipe:
             out_data[out_field] = proc_pipe.splitlines()
