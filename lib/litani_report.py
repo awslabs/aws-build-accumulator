@@ -101,6 +101,11 @@ class JobOutcomeTableRenderer:
 
 
     @staticmethod
+    def should_render(job):
+        return job["complete"] and job["loaded_outcome_dict"]
+
+
+    @staticmethod
     def render(out_dir, jinja_env, job):
         otr = JobOutcomeTableRenderer(out_dir=out_dir, jinja_env=jinja_env)
         otr.render_table(table=job["loaded_outcome_dict"])
@@ -411,7 +416,7 @@ def render(run, report_dir):
             pipe_url=pathlib.Path(pipe["url"]), pipe=pipe)
         for stage in pipe["ci_stages"]:
             for job in stage["jobs"]:
-                if job["complete"] and job["loaded_outcome_dict"]:
+                if JobOutcomeTableRenderer.should_render(job):
                     JobOutcomeTableRenderer.render(
                         out_dir=temporary_report_dir / pipe["url"],
                         jinja_env=env, job=job)
