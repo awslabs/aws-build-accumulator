@@ -55,7 +55,7 @@ class PipelineDepgraphRenderer:
                 ["dot", "-Tsvg"], text=True, stdin=subprocess.PIPE,
                 stdout=handle)
             proc.communicate(input=dot_graph)
-        return False if proc.returncode else True
+        return not proc.returncode
 
 
     @staticmethod
@@ -89,7 +89,7 @@ class MemoryTraceRenderer:
 
 
     @staticmethod
-    def render(out_dir, jinja_env, job):
+    def render(_, jinja_env, job):
         mtr = MemoryTraceRenderer(jinja_env=jinja_env)
         mtr.render_preview(job)
 
@@ -193,7 +193,6 @@ class StatsGroupRenderer:
         for group_name, jobs in stats_groups:
             if len(jobs) < 2:
                 continue
-            group_id = self.to_id(group_name)
             gnu_file = gnu_templ.render(
                 group_name=group_name, jobs=jobs)
             svg_lines = run_gnuplot(gnu_file)
@@ -479,12 +478,10 @@ def render(run, report_dir):
             for job in stage["jobs"]:
                 if JobOutcomeTableRenderer.should_render(job):
                     JobOutcomeTableRenderer.render(
-                        out_dir=temporary_report_dir / pipe["url"],
-                        jinja_env=env, job=job)
+                        temporary_report_dir / pipe["url"], env, job)
                 if MemoryTraceRenderer.should_render(job):
                     MemoryTraceRenderer.render(
-                        out_dir=temporary_report_dir / pipe["url"],
-                        jinja_env=env, job=job)
+                        temporary_report_dir / pipe["url"], env, job)
 
         pipe_page = pipe_templ.render(run=run, pipe=pipe)
         with litani.atomic_write(
