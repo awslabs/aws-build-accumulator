@@ -23,7 +23,6 @@ import os
 import pathlib
 import shlex
 import shutil
-import subprocess
 import sys
 import tempfile
 import threading
@@ -626,24 +625,10 @@ async def run_build(args):
         args=(cache_dir, report_dir, killer, args.out_file))
     render_thread.start()
 
-    cmd = [
-        "ninja",
-        "-k", "0",
-        "-f", ninja_file,
-    ]
-    if args.parallel:
-        cmd.extend(["-j", args.parallel])
-    if args.dry_run:
-        cmd.append("-n")
-
-    if args.pipelines:
-        targets = ["__litani_pipeline_name_%s" % p for p in args.pipelines]
-        cmd.extend(targets)
-    elif args.ci_stage:
-        targets = ["__litani_ci_stage_%s" % p for p in args.ci_stage]
-        cmd.extend(targets)
-
-    proc = subprocess.run(cmd)
+    runner = lib.ninja.Runner(
+        ninja_file, args.dry_run, args.parallel, args.pipelines,
+        args.ci_stage)
+    runner.run()
 
     now = datetime.datetime.utcnow().strftime(litani.TIME_FORMAT_W)
 
@@ -678,7 +663,7 @@ async def run_build(args):
             print(json.dumps(run, indent=2), file=handle)
 
     if args.fail_on_pipeline_failure:
-        sys.exit(1 if proc.returncode else 0)
+        sys.exit(1 if runner.was_successful() else 0)
 
     sys.exit(0)
 
