@@ -449,10 +449,14 @@ def render(run, report_dir):
     artifact_dir = temporary_report_dir / "artifacts"
     shutil.copytree(litani.get_artifacts_dir(), artifact_dir)
 
-    render_artifact_indexes(artifact_dir)
-
     template_dir = pathlib.Path(__file__).parent.parent / "templates"
-    env = jinja2.Environment(loader=jinja2.FileSystemLoader(str(template_dir)))
+    env = jinja2.Environment(
+        loader=jinja2.FileSystemLoader(str(template_dir)),
+        autoescape=jinja2.select_autoescape(
+            enabled_extensions=('html'),
+            default_for_string=True))
+
+    render_artifact_indexes(artifact_dir, env)
 
     svgs = get_dashboard_svgs(run, env, temporary_report_dir)
 
@@ -502,14 +506,12 @@ def render(run, report_dir):
     litani.unlink_expired()
 
 
-def render_artifact_indexes(artifact_dir):
+def render_artifact_indexes(artifact_dir, env):
     def dirs_needing_indexes():
         for root, dirs, fyles in os.walk(artifact_dir):
             if "index.html" not in fyles:
                 yield pathlib.Path(root), dirs, fyles
 
-    template_dir = pathlib.Path(__file__).parent.parent / "templates"
-    env = jinja2.Environment(loader=jinja2.FileSystemLoader(str(template_dir)))
     index_templ = env.get_template("file-list.jinja.html")
     for dyr, dirs, files in dirs_needing_indexes():
         page = index_templ.render(
