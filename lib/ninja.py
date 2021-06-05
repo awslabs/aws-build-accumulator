@@ -12,6 +12,7 @@
 # permissions and limitations under the License.
 
 
+import asyncio
 import dataclasses
 import pathlib
 import subprocess
@@ -28,30 +29,30 @@ class Runner:
     proc: subprocess.CompletedProcess = None
 
 
-    def _get_cmd(self):
-        cmd = [
-            "ninja",
+    def _get_args(self):
+        args = [
             "-k", "0",
             "-f", self.ninja_file,
         ]
         if self.parallelism:
-            cmd.extend(["-j", self.parallelism])
+            args.extend(["-j", self.parallelism])
         if self.dry_run:
-            cmd.append("-n")
+            args.append("-n")
 
         if self.pipelines:
             targets = ["__litani_pipeline_name_%s" % p for p in self.pipelines]
-            cmd.extend(targets)
+            args.extend(targets)
         elif self.ci_stage:
             targets = ["__litani_ci_stage_%s" % p for p in self.ci_stage]
-            cmd.extend(targets)
+            args.extend(targets)
 
-        return [str(c) for c in cmd]
+        return [str(c) for c in args]
 
 
-    def run(self):
-        cmd = self._get_cmd()
-        self.proc = subprocess.run(cmd)
+    async def run(self):
+        args = self._get_args()
+        self.proc = await asyncio.create_subprocess_exec("ninja", *args)
+        await self.proc.wait()
 
 
     def was_successful(self):

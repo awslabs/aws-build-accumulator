@@ -628,7 +628,7 @@ async def run_build(args):
     runner = lib.ninja.Runner(
         ninja_file, args.dry_run, args.parallel, args.pipelines,
         args.ci_stage)
-    runner.run()
+    await runner.run()
 
     now = datetime.datetime.utcnow().strftime(litani.TIME_FORMAT_W)
 
