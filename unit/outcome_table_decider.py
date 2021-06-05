@@ -44,7 +44,8 @@ class CBMCNegativeTest(unittest.TestCase):
     def test_zero(self):
         proc = unittest.mock.Mock()
         proc.returncode = 0
-        jod = lib.job_outcome.OutcomeTableDecider(self.table, proc, False, True)
+        jod = lib.job_outcome.OutcomeTableDecider(
+            self.table, proc.returncode, False, True)
 
         self.assert_outcome_equals(jod, {
                 "outcome": "fail_ignored",
@@ -55,7 +56,8 @@ class CBMCNegativeTest(unittest.TestCase):
     def test_success(self):
         proc = unittest.mock.Mock()
         proc.returncode = 10
-        jod = lib.job_outcome.OutcomeTableDecider(self.table, proc, False, True)
+        jod = lib.job_outcome.OutcomeTableDecider(
+            self.table, proc.returncode, False, True)
 
         self.assert_outcome_equals(jod, {
                 "outcome": "success",
@@ -90,7 +92,8 @@ class CBMCTest(unittest.TestCase):
     def test_success(self):
         proc = unittest.mock.Mock()
         proc.returncode = 0
-        jod = lib.job_outcome.OutcomeTableDecider(self.table, proc, False, True)
+        jod = lib.job_outcome.OutcomeTableDecider(
+            self.table, proc.returncode, False, True)
 
         self.assert_outcome_equals(jod, {
                 "outcome": "success",
@@ -101,7 +104,8 @@ class CBMCTest(unittest.TestCase):
     def test_ten(self):
         proc = unittest.mock.Mock()
         proc.returncode = 10
-        jod = lib.job_outcome.OutcomeTableDecider(self.table, proc, False, True)
+        jod = lib.job_outcome.OutcomeTableDecider(
+            self.table, proc.returncode, False, True)
 
         self.assert_outcome_equals(jod, {
                 "outcome": "fail_ignored",
@@ -112,7 +116,8 @@ class CBMCTest(unittest.TestCase):
     def test_one(self):
         proc = unittest.mock.Mock()
         proc.returncode = 1
-        jod = lib.job_outcome.OutcomeTableDecider(self.table, proc, False, True)
+        jod = lib.job_outcome.OutcomeTableDecider(
+            self.table, proc.returncode, False, True)
 
         self.assert_outcome_equals(jod, {
                 "outcome": "fail",
@@ -123,7 +128,8 @@ class CBMCTest(unittest.TestCase):
     def test_timeout_one(self):
         proc = unittest.mock.Mock()
         proc.returncode = 1
-        jod = lib.job_outcome.OutcomeTableDecider(self.table, proc, True, True)
+        jod = lib.job_outcome.OutcomeTableDecider(
+            self.table, proc.returncode, True, True)
 
         self.assert_outcome_equals(jod, {
                 "outcome": "fail",
@@ -134,7 +140,8 @@ class CBMCTest(unittest.TestCase):
     def test_timeout_ten(self):
         proc = unittest.mock.Mock()
         proc.returncode = 10
-        jod = lib.job_outcome.OutcomeTableDecider(self.table, proc, True, True)
+        jod = lib.job_outcome.OutcomeTableDecider(
+            self.table, proc.returncode, True, True)
 
         self.assert_outcome_equals(jod, {
                 "outcome": "fail",
@@ -148,7 +155,8 @@ class CBMCTest(unittest.TestCase):
         # thing to do in that case.
         proc = unittest.mock.Mock()
         proc.returncode = 0
-        jod = lib.job_outcome.OutcomeTableDecider(self.table, proc, True, True)
+        jod = lib.job_outcome.OutcomeTableDecider(
+            self.table, proc.returncode, True, True)
 
         self.assert_outcome_equals(jod, {
                 "outcome": "fail",
@@ -186,7 +194,8 @@ class TimeoutPriorityTest(unittest.TestCase):
     def test_success(self):
         proc = unittest.mock.Mock()
         proc.returncode = 0
-        jod = lib.job_outcome.OutcomeTableDecider(self.table, proc, False, True)
+        jod = lib.job_outcome.OutcomeTableDecider(
+            self.table, proc.returncode, False, True)
 
         self.assert_outcome_equals(jod, {
                 "outcome": "success",
@@ -197,7 +206,8 @@ class TimeoutPriorityTest(unittest.TestCase):
     def test_ten(self):
         proc = unittest.mock.Mock()
         proc.returncode = 10
-        jod = lib.job_outcome.OutcomeTableDecider(self.table, proc, False, True)
+        jod = lib.job_outcome.OutcomeTableDecider(
+            self.table, proc.returncode, False, True)
 
         self.assert_outcome_equals(jod, {
                 "outcome": "fail_ignored",
@@ -208,7 +218,8 @@ class TimeoutPriorityTest(unittest.TestCase):
     def test_one(self):
         proc = unittest.mock.Mock()
         proc.returncode = 1
-        jod = lib.job_outcome.OutcomeTableDecider(self.table, proc, False, True)
+        jod = lib.job_outcome.OutcomeTableDecider(
+            self.table, proc.returncode, False, True)
 
         self.assert_outcome_equals(jod, {
                 "outcome": "fail",
@@ -219,7 +230,8 @@ class TimeoutPriorityTest(unittest.TestCase):
     def test_timeout_one(self):
         proc = unittest.mock.Mock()
         proc.returncode = 1
-        jod = lib.job_outcome.OutcomeTableDecider(self.table, proc, True, True)
+        jod = lib.job_outcome.OutcomeTableDecider(
+            self.table, proc.returncode, True, True)
 
         self.assert_outcome_equals(jod, {
                 "outcome": "fail_ignored",
@@ -230,7 +242,8 @@ class TimeoutPriorityTest(unittest.TestCase):
     def test_timeout_ten(self):
         proc = unittest.mock.Mock()
         proc.returncode = 10
-        jod = lib.job_outcome.OutcomeTableDecider(self.table, proc, True, True)
+        jod = lib.job_outcome.OutcomeTableDecider(
+            self.table, proc.returncode, True, True)
 
         self.assert_outcome_equals(jod, {
                 "outcome": "fail_ignored",
@@ -241,7 +254,8 @@ class TimeoutPriorityTest(unittest.TestCase):
     def test_timeout_zero(self):
         proc = unittest.mock.Mock()
         proc.returncode = 0
-        jod = lib.job_outcome.OutcomeTableDecider(self.table, proc, True, True)
+        jod = lib.job_outcome.OutcomeTableDecider(
+            self.table, proc.returncode, True, True)
 
         self.assert_outcome_equals(jod, {
                 "outcome": "fail_ignored",

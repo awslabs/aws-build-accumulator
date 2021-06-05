@@ -16,7 +16,6 @@ import dataclasses
 import json
 import logging
 import os
-import subprocess
 
 
 ################################################################################
@@ -39,7 +38,7 @@ class OutcomeTableDecider:
     """
 
     table: dict
-    proc: subprocess.CompletedProcess
+    return_code: int
     timeout_reached: bool
     loaded_from_file: bool
 
@@ -83,7 +82,7 @@ class OutcomeTableDecider:
                 return timeout_outcome
             return self._get_wildcard_outcome()
 
-        rc_outcome = self._get_return_code_outcome(self.proc.returncode)
+        rc_outcome = self._get_return_code_outcome(self.return_code)
         if rc_outcome:
             return rc_outcome
 
@@ -175,7 +174,7 @@ def validate_outcome_table(table):
     voluptuous.humanize.validate_with_humanized_errors(table, schema)
 
 
-def _get_outcome_table_job_decider(args, proc, timeout_reached):
+def _get_outcome_table_job_decider(args, return_code, timeout_reached):
     if args.outcome_table:
         _, ext = os.path.splitext(args.outcome_table)
         with open(args.outcome_table) as handle:
@@ -195,7 +194,8 @@ def _get_outcome_table_job_decider(args, proc, timeout_reached):
     validate_outcome_table(outcome_table)
 
     return OutcomeTableDecider(
-        outcome_table, proc, timeout_reached, loaded_from_file=loaded_from_file)
+        outcome_table, return_code, timeout_reached,
+        loaded_from_file=loaded_from_file)
 
 
 ################################################################################
@@ -220,14 +220,14 @@ def fill_in_result(runner, job_data, args):
 
     job_data["complete"] = True
     job_data["timeout_reached"] = runner.reached_timeout()
-    job_data["command_return_code"] = runner.get_proc().returncode
+    job_data["command_return_code"] = runner.get_return_code()
     job_data["memory_trace"] = runner.get_memory_trace()
 
     # These get set by the deciders
     job_data["loaded_outcome_dict"] = None
 
     decider = _get_outcome_table_job_decider(
-        args, runner.get_proc(), runner.reached_timeout())
+        args, runner.get_return_code(), runner.reached_timeout())
 
     fields = decider.get_job_fields()
     for k, v in fields.items():

@@ -278,8 +278,8 @@ class Runner:
             await task
 
 
-    def get_proc(self):
-        return self.runner.proc
+    def get_return_code(self):
+        return self.runner.proc.returncode
 
 
     def get_stdout(self):
