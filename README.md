@@ -30,3 +30,5 @@ Optional:
 * [Voluptuous](https://pypi.org/project/voluptuous/) to perform
   sanity-checking on internal data structures
   * `pip3 install voluptuous`
+* [scdoc](https://git.sr.ht/~sircmpwn/scdoc) to build the documentation
+  * `brew install scdoc`
