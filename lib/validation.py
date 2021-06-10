@@ -20,10 +20,10 @@ import lib.litani
 def _time_str(string):
     try:
         datetime.datetime.strptime(string, lib.litani.TIME_FORMAT_R)
-    except RuntimeError:
+    except RuntimeError as e:
         raise ValueError(
             "Date '%s' was not in the right format (expected '%s')" %
-            (string, lib.litani.TIME_FORMAT_R))
+            (string, lib.litani.TIME_FORMAT_R)) from e
 
 
 def _get_single_job_arguments():
@@ -128,6 +128,5 @@ def validate_run(run):
                 })]
             }]
         }]
-
     }, required=True)
     voluptuous.humanize.validate_with_humanized_errors(run, schema)

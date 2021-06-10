@@ -20,7 +20,6 @@ import json
 import logging
 import os
 import pathlib
-import re
 import shutil
 import subprocess
 import sys
@@ -51,21 +50,21 @@ class PipelineDepgraphRenderer:
         dot_graph = lib.graph.SinglePipelineGraph.render(self.pipe)
         out_file.parent.mkdir(exist_ok=True, parents=True)
         with open(out_file, "w") as handle:
-            proc = subprocess.Popen(
-                ["dot", "-Tsvg"], text=True, stdin=subprocess.PIPE,
-                stdout=handle)
-            proc.communicate(input=dot_graph)
+            with subprocess.Popen(
+                    ["dot", "-Tsvg"], text=True, stdin=subprocess.PIPE,
+                    stdout=handle) as proc:
+                proc.communicate(input=dot_graph)
         return not proc.returncode
 
 
     @staticmethod
     def render(render_root, pipe_url, pipe):
         pdr = PipelineDepgraphRenderer(pipe)
-        out_rel = pipe_url / f"dependencies.svg"
+        out_rel = pipe_url / "dependencies.svg"
         out_file = render_root / out_rel
         success = pdr.render_to_file(out_file=out_file)
         if success:
-            pipe[f"dependencies_url"] = "dependencies.svg"
+            pipe["dependencies_url"] = "dependencies.svg"
 
 
 
@@ -290,7 +289,7 @@ def add_stage_stats(stage, stage_name, pipeline_name):
         try:
             if not job["complete"]:
                 continue
-            elif job["outcome"] == "fail":
+            if job["outcome"] == "fail":
                 status = StageStatus.FAIL
             elif job["outcome"] == "fail_ignored" and status == StageStatus.SUCCESS:
                 status = StageStatus.FAIL_IGNORED
@@ -391,10 +390,10 @@ def s_to_hhmmss(s):
 
 def run_gnuplot(gnu_file, out_file=None):
     cmd = ["gnuplot"]
-    proc = subprocess.Popen(
-        cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-        stderr=subprocess.DEVNULL, text=True)
-    out, _ = proc.communicate(input=gnu_file)
+    with subprocess.Popen(
+            cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL, text=True) as proc:
+        out, _ = proc.communicate(input=gnu_file)
     if proc.returncode:
         logging.error("Failed to render gnuplot file:")
         logging.error(gnu_file)

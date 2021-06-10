@@ -150,7 +150,8 @@ class SinglePipelineGraph:
                 self.edges.add(lib.graph.Edge(src=cmd_node, dst=out_node))
 
 
-    def _make_cmd_node(self, complete, outcome, command):
+    @staticmethod
+    def _make_cmd_node(complete, outcome, command):
         cmd_style = {"style": "filled"}
         if complete and outcome == "success":
             cmd_style["fillcolor"] = "#90caf9"

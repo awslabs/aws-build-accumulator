@@ -205,6 +205,7 @@ def atomic_write(path, mode="w"):
         parent = pathlib.Path(path).parent
         parent.mkdir(exist_ok=True, parents=True)
         tmp = "%s~" % path
+        # pylint: disable=consider-using-with
         handle = open(tmp, mode)
         yield handle
     except RuntimeError:

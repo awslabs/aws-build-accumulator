@@ -340,7 +340,7 @@ def continuous_render_report(cache_dir, report_dir, killer, out_file):
             if killer.is_set():
                 break
             time.sleep(2)
-    except Exception as e:
+    except BaseException as e:
         logging.error("Continuous render function crashed")
         logging.error(str(e))
         traceback.print_exc()
@@ -360,10 +360,12 @@ def set_up_logging(args):
 def positive_int(arg):
     try:
         ret = int(arg)
-    except ValueError:
-        raise argparse.ArgumentTypeError("Timeout '%s' must be an int" % arg)
+    except ValueError as e:
+        raise argparse.ArgumentTypeError(
+            "Timeout '%s' must be an int" % arg) from e
     if ret <= 0:
-        raise argparse.ArgumentTypeError("Timeout '%d' must be > 0" % ret)
+        raise argparse.ArgumentTypeError(
+            "Timeout '%d' must be > 0" % ret) from e
     return ret
 
 
@@ -372,9 +374,9 @@ def list_of_ints(arg):
     for rc in arg:
         try:
             ret.append(int(rc))
-        except ValueError:
+        except ValueError as e:
             raise argparse.ArgumentTypeError(
-                "Return code '%s' must be an int" % arg)
+                "Return code '%s' must be an int" % arg) from e
     return ret
 
 
