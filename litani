@@ -34,6 +34,7 @@ from lib import litani, litani_report, ninja_syntax
 import lib.capabilities
 import lib.graph
 import lib.job_outcome
+import lib.ninja
 import lib.process
 import lib.validation
 
@@ -381,8 +382,8 @@ def list_of_ints(arg):
 
 
 def timestamp(key, data):
-    now = datetime.datetime.utcnow()
-    data[key] = now.strftime(litani.TIME_FORMAT_W)
+    data[key] = datetime.datetime.now(datetime.timezone.utc).strftime(
+        litani.TIME_FORMAT_W)
 
 
 def make_litani_exec_command(add_args):
@@ -548,7 +549,8 @@ async def init(args):
     os.rename(temp_symlink, latest_symlink)
 
 
-    now = datetime.datetime.utcnow().strftime(litani.TIME_FORMAT_W)
+    now = datetime.datetime.now(datetime.timezone.utc).strftime(
+        litani.TIME_FORMAT_W)
 
     with litani.atomic_write(cache_dir / litani.CACHE_FILE) as handle:
         print(json.dumps({
@@ -561,7 +563,8 @@ async def init(args):
             "start_time": now,
             "status": "in_progress",
             "pools": get_pools(args),
-            "jobs": []
+            "jobs": [],
+            "parallelism": {},
         }, indent=2), file=handle)
 
     logging.info("cache dir is at: %s", cache_dir)
@@ -630,13 +633,15 @@ async def run_build(args):
     runner = lib.ninja.Runner(
         ninja_file, args.dry_run, args.parallel, args.pipelines,
         args.ci_stage)
-    await runner.run()
+    runner.run()
 
-    now = datetime.datetime.utcnow().strftime(litani.TIME_FORMAT_W)
+    now = datetime.datetime.now(datetime.timezone.utc).strftime(
+        litani.TIME_FORMAT_W)
 
     with open(cache_dir / litani.CACHE_FILE) as handle:
         run_info = json.load(handle)
     run_info["end_time"] = now
+    run_info["parallelism"] = runner.get_parallelism_graph()
 
     success = True
     for root, _, files in os.walk(litani.get_status_dir()):

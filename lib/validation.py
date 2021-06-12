@@ -17,6 +17,15 @@ import datetime
 import lib.litani
 
 
+def _ms_time_str(string):
+    try:
+        datetime.datetime.strptime(string, lib.litani.TIME_FORMAT_MS)
+    except RuntimeError as e:
+        raise ValueError(
+            "Date '%s' was not in the right format (expected '%s')" %
+            (string, lib.litani.TIME_FORMAT_MS)) from e
+
+
 def _time_str(string):
     try:
         datetime.datetime.strptime(string, lib.litani.TIME_FORMAT_R)
@@ -80,6 +89,16 @@ def validate_run(run):
         "version_patch": lib.litani.VERSION_PATCH,
         voluptuous.Optional("end_time"): _time_str,
         "status": voluptuous.Any("in_progress", "fail", "success"),
+        "parallelism": voluptuous.Any({
+            voluptuous.Optional("trace"): [{
+                "time": _ms_time_str,
+                "finished": int,
+                "running": int,
+                "total": int,
+            }],
+            voluptuous.Optional("max_parallelism"): int,
+            voluptuous.Optional("n_proc"): voluptuous.Any(None, int),
+        }),
         "pipelines": [{
             "url": str,
             "name": str,

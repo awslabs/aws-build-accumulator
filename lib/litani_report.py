@@ -139,17 +139,60 @@ class JobOutcomeTableRenderer:
 
 
 @dataclasses.dataclass
+class ParallelismGraphRenderer:
+    """Renders parallelism of run over time"""
+    run: dict
+    env: jinja2.Environment
+
+
+    # The parallelism trace includes timestamps with microsecond precision, but
+    # gnuplot can't deal with fractional seconds. So just for the purposes of
+    # the graph, return the maximum parallelism encountered at each second.  We
+    # still leave the microsecond stamps in the JSON file for those who need it.
+    @staticmethod
+    def process_trace(trace):
+
+        def overwrite(field, op, d1, d2):
+            d1[field] = op(d1[field], d2[field])
+
+        tmp = {}
+        for item in trace:
+            ms_precision = datetime.datetime.strptime(
+                item["time"], lib.litani.TIME_FORMAT_MS)
+            s_precision = ms_precision.strftime(lib.litani.TIME_FORMAT_R)
+            try:
+                tmp[s_precision]
+            except KeyError:
+                tmp[s_precision] = dict(item)
+                tmp[s_precision].pop("time")
+            else:
+                overwrite("finished", min, tmp[s_precision], item)
+                overwrite("running", max, tmp[s_precision], item)
+                overwrite("total", max, tmp[s_precision], item)
+        return sorted(
+            [{"time": time, **item} for time, item in tmp.items()],
+            key=lambda x: x["time"])
+
+
+    def render(self, template_name):
+        if not self.run["parallelism"].get("trace"):
+            return []
+
+        gnu_templ = self.env.get_template(template_name)
+        gnu_file = gnu_templ.render(
+            n_proc=self.run["parallelism"].get("n_proc"),
+            max_parallelism=self.run["parallelism"].get("max_parallelism"),
+            trace=self.process_trace(self.run["parallelism"]["trace"]))
+
+        return [run_gnuplot(gnu_file)]
+
+
+
+@dataclasses.dataclass
 class StatsGroupRenderer:
     """Renders graphs for jobs that are part of a 'stats group'."""
     run: dict
     env: jinja2.Environment
-    report_dir: pathlib.Path
-
-
-    @staticmethod
-    def to_id(string):
-        allowed = re.compile(r"[-a-zA-Z0-9\.]")
-        return "".join([c if allowed.match(c) else "_" for c in string])
 
 
     def get_stats_groups(self, job_filter):
@@ -180,15 +223,13 @@ class StatsGroupRenderer:
             except KeyError:
                 ret[stats_group] = [job]
 
-        return sorted([(k, v) for k, v in ret.items()])
+        return sorted((k, v) for k, v in ret.items())
 
 
-    def render(self, job_filter, template_name, out_dir):
+    def render(self, job_filter, template_name):
         stats_groups = self.get_stats_groups(job_filter)
         svgs = []
         gnu_templ = self.env.get_template(template_name)
-        img_dir = self.report_dir / out_dir
-        img_dir.mkdir(exist_ok=True, parents=True)
         for group_name, jobs in stats_groups:
             if len(jobs) < 2:
                 continue
@@ -415,16 +456,19 @@ def jobs_of(run):
                 yield job
 
 
-def get_dashboard_svgs(run, env, temporary_report_dir):
-    stats_renderer = StatsGroupRenderer(run, env, temporary_report_dir)
+def get_dashboard_svgs(run, env):
+    stats_renderer = StatsGroupRenderer(run, env)
+    p_renderer = ParallelismGraphRenderer(run, env)
+
     return {
         "Runtime": stats_renderer.render(
-            lambda j: "duration" in j, "runtime-box.jinja.gnu", "runtimes"),
+            lambda j: "duration" in j, "runtime-box.jinja.gnu"),
         "Memory Usage": stats_renderer.render(
             lambda j: j.get("memory_trace") and \
                 j["memory_trace"].get("peak") and \
                 j["memory_trace"]["peak"].get("rss"),
-            "memory-peak-box.jinja.gnu", "memory-peaks"),
+            "memory-peak-box.jinja.gnu"),
+        "Parallelism": p_renderer.render("run-parallelism.jinja.gnu"),
     }
 
 
@@ -457,7 +501,7 @@ def render(run, report_dir):
 
     render_artifact_indexes(artifact_dir, env)
 
-    svgs = get_dashboard_svgs(run, env, temporary_report_dir)
+    svgs = get_dashboard_svgs(run, env)
 
     litani_report_archive_path = os.getenv("LITANI_REPORT_ARCHIVE_PATH")
 

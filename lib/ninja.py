@@ -12,10 +12,83 @@
 # permissions and limitations under the License.
 
 
-import asyncio
 import dataclasses
+import datetime
+import io
+import os
 import pathlib
+import re
 import subprocess
+import threading
+
+import lib.litani
+
+
+
+@dataclasses.dataclass
+class _StatusParser:
+    # Format strings documented here:
+    # https://ninja-build.org/manual.html#_environment_variables
+    status_format: str = "<ninja>:%r/%f/%t "
+    status_re: re.Pattern = re.compile(
+        r"<ninja>:(?P<running>\d+)/(?P<finished>\d+)/(?P<total>\d+) "
+        r"(?P<message>.+)")
+
+
+    def parse_status(self, status_str):
+        m = self.status_re.match(status_str)
+        if not m:
+            return None
+        ret = {k: int(m[k]) for k in ["running", "finished", "total"]}
+        return {**ret, **{"message": m["message"]}}
+
+
+
+@dataclasses.dataclass
+class _OutputAccumulator:
+    out_stream: io.RawIOBase
+    status_parser: _StatusParser
+    concurrency_graph: list = dataclasses.field(default_factory=list)
+    finished: int = None
+    total: int = None
+    thread: threading.Thread = None
+
+
+    def process_output(self):
+        while True:
+            try:
+                line = self.out_stream.readline()
+                if not line:
+                    return
+            except ValueError:
+                return
+            status = self.status_parser.parse_status(line)
+            if not status:
+                print(line)
+                continue
+
+            now = datetime.datetime.now(datetime.timezone.utc)
+            now_str = now.strftime(lib.litani.TIME_FORMAT_MS)
+            status["time"] = now_str
+            self.concurrency_graph.append(status)
+
+            if any((
+                    status["finished"] != self.finished,
+                    status["total"] != self.total)):
+                self.finished = status["finished"]
+                self.total = status["total"]
+                print("\r[%d/%d] %s" % (
+                    self.finished, self.total, status["message"]), end="")
+
+
+    def join(self):
+        self.thread.join()
+        print()
+
+
+    def start(self):
+        self.thread = threading.Thread(target=self.process_output)
+        self.thread.start()
 
 
 
@@ -27,33 +100,60 @@ class Runner:
     pipelines: list
     ci_stage: str
     proc: subprocess.CompletedProcess = None
+    status_parser: _StatusParser = _StatusParser()
+    out_acc: _OutputAccumulator = None
 
 
-    def _get_args(self):
-        args = [
+    def _get_cmd(self):
+        cmd = [
+            "ninja",
             "-k", "0",
             "-f", self.ninja_file,
         ]
         if self.parallelism:
-            args.extend(["-j", self.parallelism])
+            cmd.extend(["-j", self.parallelism])
         if self.dry_run:
-            args.append("-n")
+            cmd.append("-n")
 
         if self.pipelines:
             targets = ["__litani_pipeline_name_%s" % p for p in self.pipelines]
-            args.extend(targets)
+            cmd.extend(targets)
         elif self.ci_stage:
             targets = ["__litani_ci_stage_%s" % p for p in self.ci_stage]
-            args.extend(targets)
+            cmd.extend(targets)
 
-        return [str(c) for c in args]
+        return [str(c) for c in cmd]
 
 
-    async def run(self):
-        args = self._get_args()
-        self.proc = await asyncio.create_subprocess_exec("ninja", *args)
-        await self.proc.wait()
+    def run(self):
+        env = {
+            **os.environ,
+            **{"NINJA_STATUS": self.status_parser.status_format},
+        }
+
+        with subprocess.Popen(
+                self._get_cmd(), env=env, stdout=subprocess.PIPE, text=True,
+                ) as proc:
+            self.proc = proc
+            self.out_acc = _OutputAccumulator(proc.stdout, self.status_parser)
+            self.out_acc.start()
+            self.out_acc.join()
 
 
     def was_successful(self):
         return not self.proc.returncode
+
+
+    def get_parallelism_graph(self):
+        trace = []
+        for item in self.out_acc.concurrency_graph:
+            tmp = dict(item)
+            tmp.pop("message")
+            trace.append(tmp)
+
+        return {
+            "trace": trace,
+            "max_parallelism": max(
+                [i["running"] for i in self.out_acc.concurrency_graph]),
+            "n_proc": os.cpu_count(),
+        }
