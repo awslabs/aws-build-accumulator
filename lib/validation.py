@@ -72,7 +72,7 @@ def validate_run(run):
     schema = voluptuous.Schema({
         "run_id": str,
         "project": str,
-        "pools": {str: int},
+        "pools": {voluptuous.Optional(str): int},
         "start_time": _time_str,
         "version": lib.litani.VERSION,
         "version_major": lib.litani.VERSION_MAJOR,
