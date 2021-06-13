@@ -139,6 +139,7 @@ class LockableDirectory:
         self.release()
 
 
+
 def _get_cache_dir(path=os.getcwd()):
     def cache_pointer_dirs():
         current = pathlib.Path(path).resolve(strict=True)
@@ -191,6 +192,7 @@ def get_report_dir():
 
 def get_report_data_dir():
     return get_cache_dir() / "report_data"
+
 
 def get_artifacts_dir():
     return get_cache_dir() / "artifacts"
