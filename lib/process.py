@@ -222,7 +222,10 @@ class _Process:
         except asyncio.TimeoutError:
             proc.terminate()
             await asyncio.sleep(1)
-            proc.kill()
+            try:
+                proc.kill()
+            except ProcessLookupError:
+                pass
             out, err = await proc.communicate()
             timeout_reached = True
 
