@@ -11,8 +11,8 @@ litani run-build [OPTION...]
 # DESCRIPTION
 
 This program creates a new Litani run. This deletes previously-added jobs and
-allows you to add new jobs with *litani --add-job*, prior to running them with
-*litani --run-build*.
+allows you to add new jobs with *litani add-job*, prior to running them with
+*litani run-build*.
 
 When you run this program, Litani will write a file called _.litani_cache_dir_
 to the current directory, which will contain the path to Litani's output
