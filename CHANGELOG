@@ -1,6 +1,34 @@
                               CHANGELOG
                               `````````
 
+Version 1.8.0 -- 2021-06-24
+---------------------------
+
+- Job pool
+    Users can now add jobs to a particular "job pool", which limits the
+    parallelism of those jobs. Multiple pools can be created, each with
+    their own parallelism limits. This is intended to inhibit the
+    parallelism of jobs that use a contended resource, like disk I/O or
+    network bandwidth.
+
+- UI improvement on pipeline page
+    Each job on the pipeline page now has a hyperlink to that job,
+    making it easy to link to particularly interesting jobs hosted on
+    the web.
+
+- Memory profiler
+    Litani can now profile the memory of particular jobs and display
+    graphs of those jobs' memory use on the dashboard. This can be
+    helpful when deciding when to place particular jobs into a job pool.
+
+- Parallelism measurement
+    Litani now tracks how many jobs are running in parallel at any one
+    moment, and displays that as a graph on the dashboard. This can be
+    helpful when trying to increase CPU core utilization or trying to
+    use cloud resources as efficiently as possible.
+
+
+
 Version 1.7.1 -- 2021-05-13
 ---------------------------
 
