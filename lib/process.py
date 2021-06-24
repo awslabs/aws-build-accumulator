@@ -45,7 +45,8 @@ class _UnixMemoryProfiler(_MemoryProfiler):
 
         ret = {
             "time":
-                datetime.datetime.utcnow().strftime(lib.litani.TIME_FORMAT_R),
+                datetime.datetime.now(datetime.timezone.utc).strftime(
+                    lib.litani.TIME_FORMAT_R),
             "rss": 0,
         }
         ps_output = await self._get_ps_output()
