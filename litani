@@ -670,7 +670,7 @@ async def run_build(args):
             print(json.dumps(run, indent=2), file=handle)
 
     if args.fail_on_pipeline_failure:
-        sys.exit(1 if runner.was_successful() else 0)
+        sys.exit(0 if runner.was_successful() else 1)
 
     sys.exit(0)
 
