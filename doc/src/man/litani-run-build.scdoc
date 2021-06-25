@@ -2,7 +2,7 @@ litani-run-build(1) "" "Litani Build System"
 
 # NAME
 
-litani run-build - Set up a new Litani run
+litani run-build - Start a Litani run
 
 # SYNOPSIS
 
@@ -10,20 +10,8 @@ litani run-build [OPTION...]
 
 # DESCRIPTION
 
-This program creates a new Litani run. This deletes previously-added jobs and
-allows you to add new jobs with *litani add-job*, prior to running them with
-*litani run-build*.
-
-When you run this program, Litani will write a file called _.litani_cache_dir_
-to the current directory, which will contain the path to Litani's output
-directory. Subsequent *litani* runs will read this file to determine where to
-find the output directory. Litani will search the following locations for the file:
-
-- The current directory;
-- the parent directory, and every ancestor directory up to the filesystem root;
-- every child directory, and every descendent down to the filesystem leaves.
-
-This allows you to run *litani init* in the 'root' of a project, and subsequently run *litani add-job* further down in the project.
+This program executes a Litani run. The run must have been created using
+*litani init* and had jobs added to it using *litani add-job*.
 
 # OPTIONS
 
