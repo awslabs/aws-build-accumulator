@@ -18,12 +18,15 @@ Hosted [here](https://awslabs.github.io/aws-build-accumulator/).
 * Python 3
 * [Ninja](https://ninja-build.org/)
   * `apt-get install ninja-build`, `brew install ninja`
-* [Gnuplot](http://www.gnuplot.info/)
-  * `apt-get install gnuplot`, `brew install gnuplot`
 * [Jinja](https://jinja.palletsprojects.com/en/2.11.x/)
   * `pip3 install jinja2`
 * [Graphviz DOT](https://graphviz.org/)
   * `apt-get install graphviz`, `brew install graphviz`
+
+Recommended:
+
+* [Gnuplot](http://www.gnuplot.info/) to generate graphs on the dashboard
+  * `apt-get install gnuplot`, `brew install gnuplot`
 
 Optional:
 
