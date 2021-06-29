@@ -32,6 +32,39 @@ import lib.graph
 
 
 
+class Gnuplot:
+    def __init__(self):
+        self._should_render = shutil.which("gnuplot") is not None
+
+
+    def should_render(self):
+        return self._should_render
+
+
+    def render(self, gnu_file, out_file=None):
+        if not self.should_render():
+            raise UserWarning(
+                "Should not call Gnuplot.render() if should_render() is False")
+
+        cmd = ["gnuplot"]
+        with subprocess.Popen(
+                cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL, text=True) as proc:
+            out, _ = proc.communicate(input=gnu_file)
+        if proc.returncode:
+            logging.error("Failed to render gnuplot file:")
+            logging.error(gnu_file)
+            sys.exit(1)
+        lines = [
+            l for l in out.splitlines()
+            if "<?xml version" not in l
+        ]
+        if out_file:
+            with litani.atomic_write(out_file) as handle:
+                print("\n".join(lines), file=handle)
+        return lines
+
+
 # ______________________________________________________________________________
 # Job renderers
 # ``````````````````````````````````````````````````````````````````````````````
@@ -71,6 +104,7 @@ class PipelineDepgraphRenderer:
 @dataclasses.dataclass
 class MemoryTraceRenderer:
     jinja_env: jinja2.Environment
+    gnuplot: Gnuplot
 
 
     @staticmethod
@@ -81,15 +115,19 @@ class MemoryTraceRenderer:
 
 
     def render_preview(self, job):
+        job["memory_trace_preview"] = []
+        if not self.gnuplot.should_render():
+            return
+
         templ = self.jinja_env.get_template("memory-trace.jinja.gnu")
         gnu_file = templ.render(job=job)
-        lines = run_gnuplot(gnu_file)
+        lines = self.gnuplot.render(gnu_file)
         job["memory_trace_preview"] = lines
 
 
     @staticmethod
-    def render(_, jinja_env, job):
-        mtr = MemoryTraceRenderer(jinja_env=jinja_env)
+    def render(_, jinja_env, job, gnuplot):
+        mtr = MemoryTraceRenderer(jinja_env=jinja_env, gnuplot=gnuplot)
         mtr.render_preview(job)
 
 
@@ -143,6 +181,7 @@ class ParallelismGraphRenderer:
     """Renders parallelism of run over time"""
     run: dict
     env: jinja2.Environment
+    gnuplot: Gnuplot
 
 
     # The parallelism trace includes timestamps with microsecond precision, but
@@ -175,7 +214,10 @@ class ParallelismGraphRenderer:
 
 
     def render(self, template_name):
-        if not self.run["parallelism"].get("trace"):
+        if not all((
+                self.gnuplot.should_render(),
+                self.run["parallelism"].get("trace")
+        )):
             return []
 
         gnu_templ = self.env.get_template(template_name)
@@ -184,7 +226,7 @@ class ParallelismGraphRenderer:
             max_parallelism=self.run["parallelism"].get("max_parallelism"),
             trace=self.process_trace(self.run["parallelism"]["trace"]))
 
-        return [run_gnuplot(gnu_file)]
+        return [self.gnuplot.render(gnu_file)]
 
 
 
@@ -193,6 +235,7 @@ class StatsGroupRenderer:
     """Renders graphs for jobs that are part of a 'stats group'."""
     run: dict
     env: jinja2.Environment
+    gnuplot: Gnuplot
 
 
     def get_stats_groups(self, job_filter):
@@ -227,6 +270,8 @@ class StatsGroupRenderer:
 
 
     def render(self, job_filter, template_name):
+        if not self.gnuplot.should_render():
+            return []
         stats_groups = self.get_stats_groups(job_filter)
         svgs = []
         gnu_templ = self.env.get_template(template_name)
@@ -235,7 +280,7 @@ class StatsGroupRenderer:
                 continue
             gnu_file = gnu_templ.render(
                 group_name=group_name, jobs=jobs)
-            svg_lines = run_gnuplot(gnu_file)
+            svg_lines = self.gnuplot.render(gnu_file)
             svgs.append(svg_lines)
         return svgs
 
@@ -429,26 +474,6 @@ def s_to_hhmmss(s):
     return "{s:02d}s".format(s=s)
 
 
-def run_gnuplot(gnu_file, out_file=None):
-    cmd = ["gnuplot"]
-    with subprocess.Popen(
-            cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL, text=True) as proc:
-        out, _ = proc.communicate(input=gnu_file)
-    if proc.returncode:
-        logging.error("Failed to render gnuplot file:")
-        logging.error(gnu_file)
-        sys.exit(1)
-    lines = [
-        l for l in out.splitlines()
-        if "<?xml version" not in l
-    ]
-    if out_file:
-        with litani.atomic_write(out_file) as handle:
-            print("\n".join(lines), file=handle)
-    return lines
-
-
 def jobs_of(run):
     for pipe in run["pipelines"]:
         for stage in pipe["ci_stages"]:
@@ -456,9 +481,9 @@ def jobs_of(run):
                 yield job
 
 
-def get_dashboard_svgs(run, env):
-    stats_renderer = StatsGroupRenderer(run, env)
-    p_renderer = ParallelismGraphRenderer(run, env)
+def get_dashboard_svgs(run, env, gnuplot):
+    stats_renderer = StatsGroupRenderer(run, env, gnuplot)
+    p_renderer = ParallelismGraphRenderer(run, env, gnuplot)
 
     return {
         "Runtime": stats_renderer.render(
@@ -501,7 +526,8 @@ def render(run, report_dir):
 
     render_artifact_indexes(artifact_dir, env)
 
-    svgs = get_dashboard_svgs(run, env)
+    gnuplot = Gnuplot()
+    svgs = get_dashboard_svgs(run, env, gnuplot)
 
     litani_report_archive_path = os.getenv("LITANI_REPORT_ARCHIVE_PATH")
 
@@ -528,7 +554,7 @@ def render(run, report_dir):
                         temporary_report_dir / pipe["url"], env, job)
                 if MemoryTraceRenderer.should_render(job):
                     MemoryTraceRenderer.render(
-                        temporary_report_dir / pipe["url"], env, job)
+                        temporary_report_dir / pipe["url"], env, job, gnuplot)
 
         pipe_page = pipe_templ.render(run=run, pipe=pipe)
         with litani.atomic_write(
