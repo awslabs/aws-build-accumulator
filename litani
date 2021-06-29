@@ -548,6 +548,9 @@ async def init(args):
     os.symlink(cache_dir, temp_symlink, target_is_directory=True)
     os.rename(temp_symlink, latest_symlink)
 
+    print(
+        "Report will be rendered at "
+        f"file://{str(latest_symlink)}/html/index.html")
 
     now = datetime.datetime.now(datetime.timezone.utc).strftime(
         litani.TIME_FORMAT_W)
@@ -623,7 +626,6 @@ async def run_build(args):
     run = litani_report.get_run_data(cache_dir)
     lib.validation.validate_run(run)
     litani_report.render(run, report_dir)
-    print("Report will be rendered at file://%s/index.html" % str(report_dir))
     killer = threading.Event()
     render_thread = threading.Thread(
         group=None, target=continuous_render_report,
