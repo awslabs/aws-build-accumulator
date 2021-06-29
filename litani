@@ -200,17 +200,17 @@ def get_args():
     for arg in [{
             "flags": ["--project-name"],
             "required": True,
-            "help": "Project that this proof run is associated with",
+            "help": "project that this proof run is associated with",
             "metavar": "NAME",
         }, {
             "flags": ["--pools"],
             "help":
-                "Job pools to which jobs can be added, with depth of each pool",
+                "job pools to which jobs can be added, with depth of each pool",
             "metavar": "NAME:DEPTH",
             "nargs": "+",
         }, {
             "flags": ["--output-symlink"],
-            "help": "Create a symbolic link from DIR to litani's output directory",
+            "help": "create a symbolic link from DIR to litani's output directory",
             "metavar": "DIR"
     }]:
         flags = arg.pop("flags")
@@ -218,11 +218,11 @@ def get_args():
     init_output_flags = init_pars.add_mutually_exclusive_group()
     for arg in [{
             "flags": ["--output-directory"],
-            "help": "Write Litani output to specified directory",
+            "help": "write Litani output to specified directory",
             "metavar": "DIR"
         }, {
             "flags": ["--output-prefix"],
-            "help": "Directory prefix to write Litani output to",
+            "help": "directory prefix to write Litani output to",
             "metavar": "DIR"
     }]:
         flags = arg.pop("flags")
