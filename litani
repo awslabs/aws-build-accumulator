@@ -227,6 +227,13 @@ def get_args():
     }]:
         flags = arg.pop("flags")
         init_output_flags.add_argument(*flags, **arg)
+    for arg in [{
+            "flags": ["--no-print-out-dir"],
+            "help": "do not print path to output directory",
+            "action": "store_true"
+    }]:
+        flags = arg.pop("flags")
+        init_pars.add_argument(*flags, **arg)
 
 
     graph_pars = subs.add_parser("graph")
@@ -548,9 +555,10 @@ async def init(args):
     os.symlink(cache_dir, temp_symlink, target_is_directory=True)
     os.rename(temp_symlink, latest_symlink)
 
-    print(
-        "Report will be rendered at "
-        f"file://{str(latest_symlink)}/html/index.html")
+    if not args.no_print_out_dir:
+        print(
+            "Report will be rendered at "
+            f"file://{str(latest_symlink)}/html/index.html")
 
     now = datetime.datetime.now(datetime.timezone.utc).strftime(
         litani.TIME_FORMAT_W)

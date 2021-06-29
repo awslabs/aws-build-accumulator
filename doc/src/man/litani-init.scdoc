@@ -63,6 +63,11 @@ This allows you to run *litani init* in the 'root' of a project, and subsequentl
 	easy to keep a web browser pointed to _output/latest/html/index.html_, which
 	will always resolve to the most recent dashboard.
 
+*--no-print-out-dir*
+	Do not print the resolved path to the output directory. This is useful for
+	clients that have their own method for printing the output directory's
+	location.
+
 # ENVIRONMENT VARIABLES
 
 *LITANI_RUN_ID*
