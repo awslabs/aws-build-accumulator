@@ -15,6 +15,7 @@
 import dataclasses
 import datetime
 import io
+import math
 import os
 import pathlib
 import re
@@ -54,6 +55,41 @@ class _OutputAccumulator:
     thread: threading.Thread = None
 
 
+    @staticmethod
+    def get_tty_width():
+        try:
+            proc = subprocess.run(
+                ["tput", "cols"], text=True, stdout=subprocess.PIPE, check=True)
+        except (FileNotFoundError, subprocess.CalledProcessError):
+            return None
+        if proc.returncode:
+            return None
+        try:
+            return int(proc.stdout.strip())
+        except TypeError:
+            return None
+
+
+    def print_progress(self, message):
+        tty_width = self.get_tty_width()
+        if not tty_width:
+            message_fmt = message
+        else:
+            f_width = int(math.log10(self.finished)) + 1 if self.finished else 1
+            t_width = int(math.log10(self.total)) + 1 if self.total else 1
+            progress_width = f_width + t_width + len("[/] ")
+
+            if len(message) + progress_width <= tty_width:
+                message_fmt = "[%d/%d] %s%s" % (
+                    self.finished, self.total, message,
+                    " " * (tty_width - len(message) - progress_width))
+            else:
+                message_width = tty_width - progress_width - len("...")
+                message_fmt = "[%d/%d] %s..." % (
+                    self.finished, self.total, message[:message_width])
+        print("\r%s" % message_fmt, end="")
+
+
     def process_output(self):
         while True:
             try:
@@ -77,8 +113,7 @@ class _OutputAccumulator:
                     status["total"] != self.total)):
                 self.finished = status["finished"]
                 self.total = status["total"]
-                print("\r[%d/%d] %s" % (
-                    self.finished, self.total, status["message"]), end="")
+                self.print_progress(status["message"])
 
 
     def join(self):
