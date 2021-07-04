@@ -54,21 +54,21 @@ RULES = [{
     "name": "uniquify_header_ids",
     "description": "Giving unique header IDs to ${man-name}.html",
     "command": f"sed -f {BIN_DIR}/uniquify-header-ids"
-                    " -e 's/@MAN_NAME@/${man-name}/g'"
-                    " ${in-file}"
-                    # Get rid of header and footer
-                    " | tail -n +8"
-                    " | tac"
-                    " | tail -n +7"
-                    " | tac"
-                    " > ${out}"
+               " -e 's/@MAN_NAME@/${man-name}/g'"
+               " ${in-file}"
+               # Get rid of header and footer
+               " | tail -n +8"
+               " | tac"
+               " | tail -n +7"
+               " | tac"
+               " > ${out}"
 }, {
     "name": "build_html_doc",
     "description": "Building final HTML page",
     "command": f"{BIN_DIR}/build-html-doc"
-                    "  --html-manuals ${html-mans}"
-                    f" --template-dir {TEMPLATE_DIR}"
-                    "  --out-file ${out}"
+               "  --html-manuals ${html-mans}"
+               f" --template-dir {TEMPLATE_DIR}"
+               "  --out-file ${out}"
 }]
 
 
