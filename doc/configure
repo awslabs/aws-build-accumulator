@@ -50,12 +50,12 @@ RULES = [{
     "name": "voluptuous_to_roff",
     "description": "converting ${man-name} to roff",
     "command": f"{BIN_DIR / 'schema-to-scdoc'}"
-                    f" --project-root { DOC_DIR.parent }"
-                    " --page-name ${man-name}"
-                    " --data-path ${data-path}"
-                    " --template"
-                    f" { TEMPLATE_DIR / 'voluptuous-man.jinja.scdoc' }"
-                    " | scdoc > ${out}"
+               f" --project-root { DOC_DIR.parent }"
+               " --page-name ${man-name}"
+               " --data-path ${data-path}"
+               " --template"
+               f" { TEMPLATE_DIR / 'voluptuous-man.jinja.scdoc' }"
+               " | scdoc > ${out}"
 }, {
     "name": "roff_to_html",
     "description": "converting ${man-name}.roff HTML",

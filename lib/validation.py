@@ -239,7 +239,7 @@ def _run_schema():
         # Litani's patch version number.
 
         "release_candidate": bool,
-        # false if this version of Litani is a tagged release
+        # false if this version of Litani is a tagged release.
 
         voluptuous.Optional("end_time"): _time_str,
         # The time at which the run ended. This key will only exist if *status*
