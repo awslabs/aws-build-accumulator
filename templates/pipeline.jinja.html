@@ -716,6 +716,10 @@ a:visited:active {
               {% for line in job["memory_trace_preview"] %}
                 {{ line }}
               {% endfor %}{# line in job["memory_trace_preview"] #}
+              {% else %}
+              <p style="text-align: center; font-size: smaller">
+              [No memory graph; job did not run for long enough]
+              </p>
               {% endif %}{# "memory_trace_preview" in job #}
               </div><!--  class="memory-preview" -->
               <div class="memory-table">

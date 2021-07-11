@@ -1,6 +1,22 @@
                               CHANGELOG
                               `````````
 
+Version 1.10.0 -- 2021-07-11
+----------------------------
+
+- "aux" key added to run API
+    This is intended for users to fill out their own custom data when
+    processing the run.json file. The run.json file has a tightly
+    specified schema that allows for no additions, but the "aux" key
+    provides a way to add arbitrary data to a run.
+
+- UI improvements
+    The parallelism graph now shows the number of processing cores as a
+    horizontal line, and the job memory usage section of the dashboard
+    now displays a message if no memory trace was captured.
+
+
+
 Version 1.9.0 -- 2021-06-29
 ---------------------------
 

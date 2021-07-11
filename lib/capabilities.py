@@ -24,6 +24,8 @@ _CAPABILITIES = {
         "--output-prefix flags are supported",
     "pools": "Jobs can be added to task pools to limit parallelism",
     "memory_profile": "Litani can measure the memory usage of specific jobs",
+    "aux": "Run contains an aux field for custom user data",
+    "parallelism_metric": "Run contains process parallelism measurements",
 }
 
 

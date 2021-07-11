@@ -565,6 +565,7 @@ async def init(args):
 
     with litani.atomic_write(cache_dir / litani.CACHE_FILE) as handle:
         print(json.dumps({
+            "aux": {},
             "project": args.project_name,
             "version": litani.VERSION,
             "version_major": litani.VERSION_MAJOR,

@@ -15,13 +15,15 @@
 
 $data << EOD
 {% for sample in trace -%}
-{{ sample["time"] }} {{ sample["running"] }} {{ sample["finished"] }} {{ n_proc }}
+{{ sample["time"] }} {{ sample["running"] }} {{ n_proc }} {{ n_proc + 0.5 }} {% if loop.last %} "# cores: {{ n_proc}}" {% endif %}
 {% endfor %}{# sample in trace #}
 EOD
 
 set terminal svg noenhanced size 720,320
 
 set border 3 linecolor "#263238"
+
+set ylabel "# parallel jobs"
 
 set ytics nomirror tc "#263238" font "Helvetica,9"
 set xtics nomirror
@@ -31,4 +33,6 @@ set timefmt "%Y-%m-%dT%H:%M:%SZ"
 set format x "%H:%M:%S"
 unset key
 
-plot '$data' using 1:2 with lines lc "#ab47bc"
+plot '$data' using 1:2 with lines lc "#ab47bc", \
+  '' using 1:3 with lines lc "#cc0000", \
+  '' using 1:4:5 with labels tc "#cc0000"

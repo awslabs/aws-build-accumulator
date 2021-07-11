@@ -79,6 +79,7 @@ def validate_run(run):
     import voluptuous.humanize
     outcome = voluptuous.Any("success", "fail", "fail_ignored")
     schema = voluptuous.Schema({
+        "aux": dict,
         "run_id": str,
         "project": str,
         "pools": {voluptuous.Optional(str): int},
