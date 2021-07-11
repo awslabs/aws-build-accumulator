@@ -23,6 +23,8 @@ set terminal svg noenhanced size 720,320
 
 set border 3 linecolor "#263238"
 
+set ylabel "# parallel jobs"
+
 set ytics nomirror tc "#263238" font "Helvetica,9"
 set xtics nomirror
 
