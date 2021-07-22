@@ -88,6 +88,7 @@ def validate_run(run):
         "version_major": lib.litani.VERSION_MAJOR,
         "version_minor": lib.litani.VERSION_MINOR,
         "version_patch": lib.litani.VERSION_PATCH,
+        "release_candidate": lib.litani.RC,
         voluptuous.Optional("end_time"): _time_str,
         "status": voluptuous.Any("in_progress", "fail", "success"),
         "parallelism": voluptuous.Any({

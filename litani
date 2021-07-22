@@ -571,6 +571,7 @@ async def init(args):
             "version_major": litani.VERSION_MAJOR,
             "version_minor": litani.VERSION_MINOR,
             "version_patch": litani.VERSION_PATCH,
+            "release_candidate": litani.RC,
             "run_id": run_id,
             "start_time": now,
             "status": "in_progress",
