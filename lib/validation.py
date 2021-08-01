@@ -61,6 +61,7 @@ def _get_single_job_arguments():
         "stdout_file": voluptuous.Any(str, None),
         "ok_returns": voluptuous.Any([str], None),
         "outcome_table": voluptuous.Any(str, None),
+        "phony_outputs": voluptuous.Any([str], None),
         "ignore_returns": voluptuous.Any([str], None),
         "subcommand": voluptuous.Any("exec", "add-job"),
     }

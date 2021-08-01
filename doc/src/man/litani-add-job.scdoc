@@ -146,6 +146,22 @@ more
 	output in the _stderr_ field of the _run.json_ file. This flag is a useful
 	alternative to using shell redirection (_2>_).
 
+*--phony-outputs* _[OUT ...]_
+	Do not print a warning if this job has not written the named _OUT_ files by
+	the time it finishes running. If you do not specify any _OUT_ files, Litani
+	will not warn when _any_ output specified to the *--outputs* flag does not
+	exist when the job has finished running.
+
+	This is useful when you want to create a dependency ordering between two jobs,
+	but the first job does not write any output files that the second job can
+	depend on. To achieve this, you could pass *--outputs phony-file* when adding
+	the first job, and *--inputs phony-file* when adding the second job. However,
+	Litani will print a warning if the first job exits without writing a file
+	called _phony-file_. To suppress the warning, also pass *--phony-outputs
+	phony-file* when adding the first job. Doing this obviates the need to use
+	touchfiles for dependency ordering, which is how this must be done when using
+	a traditional build system like *make(1)*.
+
 *--pool* _P_
 	Place this job in the pool named _P_. This pool must have been declared using
 	the *--pools* flag of *litani init*. If pool _P_ has a depth of _D_, that

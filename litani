@@ -34,6 +34,7 @@ from lib import litani, litani_report, ninja_syntax
 import lib.capabilities
 import lib.graph
 import lib.job_outcome
+import lib.output_artifact
 import lib.ninja
 import lib.process
 import lib.validation
@@ -144,6 +145,11 @@ def get_add_job_args():
             "default": 10,
             "type": int,
             "help": "seconds between memory profile polls"
+        }, {
+            "flags": ["--phony-outputs"],
+            "metavar": "OUT",
+            "nargs": "*",
+            "help": "do not warn if OUT does not exist upon job completion"
         }, {
             "flags": ["--tags"],
             "metavar": "TAG",
@@ -409,7 +415,7 @@ def make_litani_exec_command(add_args):
     # lists
     for arg in [
             "inputs", "outputs", "ignore_returns", "ok_returns",
-            "tags",
+            "tags", "phony_outputs",
     ]:
         if arg not in add_args or add_args[arg] is None:
             continue
@@ -728,14 +734,19 @@ async def exec_job(args):
          out_data["wrapper_arguments"]["pipeline_name"] /
          out_data["wrapper_arguments"]["ci_stage"])
     artifacts_dir.mkdir(parents=True, exist_ok=True)
+
+    copier = lib.output_artifact.Copier(
+        artifacts_dir, out_data["wrapper_arguments"])
     for fyle in out_data["wrapper_arguments"]["outputs"] or []:
         try:
-            shutil.copy(fyle, str(artifacts_dir))
-        except FileNotFoundError:
+            copier.copy_output_file(fyle)
+        except lib.output_artifact.MissingOutput:
             logging.warning(
                 "Output file '%s' of pipeline '%s' did not exist upon job "
-                "completion. Not copying to artifacts directory.", fyle,
-            out_data["wrapper_arguments"]["pipeline_name"])
+                "completion. Not copying to artifacts directory. "
+                "If this job is not supposed to emit the file, pass "
+                "`--phony-outputs %s` to suppress this warning", fyle,
+                out_data["wrapper_arguments"]["pipeline_name"], fyle)
         except IsADirectoryError:
             artifact_src = pathlib.Path(fyle)
             try:
