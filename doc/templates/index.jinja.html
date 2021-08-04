@@ -384,7 +384,9 @@
             </li>
             {% for man in manuals %}
               <li class="navL1">
-								<a href="#litani-man_{{ man["anchor"] }}">{{ man["title"] }}</a>
+								<a
+                  href="#litani-man_{{ man["anchor"] }}"
+                  >{{ man["title"] }}({{ man["chapter"] }})</a>
               </li>
             {% endfor %}{# man in manuals #}
           </ul>
