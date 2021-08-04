@@ -79,6 +79,7 @@ RULES = [{
                "  --html-manuals ${html-mans}"
                f" --template-dir {TEMPLATE_DIR}"
                "  --out-file ${out}"
+               "  --roff-html-dir ${roff-html-dir}"
 }]
 
 
@@ -145,6 +146,7 @@ def main():
         "rule": "build_html_doc",
         "variables": {
             "html-mans": " ".join([str(h) for h in html_mans]),
+            "roff-html-dir": HTML_MAN_SRC_DIR,
         }
     })
 
