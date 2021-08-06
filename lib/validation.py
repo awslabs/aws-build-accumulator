@@ -13,8 +13,12 @@
 
 
 import datetime
+import logging
 
 import lib.litani
+
+
+_NO_VALIDATE = False
 
 
 def _ms_time_str(string):
@@ -145,18 +149,34 @@ def _single_job_schema():
 
 
 def validate_single_job(job):
-    import voluptuous
-    import voluptuous.humanize
-    schema = voluptuous.Schema(_single_job_schema(), required=True)
-    voluptuous.humanize.validate_with_humanized_errors(job, schema)
+    global _NO_VALIDATE
+
+    if _NO_VALIDATE:
+        return
+    try:
+        import voluptuous
+        import voluptuous.humanize
+        schema = voluptuous.Schema(_single_job_schema(), required=True)
+        voluptuous.humanize.validate_with_humanized_errors(job, schema)
+    except (ImportError, ModuleNotFoundError):
+        logging.debug("voluptuous not installed; not validating schema")
+        _NO_VALIDATE = True
 
 
 def validate_run(run):
-    import voluptuous
-    import voluptuous.humanize
-    outcome = voluptuous.Any("success", "fail", "fail_ignored")
-    schema = voluptuous.Schema(_run_schema(), required=True)
-    voluptuous.humanize.validate_with_humanized_errors(run, schema)
+    global _NO_VALIDATE
+
+    if _NO_VALIDATE:
+        return
+    try:
+        import voluptuous
+        import voluptuous.humanize
+        outcome = voluptuous.Any("success", "fail", "fail_ignored")
+        schema = voluptuous.Schema(_run_schema(), required=True)
+        voluptuous.humanize.validate_with_humanized_errors(run, schema)
+    except (ImportError, ModuleNotFoundError):
+        logging.debug("voluptuous not installed; not validating schema")
+        _NO_VALIDATE = True
 
 
 # doc-gen
