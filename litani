@@ -23,6 +23,7 @@ import os
 import pathlib
 import shlex
 import shutil
+import signal
 import sys
 import tempfile
 import threading
@@ -34,8 +35,11 @@ from lib import litani, litani_report, ninja_syntax
 import lib.capabilities
 import lib.graph
 import lib.job_outcome
+import lib.output_artifact
 import lib.ninja
+import lib.pid_file
 import lib.process
+import lib.run_printer
 import lib.validation
 
 
@@ -145,6 +149,11 @@ def get_add_job_args():
             "type": int,
             "help": "seconds between memory profile polls"
         }, {
+            "flags": ["--phony-outputs"],
+            "metavar": "OUT",
+            "nargs": "*",
+            "help": "do not warn if OUT does not exist upon job completion"
+        }, {
             "flags": ["--tags"],
             "metavar": "TAG",
             "nargs": "+",
@@ -235,6 +244,20 @@ def get_args():
         flags = arg.pop("flags")
         init_pars.add_argument(*flags, **arg)
 
+
+    dump_run_pars = subs.add_parser("dump-run")
+    dump_run_pars.set_defaults(func=lib.run_printer.dump_run)
+    for arg in [{
+            "flags": ["-r", "--retries"],
+            "metavar": "N",
+            "type": non_negative_int,
+            "default": 10,
+            "help":
+                "how many times to retry loading the run in 1 second intervals"
+                " (Default: %(default)s)"
+    }]:
+        flags = arg.pop("flags")
+        dump_run_pars.add_argument(*flags, **arg)
 
     graph_pars = subs.add_parser("graph")
     graph_pars.set_defaults(func=lib.graph.print_graph)
@@ -334,6 +357,7 @@ def get_args():
 ################################################################################
 
 
+
 def continuous_render_report(cache_dir, report_dir, killer, out_file):
     try:
         while True:
@@ -365,15 +389,15 @@ def set_up_logging(args):
         format="litani: %(message)s", level=level)
 
 
-def positive_int(arg):
+def non_negative_int(arg):
     try:
         ret = int(arg)
     except ValueError as e:
         raise argparse.ArgumentTypeError(
             "Timeout '%s' must be an int" % arg) from e
-    if ret <= 0:
+    if ret < 0:
         raise argparse.ArgumentTypeError(
-            "Timeout '%d' must be > 0" % ret) from e
+            "Timeout '%d' must be >= 0" % ret) from e
     return ret
 
 
@@ -409,7 +433,7 @@ def make_litani_exec_command(add_args):
     # lists
     for arg in [
             "inputs", "outputs", "ignore_returns", "ok_returns",
-            "tags",
+            "tags", "phony_outputs",
     ]:
         if arg not in add_args or add_args[arg] is None:
             continue
@@ -571,6 +595,7 @@ async def init(args):
             "version_major": litani.VERSION_MAJOR,
             "version_minor": litani.VERSION_MINOR,
             "version_patch": litani.VERSION_PATCH,
+            "release_candidate": litani.RC,
             "run_id": run_id,
             "start_time": now,
             "status": "in_progress",
@@ -644,6 +669,10 @@ async def run_build(args):
     runner = lib.ninja.Runner(
         ninja_file, args.dry_run, args.parallel, args.pipelines,
         args.ci_stage)
+
+    lib.pid_file.write()
+    sig_handler = lib.run_printer.DumpRunSignalHandler(cache_dir)
+    signal.signal(lib.run_printer.DUMP_SIGNAL, sig_handler)
     runner.run()
 
     now = datetime.datetime.now(datetime.timezone.utc).strftime(
@@ -727,14 +756,19 @@ async def exec_job(args):
          out_data["wrapper_arguments"]["pipeline_name"] /
          out_data["wrapper_arguments"]["ci_stage"])
     artifacts_dir.mkdir(parents=True, exist_ok=True)
+
+    copier = lib.output_artifact.Copier(
+        artifacts_dir, out_data["wrapper_arguments"])
     for fyle in out_data["wrapper_arguments"]["outputs"] or []:
         try:
-            shutil.copy(fyle, str(artifacts_dir))
-        except FileNotFoundError:
+            copier.copy_output_file(fyle)
+        except lib.output_artifact.MissingOutput:
             logging.warning(
                 "Output file '%s' of pipeline '%s' did not exist upon job "
-                "completion. Not copying to artifacts directory.", fyle,
-            out_data["wrapper_arguments"]["pipeline_name"])
+                "completion. Not copying to artifacts directory. "
+                "If this job is not supposed to emit the file, pass "
+                "`--phony-outputs %s` to suppress this warning", fyle,
+                out_data["wrapper_arguments"]["pipeline_name"], fyle)
         except IsADirectoryError:
             artifact_src = pathlib.Path(fyle)
             try:

@@ -1,6 +1,16 @@
                               CHANGELOG
                               `````````
 
+Version 1.11.0 -- 2021-08-13
+----------------------------
+
+- Added --phony-outputs flag to litani add-job
+- Added litani dump-run command
+- Added auto-generated documentation for run.json schema
+- Added more documentation
+
+
+
 Version 1.10.0 -- 2021-07-11
 ----------------------------
 
