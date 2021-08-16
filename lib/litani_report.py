@@ -83,10 +83,13 @@ class PipelineDepgraphRenderer:
         dot_graph = lib.graph.SinglePipelineGraph.render(self.pipe)
         out_file.parent.mkdir(exist_ok=True, parents=True)
         with open(out_file, "w") as handle:
-            with subprocess.Popen(
-                    ["dot", "-Tsvg"], text=True, stdin=subprocess.PIPE,
-                    stdout=handle) as proc:
-                proc.communicate(input=dot_graph)
+            try:
+                with subprocess.Popen(
+                        ["dot", "-Tsvg"], text=True, stdin=subprocess.PIPE,
+                        stdout=handle) as proc:
+                    proc.communicate(input=dot_graph)
+            except FileNotFoundError:
+                return False
         return not proc.returncode
 
 
