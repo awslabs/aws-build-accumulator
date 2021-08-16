@@ -30,7 +30,7 @@ RUN_FILE = "run.json"
 TIME_FORMAT_R = "%Y-%m-%dT%H:%M:%SZ"
 TIME_FORMAT_W = "%Y-%m-%dT%H:%M:%SZ"
 TIME_FORMAT_MS = "%Y-%m-%dT%H:%M:%S.%fZ"
-VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH = 1, 11, 0
+VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH = 1, 11, 1
 RC = False
 
 RC_STR = "-rc" if RC else ""

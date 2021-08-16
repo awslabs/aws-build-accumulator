@@ -1,6 +1,13 @@
                               CHANGELOG
                               `````````
 
+Version 1.11.1 -- 2021-08-16
+----------------------------
+
+- Make dependency on graphviz optional
+
+
+
 Version 1.11.0 -- 2021-08-13
 ----------------------------
 
