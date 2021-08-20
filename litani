@@ -614,6 +614,14 @@ async def add_job(args):
     jobs_dir = litani.get_cache_dir() / litani.JOBS_DIR
     jobs_dir.mkdir(exist_ok=True, parents=True)
 
+    if args.phony_outputs:
+        if not args.outputs:
+            args.outputs = args.phony_outputs
+        else:
+            for phony_output in args.phony_outputs:
+                if phony_output not in args.outputs:
+                    args.outputs.append(phony_output)
+
     job = vars(args)
     job.pop("func")
 
