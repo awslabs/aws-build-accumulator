@@ -19,6 +19,7 @@ import dataclasses
 import json
 import os
 import pathlib
+import random
 import signal
 import sys
 import time
@@ -33,6 +34,23 @@ DUMP_SIGNAL = signal.SIGUSR1
 _DUMPED_RUN = "dumped-run.json"
 
 
+
+@dataclasses.dataclass
+class BackoffSleeper:
+    jitter: float
+    duration: float = 0.2
+    multiplier: int = 2
+
+
+    def sleep(self):
+        time.sleep(self.duration)
+
+        self.duration += self.jitter
+        self.duration *= self.multiplier
+        self.jitter *= self.multiplier
+
+
+
 def _exit_success(run):
     print(json.dumps(run, indent=2))
     sys.exit(0)
@@ -43,32 +61,33 @@ def _exit_error():
     sys.exit(0)
 
 
-def _try_dump_run(cache_dir):
+def _try_dump_run(cache_dir, pid, sleeper):
+    os.kill(pid, DUMP_SIGNAL)
     try:
         with open(cache_dir / _DUMPED_RUN) as handle:
             run = json.load(handle)
-        os.unlink(cache_dir / _DUMPED_RUN)
         _exit_success(run)
     except (FileNotFoundError, json.decoder.JSONDecodeError):
-        time.sleep(1)
+        sleeper.sleep()
 
 
 async def dump_run(args):
+    random.seed()
+
     try:
         pid = lib.pid_file.read()
     except FileNotFoundError:
         _exit_error()
 
-    os.kill(pid, DUMP_SIGNAL)
-
     cache_dir = lib.litani.get_cache_dir()
 
+    sleeper = BackoffSleeper(jitter=random.random())
     if args.retries:
         for _ in range(args.retries):
-            _try_dump_run(cache_dir)
+            _try_dump_run(cache_dir, pid, sleeper)
     else:
         while True:
-            _try_dump_run(cache_dir)
+            _try_dump_run(cache_dir, pid, sleeper)
     _exit_error()
 
 
