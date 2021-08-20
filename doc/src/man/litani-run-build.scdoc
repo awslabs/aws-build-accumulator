@@ -27,6 +27,13 @@ litani run-build [OPTION...]
 This program executes a Litani run. The run must have been created using
 *litani init* and had jobs added to it using *litani add-job*.
 
+
+# MULTIPROCESS SAFETY
+
+It is *NOT SAFE* to run multiple invocations of *litani run-build* in
+parallel.
+
+
 # OPTIONS
 
 *-n*, *--dry-run*

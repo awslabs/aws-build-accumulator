@@ -36,11 +36,22 @@ _run.json_ file in the run's output directory.
 
 This program may be run as a Litani job, and it may be run as a subprocess from
 a command that is part of a Litani job. This allows commands to 'introspect' on
-a Litani run so far. It is guaranteed that if a Litani job runs *litani
+a Litani run so far. It is guaranteed that if a single Litani job runs *litani
 dump-run*, all of the reverse-dependencies of that job will have the
 _"complete"_ key set to *True* in the printed _run.json_ file. That is, any job
 that runs *litani dump-run* will always see the most up-to-date state of the
 build with respect to its own reverse dependencies.
+
+
+# MULTIPROCESS SAFETY
+
+It is safe to run multiple invocations of *litani dump-run* in parallel.
+However, if you do so, the printed result may be slightly out-of-date.
+If you run *litani dump-run* from a running Litani job, the recommended
+way to sanity-check the output is to check that the _"complete"_ key of
+the job's reverse-dependencies are set to *True*. If this is not the
+case, then clients can run *litani dump-run* again to try for a more
+up-to-date run. This may be fixed in a future version.
 
 
 # OPTIONS

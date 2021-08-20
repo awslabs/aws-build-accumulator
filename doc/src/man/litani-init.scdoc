@@ -39,6 +39,14 @@ find the output directory. Litani will search the following locations for the fi
 
 This allows you to run *litani init* in the 'root' of a project, and subsequently run *litani add-job* further down in the project.
 
+
+# MULTIPROCESS SAFETY
+
+It is safe but pointless to run *litani init* more than once in
+parallel. One of the invocations will 'win', and subsequent invocations
+of *litani add-job* will add jobs to a single run.
+
+
 # OPTIONS
 
 *--project-name* _NAME_
