@@ -20,6 +20,7 @@ import os
 import pathlib
 import shutil
 import sys
+import uuid
 
 
 CACHE_FILE = "cache.json"
@@ -210,7 +211,7 @@ def atomic_write(path, mode="w"):
     try:
         parent = pathlib.Path(path).parent
         parent.mkdir(exist_ok=True, parents=True)
-        tmp = "%s~" % path
+        tmp = "%s~%s" % (path, str(uuid.uuid4()))
         # pylint: disable=consider-using-with
         handle = open(tmp, mode)
         yield handle
