@@ -16,7 +16,9 @@
 
 
 import dataclasses
+import functools
 import json
+import logging
 import os
 import pathlib
 import random
@@ -51,6 +53,65 @@ class BackoffSleeper:
 
 
 
+class InconsistentRunError(RuntimeError):
+    pass
+
+
+
+def run_consistent_to_job(run, job_id):
+    """True iff the reverse-dependencies of job_id are marked as complete"""
+
+    out_to_status = {}
+    job_ins = []
+    found = False
+
+    for pipe in run["pipelines"]:
+        for stage in pipe["ci_stages"]:
+            for job in stage["jobs"]:
+                current_id = job["wrapper_arguments"]["job_id"]
+                if current_id == job_id:
+                    found = True
+                    job_ins = job["wrapper_arguments"]["inputs"] or []
+
+                for out in job["wrapper_arguments"]["outputs"] or []:
+                    if out in out_to_status:
+                        logging.warning(
+                            "Two jobs share an output '%s'. Jobs: %s and %s",
+                            out, out_to_status[out]["job_id"], current_id)
+                    out_to_status[out] = {
+                        "job_id": current_id,
+                        "complete": job["complete"],
+                    }
+    if not found:
+        logging.error(
+            "Could not find job with ID '%s' in run", job_id)
+        raise InconsistentRunError()
+
+    for inputt in job_ins:
+        if inputt not in out_to_status:
+            continue
+        if not out_to_status[inputt]["complete"]:
+            logging.debug(
+                "Run inconsistent: job '%s' is a reverse-dependency of "
+                "job '%s' through input '%s', but the reverse-dependency "
+                "job is not marked as complete.",
+                out_to_status[inputt]["job_id"], job_id, inputt)
+            raise InconsistentRunError()
+    return True
+
+
+def get_run_checker():
+    # If we're being run from inside a litani job, we should check that the run
+    # is consistent with the job before printing out the run. Otherwise, no
+    # check is required, just print out the run.
+
+    parent_job_id = os.getenv(lib.litani.ENV_VAR_JOB_ID)
+    if parent_job_id:
+        return functools.partial(run_consistent_to_job, job_id=parent_job_id)
+    return lambda run: True
+
+
+
 def _exit_success(run):
     print(json.dumps(run, indent=2))
     sys.exit(0)
@@ -61,13 +122,16 @@ def _exit_error():
     sys.exit(0)
 
 
-def _try_dump_run(cache_dir, pid, sleeper):
+def _try_dump_run(cache_dir, pid, sleeper, check_run):
     os.kill(pid, DUMP_SIGNAL)
     try:
         with open(cache_dir / _DUMPED_RUN) as handle:
             run = json.load(handle)
+        check_run(run)
         _exit_success(run)
-    except (FileNotFoundError, json.decoder.JSONDecodeError):
+    except (
+            FileNotFoundError, json.decoder.JSONDecodeError,
+            InconsistentRunError):
         sleeper.sleep()
 
 
@@ -82,12 +146,14 @@ async def dump_run(args):
     cache_dir = lib.litani.get_cache_dir()
 
     sleeper = BackoffSleeper(jitter=random.random())
+    check_run = get_run_checker()
+
     if args.retries:
         for _ in range(args.retries):
-            _try_dump_run(cache_dir, pid, sleeper)
+            _try_dump_run(cache_dir, pid, sleeper, check_run)
     else:
         while True:
-            _try_dump_run(cache_dir, pid, sleeper)
+            _try_dump_run(cache_dir, pid, sleeper, check_run)
     _exit_error()
 
 
