@@ -186,3 +186,10 @@ more
 *--profile-memory-interval* _N_
 	Profiles the memory usage of this job every _N_ seconds. Has no effect unless
 	*--profile-memory* is also passed.
+
+
+# ENVIRONMENT VARIABLES
+
+*LITANI_JOB_ID*
+	Litani passes the job's unique ID to the command through this environment variable.
+	The unique id is the _job\_id_ field in the *litani-run.json(5)* representation.
