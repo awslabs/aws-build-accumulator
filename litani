@@ -736,7 +736,8 @@ async def exec_job(args):
 
     run = lib.process.Runner(
         args.command, args.interleave_stdout_stderr, args.cwd,
-        args.timeout, args.profile_memory, args.profile_memory_interval)
+        args.timeout, args.profile_memory, args.profile_memory_interval,
+        args_dict["job_id"])
     await run()
     lib.job_outcome.fill_in_result(run, out_data, args)
 

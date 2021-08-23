@@ -18,6 +18,7 @@ import dataclasses
 import datetime
 import decimal
 import logging
+import os
 import platform
 import subprocess
 import sys
@@ -199,6 +200,7 @@ class _Process:
     interleave_stdout_stderr: bool
     timeout: int
     cwd: str
+    job_id: str
     proc: subprocess.CompletedProcess = None
     stdout: str = None
     stderr: str = None
@@ -211,9 +213,12 @@ class _Process:
         else:
             pipe = asyncio.subprocess.PIPE
 
+        env = dict(os.environ)
+        env[lib.litani.ENV_VAR_JOB_ID] = self.job_id
+
         proc = await asyncio.create_subprocess_shell(
             self.command, stdout=asyncio.subprocess.PIPE, stderr=pipe,
-            cwd=self.cwd)
+            cwd=self.cwd, env=env)
         self.proc = proc
 
         timeout_reached = False
@@ -250,11 +255,11 @@ class Runner:
 
     def __init__(
             self, command, interleave_stdout_stderr, cwd, timeout,
-            profile_memory, profile_interval):
+            profile_memory, profile_interval, job_id):
         self.tasks = []
         self.runner = _Process(
             command=command, interleave_stdout_stderr=interleave_stdout_stderr,
-            cwd=cwd, timeout=timeout)
+            cwd=cwd, timeout=timeout, job_id=job_id)
         self.tasks.append(self.runner)
 
         self.profiler = None

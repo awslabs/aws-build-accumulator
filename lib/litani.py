@@ -26,6 +26,7 @@ import uuid
 CACHE_FILE = "cache.json"
 CACHE_POINTER = ".litani_cache_dir"
 CI_STAGES = ["build", "test", "report"]
+ENV_VAR_JOB_ID = "LITANI_JOB_ID"
 JOBS_DIR = "jobs"
 RUN_FILE = "run.json"
 TIME_FORMAT_R = "%Y-%m-%dT%H:%M:%SZ"
