@@ -1,6 +1,21 @@
                               CHANGELOG
                               `````````
 
+
+Version 1.12.0 -- 2021-08-24
+----------------------------
+
+- The --phony-outputs flag now has a slightly changed semantic
+    Outputs passed to --phony-outputs no longer need to be also passed
+    to --outputs to be considered an output. That is, the set of outputs
+    of a job is the union of the outputs and the phony outputs. This is
+    a backward-compatible change that should make configure scripts
+    shorter.
+
+- The `dump-run` command is more reliable when being run in parallel
+
+
+
 Version 1.11.1 -- 2021-08-16
 ----------------------------
 

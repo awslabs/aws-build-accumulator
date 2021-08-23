@@ -44,6 +44,14 @@ aspects of the program: timeouts, dealing with return codes, output streams, and
 more
 
 
+# MULTIPROCESS SAFETY
+
+It is safe to run multiple invocations of *litani add-job* in parallel.
+Having a configure script that can run multiple invocations of *litani
+add-job* from a thread pool (or similar) is recommended to decrease
+configure times.
+
+
 # OPTIONS
 
 *--command* _CMD_
@@ -186,3 +194,10 @@ more
 *--profile-memory-interval* _N_
 	Profiles the memory usage of this job every _N_ seconds. Has no effect unless
 	*--profile-memory* is also passed.
+
+
+# ENVIRONMENT VARIABLES
+
+*LITANI_JOB_ID*
+	Litani passes the job's unique ID to the command through this environment variable.
+	The unique id is the _job\_id_ field in the *litani-run.json(5)* representation.

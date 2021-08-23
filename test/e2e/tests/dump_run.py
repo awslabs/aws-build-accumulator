@@ -50,7 +50,7 @@ def get_jobs():
         }
     }, {
         "kwargs": {
-            "command": "sleep 15",
+            "command": "sleep 10",
             "description": "LONG",
             "ci-stage": "build",
             "pipeline": "foo",
