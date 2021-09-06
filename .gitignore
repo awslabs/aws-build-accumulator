@@ -10,3 +10,5 @@ examples/rich-output/*.csv
 __pycache__/
 
 build.ninja
+
+tmp
