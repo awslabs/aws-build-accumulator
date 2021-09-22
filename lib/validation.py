@@ -144,7 +144,6 @@ def _single_job_schema():
         # codes (or 0), then the outcome will be set to 'fail_ignored'.
 
         "subcommand": voluptuous.Any("exec", "add-job"),
-
     }
 
 
@@ -445,5 +444,8 @@ def _run_schema():
                 })],
             }],
         }],
+
+        "latest_symlink": voluptuous.Any(str, None),
+        # The symbolic link to the report advertised to users
     }
 # end-doc-gen
