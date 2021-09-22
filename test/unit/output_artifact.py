@@ -32,7 +32,7 @@ class TestOutputArtifact(unittest.TestCase):
         copier = lib.output_artifact.Copier(self.artifacts_dir, job_args)
 
         with self.assertRaises(lib.output_artifact.MissingOutput):
-            copier.copy_output_file("foo")
+            copier.copy_output_artifact("foo")
 
 
     def test_null_flag(self):
@@ -42,7 +42,7 @@ class TestOutputArtifact(unittest.TestCase):
         copier = lib.output_artifact.Copier(self.artifacts_dir, job_args)
 
         with self.assertRaises(lib.output_artifact.MissingOutput):
-            copier.copy_output_file("foo")
+            copier.copy_output_artifact("foo")
 
 
     def test_all_phony(self):
@@ -50,7 +50,7 @@ class TestOutputArtifact(unittest.TestCase):
             "phony_outputs": [],
         }
         copier = lib.output_artifact.Copier(self.artifacts_dir, job_args)
-        copier.copy_output_file("foo")
+        copier.copy_output_artifact("foo")
 
 
     def test_different_phony(self):
@@ -60,7 +60,7 @@ class TestOutputArtifact(unittest.TestCase):
         copier = lib.output_artifact.Copier(self.artifacts_dir, job_args)
 
         with self.assertRaises(lib.output_artifact.MissingOutput):
-            copier.copy_output_file("foo")
+            copier.copy_output_artifact("foo")
 
 
     def test_file_phony(self):
@@ -68,4 +68,4 @@ class TestOutputArtifact(unittest.TestCase):
             "phony_outputs": ["foo"],
         }
         copier = lib.output_artifact.Copier(self.artifacts_dir, job_args)
-        copier.copy_output_file("foo")
+        copier.copy_output_artifact("foo")

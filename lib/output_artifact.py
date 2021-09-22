@@ -33,7 +33,7 @@ class Copier:
     job_args: dict
 
 
-    def copy_output_file(self, fyle):
+    def copy_output_artifact(self, fyle):
         try:
             if os.path.isfile(fyle):
                 shutil.copy(fyle, self.artifacts_dir)
