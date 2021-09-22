@@ -41,7 +41,6 @@ class Copier:
             if os.path.isdir(fyle):
                 shutil.copytree(fyle, self.artifacts_dir, dirs_exist_ok=True)
                 return
-            logging.warning("Can't copy %s: expected a file or a directory", fyle)
             raise FileNotFoundError
         except FileNotFoundError as e:
             if "phony_outputs" not in self.job_args:
