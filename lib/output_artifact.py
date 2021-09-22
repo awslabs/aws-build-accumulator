@@ -13,6 +13,8 @@
 
 
 import dataclasses
+import logging
+import os
 import pathlib
 import shutil
 
@@ -25,7 +27,7 @@ class MissingOutput(Exception):
 
 @dataclasses.dataclass
 class Copier:
-    """Copy output artifacts to a directory, raising if they don't exist"""
+    """Copy output artifacts to a directory, raising MissingOutput if they don't exist"""
 
     artifacts_dir: pathlib.Path
     job_args: dict
@@ -33,7 +35,14 @@ class Copier:
 
     def copy_output_file(self, fyle):
         try:
-            shutil.copy(fyle, self.artifacts_dir)
+            if os.path.isfile(fyle):
+                shutil.copy(fyle, self.artifacts_dir)
+                return
+            if os.path.isdir(fyle):
+                shutil.copytree(fyle, self.artifacts_dir, dirs_exist_ok=True)
+                return
+            logging.warning("Can't copy %s: expected a file or a directory", fyle)
+            raise FileNotFoundError
         except FileNotFoundError as e:
             if "phony_outputs" not in self.job_args:
                 raise MissingOutput() from e
