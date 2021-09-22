@@ -770,7 +770,7 @@ async def exec_job(args):
         artifacts_dir, out_data["wrapper_arguments"])
     for fyle in out_data["wrapper_arguments"]["outputs"] or []:
         try:
-            copier.copy_output_file(fyle)
+            copier.copy_output_artifact(fyle)
         except lib.output_artifact.MissingOutput:
             logging.warning(
                 "Output file '%s' of pipeline '%s' did not exist upon job "
