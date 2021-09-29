@@ -319,9 +319,9 @@ p {
       </div><!-- class="pipeline-name" -->
 
       <div class="pipeline-progress pipeline-header">
-        <p id="build-title">Build</p>
-        <p id="test-title">Test</p>
-        <p id="report-title">Report</p>
+        <p id="build-title">{{ run["stages"][0] }}</p>
+        <p id="test-title">{{ run["stages"][1] }}</p>
+        <p id="report-title">{{ run["stages"][2] }}</p>
       </div><!-- class="pipeline-progress" -->
     </div><!-- class="pipeline-row" -->
 

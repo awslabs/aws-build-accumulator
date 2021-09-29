@@ -78,9 +78,7 @@ def get_add_job_args():
             "flags": ["--ci-stage"],
             "required": True,
             "metavar": "S",
-            "choices": litani.CI_STAGES,
             "help": "which CI stage this job should execute in. "
-                    "Must be one of {%(choices)s}.",
         }, {
             "flags": ["--cwd"],
             "metavar": "DIR",
@@ -221,6 +219,12 @@ def get_args():
             "flags": ["--output-symlink"],
             "help": "create a symbolic link from DIR to litani's output directory",
             "metavar": "DIR"
+        }, {
+            "flags": ["--stage-names"],
+            "help":
+                "stage names for the project",
+            "metavar": "NAME",
+            "nargs": "+",
     }]:
         flags = arg.pop("flags")
         init_pars.add_argument(*flags, **arg)
@@ -312,10 +316,8 @@ def get_args():
     }, {
             "flags": ["-s", "--ci-stage"],
             "metavar": "S",
-            "choices": litani.CI_STAGES,
             "help": (
                 "only run jobs that are part of the specified ci stage. S "
-                "must be one of %(choices)s."
             )
     }]:
         flags = arg.pop("flags")
@@ -452,11 +454,14 @@ def make_litani_exec_command(add_args):
     return " ".join(cmd)
 
 
-def fill_out_ninja(cache, rules, builds, pools):
+def fill_out_ninja(cache, stages, rules, builds, pools):
     phonies = {
         "pipeline_name": {},
         "ci_stage": {},
     }
+
+    for stage in cache["stages"]:
+        stages += stage
 
     for name, depth in cache["pools"].items():
         pools[name] = depth
@@ -541,6 +546,19 @@ def get_pools(args):
 
     return ret
 
+def get_stages(args):
+    ret = litani.DEFAULT_STAGES
+    if not args.stage_names:
+        return ret
+    num_stage_names = len(args.stage_names)
+    if num_stage_names > 3:
+        logging.error(
+            "Cannot provide more than 3 stage names")
+        sys.exit(1)
+    for i in range(len(args.stage_names)):
+        ret[i] = args.stage_names[i]
+
+    return ret
 
 ################################################################################
 # Entry points
@@ -597,6 +615,7 @@ async def init(args):
             "version_patch": litani.VERSION_PATCH,
             "release_candidate": litani.RC,
             "run_id": run_id,
+            "stages": get_stages(args),
             "start_time": now,
             "status": "in_progress",
             "pools": get_pools(args),
@@ -650,7 +669,8 @@ async def run_build(args):
     rules = []
     builds = []
     pools = {}
-    fill_out_ninja(cache, rules, builds, pools)
+    stages = []
+    fill_out_ninja(cache, stages, rules, builds, pools)
 
     ninja_file = cache_dir / "litani.ninja"
     with litani.atomic_write(ninja_file) as handle:
