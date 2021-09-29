@@ -319,9 +319,9 @@ p {
       </div><!-- class="pipeline-name" -->
 
       <div class="pipeline-progress pipeline-header">
-        <p id="build-title">Build</p>
-        <p id="test-title">Test</p>
-        <p id="report-title">Report</p>
+        {% for stage in run["stages"] %}
+        <p>{{ stage }}</p>
+        {% endfor %}{# stage in run["stages"] #}
       </div><!-- class="pipeline-progress" -->
     </div><!-- class="pipeline-row" -->
 

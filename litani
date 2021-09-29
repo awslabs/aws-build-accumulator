@@ -78,9 +78,7 @@ def get_add_job_args():
             "flags": ["--ci-stage"],
             "required": True,
             "metavar": "S",
-            "choices": litani.CI_STAGES,
             "help": "which CI stage this job should execute in. "
-                    "Must be one of {%(choices)s}.",
         }, {
             "flags": ["--cwd"],
             "metavar": "DIR",
@@ -221,6 +219,12 @@ def get_args():
             "flags": ["--output-symlink"],
             "help": "create a symbolic link from DIR to litani's output directory",
             "metavar": "DIR"
+        }, {
+            "flags": ["--stages"],
+            "default": litani.DEFAULT_STAGES,
+            "help": "stages that a job can be a member of. Default: %(default)s",
+            "metavar": "NAME",
+            "nargs": "+",
     }]:
         flags = arg.pop("flags")
         init_pars.add_argument(*flags, **arg)
@@ -312,10 +316,8 @@ def get_args():
     }, {
             "flags": ["-s", "--ci-stage"],
             "metavar": "S",
-            "choices": litani.CI_STAGES,
             "help": (
                 "only run jobs that are part of the specified ci stage. S "
-                "must be one of %(choices)s."
             )
     }]:
         flags = arg.pop("flags")
@@ -597,6 +599,7 @@ async def init(args):
             "version_patch": litani.VERSION_PATCH,
             "release_candidate": litani.RC,
             "run_id": run_id,
+            "stages": args.stages,
             "start_time": now,
             "status": "in_progress",
             "pools": get_pools(args),
