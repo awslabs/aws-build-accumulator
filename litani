@@ -602,6 +602,7 @@ async def init(args):
             "pools": get_pools(args),
             "jobs": [],
             "parallelism": {},
+            "latest_symlink": str(latest_symlink),
         }, indent=2), file=handle)
 
     logging.info("cache dir is at: %s", cache_dir)
@@ -717,6 +718,12 @@ async def run_build(args):
         with litani.atomic_write(args.out_file) as handle:
             print(json.dumps(run, indent=2), file=handle)
 
+    # Print the path to the complete report at the end of 'litani run-build'.
+    # The same path was printed at the start of 'litani init'.
+    if 'latest_symlink' in run_info:
+        print("Report was rendered at "
+              f"file://{run_info['latest_symlink']}/html/index.html")
+
     if args.fail_on_pipeline_failure:
         sys.exit(0 if runner.was_successful() else 1)
 
@@ -770,7 +777,7 @@ async def exec_job(args):
         artifacts_dir, out_data["wrapper_arguments"])
     for fyle in out_data["wrapper_arguments"]["outputs"] or []:
         try:
-            copier.copy_output_file(fyle)
+            copier.copy_output_artifact(fyle)
         except lib.output_artifact.MissingOutput:
             logging.warning(
                 "Output file '%s' of pipeline '%s' did not exist upon job "
