@@ -441,7 +441,7 @@ def sort_run(run):
     js = functools.cmp_to_key(job_sorter)
     for pipe in run["pipelines"].values():
         stages = []
-        for stage in pipe["ci_stages"]:
+        for stage in run["stages"]:
             try:
                 pipeline_stage = pipe["ci_stages"][stage]
             except KeyError:
