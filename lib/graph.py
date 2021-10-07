@@ -34,6 +34,11 @@ class Node:
         return string
 
 
+def wrap_command(limit, command):
+    occurrences = re.findall('.{1,%i}' % limit, command)
+    newline_separated_command = '\n'.join(occurrences)
+    return newline_separated_command
+
 
 class DependencyNode(Node):
     def __init__(self, fyle, truncate=30, **style):
@@ -46,8 +51,9 @@ class DependencyNode(Node):
         self.style = style
 
         if len(path.name) + len(ext) > truncate:
-            self.style["label"] = '\n'.join(
-                re.findall('.{1,%i}' % (truncate - 1 - len(ext)), path.name)
+            self.style["label"] = wrap_command(
+                truncate - 1 - len(ext),
+                path.name
             ) + ext
         else:
             self.style["label"] = path.name
@@ -76,9 +82,7 @@ class CommandNode(Node):
         self.style = style
 
         if len(command) > truncate:
-            self.style["label"] = '\n'.join(
-                re.findall('.{1,%i}' % truncate, command)
-            )
+            self.style["label"] = wrap_command(truncate-1, command)
         else:
             self.style["label"] = command
         self.style["shape"] = "box"
