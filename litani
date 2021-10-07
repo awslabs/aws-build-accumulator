@@ -304,6 +304,10 @@ def get_args():
             "flags": ["--fail-on-pipeline-failure"],
             "action": "store_true",
             "help": "exit with a non-zero return code if some pipelines failed"
+    }, {
+            "flags": ["--no-pipeline-dep-graph"],
+            "action": "store_true",
+            "help": "do not attempt to generate pipeline dependency graph"
     }]:
         flags = arg.pop("flags")
         run_build_pars.add_argument(*flags, **arg)
@@ -678,11 +682,11 @@ async def run_build(args):
         for build in builds:
             logging.debug(build)
             ninja.build(**build)
-
     report_dir = litani.get_report_dir()
     run = litani_report.get_run_data(cache_dir)
     lib.validation.validate_run(run)
-    pipeline_degraph_renderer = litani_report.PipelineDepgraphRenderer()
+    pipeline_degraph_renderer = litani_report.PipelineDepgraphRenderer(
+        should_render=not args.no_pipeline_dep_graph)
     litani_report.render(run, report_dir, pipeline_degraph_renderer)
     killer = threading.Event()
     render_thread = threading.Thread(
