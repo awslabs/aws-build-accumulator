@@ -220,9 +220,9 @@ def get_args():
             "help": "create a symbolic link from DIR to litani's output directory",
             "metavar": "DIR"
         }, {
-            "flags": ["--stage-names"],
-            "help":
-                "stage names for the project",
+            "flags": ["--stages"],
+            "default": litani.DEFAULT_STAGES,
+            "help": "stages that a job can be a member of. Default: %(default)s",
             "metavar": "NAME",
             "nargs": "+",
     }]:
@@ -454,14 +454,11 @@ def make_litani_exec_command(add_args):
     return " ".join(cmd)
 
 
-def fill_out_ninja(cache, stages, rules, builds, pools):
+def fill_out_ninja(cache, rules, builds, pools):
     phonies = {
         "pipeline_name": {},
         "ci_stage": {},
     }
-
-    for stage in cache["stages"]:
-        stages += stage
 
     for name, depth in cache["pools"].items():
         pools[name] = depth
@@ -546,19 +543,6 @@ def get_pools(args):
 
     return ret
 
-def get_stages(args):
-    ret = litani.DEFAULT_STAGES
-    if not args.stage_names:
-        return ret
-    num_stage_names = len(args.stage_names)
-    if num_stage_names > 3:
-        logging.error(
-            "Cannot provide more than 3 stage names")
-        sys.exit(1)
-    for i in range(len(args.stage_names)):
-        ret[i] = args.stage_names[i]
-
-    return ret
 
 ################################################################################
 # Entry points
@@ -615,7 +599,7 @@ async def init(args):
             "version_patch": litani.VERSION_PATCH,
             "release_candidate": litani.RC,
             "run_id": run_id,
-            "stages": get_stages(args),
+            "stages": args.stages,
             "start_time": now,
             "status": "in_progress",
             "pools": get_pools(args),
@@ -669,8 +653,7 @@ async def run_build(args):
     rules = []
     builds = []
     pools = {}
-    stages = []
-    fill_out_ninja(cache, stages, rules, builds, pools)
+    fill_out_ninja(cache, rules, builds, pools)
 
     ninja_file = cache_dir / "litani.ninja"
     with litani.atomic_write(ninja_file) as handle:

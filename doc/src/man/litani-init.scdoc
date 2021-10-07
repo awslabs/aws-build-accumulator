@@ -54,11 +54,10 @@ of *litani add-job* will add jobs to a single run.
 	at the top of the HTML report. The project name is also included in the
 	_run.json_ file to help find all the runs for a particular project.
 
-*--stage-names _NAME_ _[NAME...]_
-	The stage names that this run is composed of. Stage names are printed in
-	above the first pipeline in the run. It is possible to provide up to three
-	names using this flag. Default stage names are used if less than three names
-	are provided.
+*--stages _NAME_ _[NAME...]_
+	The stages that this run is composed of. At least one stage has to be
+	provided. If this flag is not specified, the default stages `build`, `test`
+	and `report` are used.
 
 *--pools* _NAME:DEPTH_ _[NAME:DEPTH...]_
 	The job pools that you will subsequently add jobs into using the *--pool* flag
