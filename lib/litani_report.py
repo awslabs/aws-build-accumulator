@@ -74,31 +74,33 @@ class Gnuplot:
 # ______________________________________________________________________________
 
 
-@dataclasses.dataclass
 class PipelineDepgraphRenderer:
-    pipe: dict
+    def __init__(self):
+        self.should_render = shutil.which("dot") is not None
+
+        if not self.should_render:
+            logging.info(
+                "Graphviz is not installed; pipeline dependency "
+                "graph will not be rendered")
 
 
-    def render_to_file(self, out_file):
-        dot_graph = lib.graph.SinglePipelineGraph.render(self.pipe)
+    def render_to_file(self, out_file, pipe):
+        dot_graph = lib.graph.SinglePipelineGraph.render(pipe)
         out_file.parent.mkdir(exist_ok=True, parents=True)
         with open(out_file, "w") as handle:
-            try:
-                with subprocess.Popen(
-                        ["dot", "-Tsvg"], text=True, stdin=subprocess.PIPE,
-                        stdout=handle) as proc:
-                    proc.communicate(input=dot_graph)
-            except FileNotFoundError:
-                return False
+            with subprocess.Popen(
+                    ["dot", "-Tsvg"], text=True, stdin=subprocess.PIPE,
+                    stdout=handle) as proc:
+                proc.communicate(input=dot_graph)
         return not proc.returncode
 
 
-    @staticmethod
-    def render(render_root, pipe_url, pipe):
-        pdr = PipelineDepgraphRenderer(pipe)
+    def render(self, render_root, pipe_url, pipe):
+        if not self.should_render:
+            return
         out_rel = pipe_url / "dependencies.svg"
         out_file = render_root / out_rel
-        success = pdr.render_to_file(out_file=out_file)
+        success = self.render_to_file(out_file=out_file, pipe=pipe)
         if success:
             pipe["dependencies_url"] = "dependencies.svg"
 
@@ -511,7 +513,7 @@ def get_git_hash():
         return None
 
 
-def render(run, report_dir):
+def render(run, report_dir, pipeline_degraph_renderer):
     temporary_report_dir = litani.get_report_data_dir() / str(uuid.uuid4())
     temporary_report_dir.mkdir(parents=True)
     old_report_dir_path = litani.get_report_dir().resolve()
@@ -547,7 +549,7 @@ def render(run, report_dir):
 
     pipe_templ = env.get_template("pipeline.jinja.html")
     for pipe in run["pipelines"]:
-        PipelineDepgraphRenderer.render(
+        pipeline_degraph_renderer.render(
             render_root=temporary_report_dir,
             pipe_url=pathlib.Path(pipe["url"]), pipe=pipe)
         for stage in pipe["ci_stages"]:

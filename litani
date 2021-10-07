@@ -360,7 +360,8 @@ def get_args():
 
 
 
-def continuous_render_report(cache_dir, report_dir, killer, out_file):
+def continuous_render_report(
+    cache_dir, report_dir, killer, out_file, pipeline_degraph_renderer):
     try:
         while True:
             run = litani_report.get_run_data(cache_dir)
@@ -370,7 +371,7 @@ def continuous_render_report(cache_dir, report_dir, killer, out_file):
             if out_file is not None:
                 with litani.atomic_write(out_file) as handle:
                     print(json.dumps(run, indent=2), file=handle)
-            litani_report.render(run, report_dir)
+            litani_report.render(run, report_dir, pipeline_degraph_renderer)
             if killer.is_set():
                 break
             time.sleep(2)
@@ -681,11 +682,13 @@ async def run_build(args):
     report_dir = litani.get_report_dir()
     run = litani_report.get_run_data(cache_dir)
     lib.validation.validate_run(run)
-    litani_report.render(run, report_dir)
+    pipeline_degraph_renderer = litani_report.PipelineDepgraphRenderer()
+    litani_report.render(run, report_dir, pipeline_degraph_renderer)
     killer = threading.Event()
     render_thread = threading.Thread(
         group=None, target=continuous_render_report,
-        args=(cache_dir, report_dir, killer, args.out_file))
+        args=(cache_dir, report_dir, killer, args.out_file,
+        pipeline_degraph_renderer))
     render_thread.start()
 
     runner = lib.ninja.Runner(
@@ -723,7 +726,7 @@ async def run_build(args):
     render_thread.join()
     run = litani_report.get_run_data(cache_dir)
     lib.validation.validate_run(run)
-    litani_report.render(run, report_dir)
+    litani_report.render(run, report_dir, pipeline_degraph_renderer)
 
     with litani.atomic_write(cache_dir / litani.RUN_FILE) as handle:
         print(json.dumps(run, indent=2), file=handle)
