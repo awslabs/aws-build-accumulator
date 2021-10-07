@@ -75,13 +75,13 @@ class Gnuplot:
 
 
 class PipelineDepgraphRenderer:
-    def __init__(self):
-        self.should_render = shutil.which("dot") is not None
-
-        if not self.should_render:
+    def __init__(self, should_render=True):
+        is_graphviz_installed = shutil.which("dot") is not None
+        if not is_graphviz_installed:
             logging.info(
                 "Graphviz is not installed; pipeline dependency "
-                "graph will not be rendered")
+                "graph cannot be rendered")
+        self.should_render = should_render and is_graphviz_installed
 
 
     def render_to_file(self, out_file, pipe):

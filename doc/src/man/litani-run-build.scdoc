@@ -25,6 +25,7 @@ litani run-build - Start a Litani run
 	\[*-j*/*--parallel* _N_]
 	\[*-o*/*--out-file* _F_]
 	\[*--fail-on-pipeline-failure*]
+	\[*--no-pipeline-dep-graph*]
 	\[*-p*/*--pipelines* _P_ [_P_ ...]]
 	\[*-s*/*--ci-stage* _S_]
 
@@ -59,6 +60,11 @@ parallel.
 *--fail-on-pipeline-failure*
 	Return _0_ only if all pipelines were successful. See *RETURN CODE*
 	below.
+
+*--no-pipeline-dep-graph*
+	Do not render dependency graphs for each pipeline onto the HTML individual
+	pipeline pages. Pipeline graphs will also not be rendered if Graphviz is
+	not installed.
 
 *-p* _P_ [_P_ ...], *--pipelines* _P_ [_P_ ...]
 	Only run jobs that are part of the specified pipelines.
