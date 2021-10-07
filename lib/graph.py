@@ -46,7 +46,9 @@ class DependencyNode(Node):
         self.style = style
 
         if len(path.name) + len(ext) > truncate:
-            self.style["label"] = path.name[:(truncate - 1 - len(ext))] + "…" + ext
+            self.style["label"] = '\n'.join(
+                re.findall('.{1,%i}' % (truncate - 1 - len(ext)), path.name)
+            ) + ext
         else:
             self.style["label"] = path.name
 
@@ -74,7 +76,9 @@ class CommandNode(Node):
         self.style = style
 
         if len(command) > truncate:
-            self.style["label"] = command[:truncate-1] + "…"
+            self.style["label"] = '\n'.join(
+                re.findall('.{1,%i}' % truncate, command)
+            )
         else:
             self.style["label"] = command
         self.style["shape"] = "box"
