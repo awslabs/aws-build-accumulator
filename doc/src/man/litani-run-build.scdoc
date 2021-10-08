@@ -60,7 +60,7 @@ parallel.
 	Return _0_ only if all pipelines were successful. See *RETURN CODE*
 	below.
 
-*-p* _P_ _[P ...]_, *--pipelines* _P_ _[P ...]_
+*-p* _P_ [_P_ ...], *--pipelines* _P_ [_P_ ...]
 	Only run jobs that are part of the specified pipelines.
 
 *-s* _S_, *--ci-stage* _S_

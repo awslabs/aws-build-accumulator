@@ -20,13 +20,14 @@ litani add-job - Add a single command with its dependencies
 
 # SYNOPSIS
 
-*litani add-job --command* _C_ *--pipeline-name* _P_ *--ci-stage* _S_
+*litani add-job --command* _C_ *--pipeline-name* _P_ *--ci-stage*
+<_build_|_test_|_report_>
 	\[*--inputs* _F_ [_F_ ...]]
 	\[*--outputs* _F_ [_F_ ...]]
 	\[*--phony-outputs* _F_ [_F_ ...]]
 	\[*--description* _D_]
 	\[*--tags* _T_ [_T_ ...]]
-	\[*--cwd* _dir_]
+	\[*--cwd* _D_]
 	\[*--ok-returns* _RC_ [_RC_ ...]]
 	\[*--ignore-returns* _RC_ [_RC_ ...]]
 	\[*--timeout* _N_]
@@ -77,7 +78,7 @@ configure times.
 	through a subshell, so wildcards and shell expansions are supported and
 	special characters must be escaped.
 
-*--inputs* _F_ _[F ...]_
+*--inputs* _F_ [_F_ ...]
 	A list of inputs that this job depends on. Litani interprets each _F_ as a file:
 	- If every _F_ exists and has an older timestamp than all of this job's
 	  outputs, then Litani will not run this job.
@@ -88,7 +89,7 @@ configure times.
 	- If option 2 applies, but there is no job whose output includes the
 	  out-of-date files, then the build will fail.
 
-*--outputs* _F_ _[F ...]_
+*--outputs* _F_ [_F_ ...]
 	A list of outputs that this job emits. Litani interprets each _F_ as a file,
 	and expects that the command will write a file with that name upon completion.
 	If a job _J_ has _F_ as an output, but does not actually write a file called
@@ -100,7 +101,7 @@ configure times.
 	A human-readable description for this job. This flag is optional but highly
 	recommended, as it makes the HTML dashboard much easier to navigate.
 
-*--tags* _TAG_ _[TAG ...]_
+*--tags* _TAG_ [_TAG_ ...]
 	A list of tags for this job. Litani does not interpret tags (although the HTML
 	dashboard generator does use some of them). Each tag can be in whatever format
 	you prefer, e.g. a plain string, key-value pair, or even arbitrary JSON. A
@@ -113,7 +114,7 @@ configure times.
 	pipeline does not affect how it is scheduled to run, but is used for grouping
 	related jobs in the HTML dashboard.
 
-*--ci-stage* _<build|test|report>_
+*--ci-stage* <_build_|_test_|_report_>
 	The 'CI stage' that this job is part of. A CI stage is a subgraph of the
 	overall build, representing a set of jobs that should complete before Litani
 	moves onto the next stage. A job's CI stage does not affect how it is
@@ -122,13 +123,13 @@ configure times.
 *--cwd* _DIR_
 	The directory that this job should execute in.
 
-*--ok-returns* _RC_ _[RC ...]_
+*--ok-returns* _RC_ [_RC_ ...]
 	Set the job outcome to _success_ if the command exits with a return code of
 	_RC_. By default, a job is only considered successful if it returns with _0_.
 	You can also use the *--outcome-table* option for fine-grained control over
 	job outcomes.
 
-*--ignore-returns* _RC_ _[RC ...]_
+*--ignore-returns* _RC_ [_RC_ ...]
 	Set the job outcome to _fail_ignore_ if the command exits with a return code
 	of _RC_. This means that jobs that depend on this one will still run as if
 	this job had passed, but the pipeline that contains this job will fail after
@@ -177,7 +178,7 @@ configure times.
 	output in the _stderr_ field of the _run.json_ file. This flag is a useful
 	alternative to using shell redirection (_2>_).
 
-*--phony-outputs* _[OUT ...]_
+*--phony-outputs* [_OUT_ ...]
 	Do not print a warning if this job has not written the named _OUT_ files by
 	the time it finishes running. If you do not specify any _OUT_ files, Litani
 	will not warn when _any_ output specified to the *--outputs* flag does not
