@@ -170,7 +170,7 @@ def validate_run(run):
     try:
         import voluptuous
         import voluptuous.humanize
-        outcome = voluptuous.Any("success", "fail", "fail_ignored")
+        outcome = _outcome()
         schema = voluptuous.Schema(_run_schema(), required=True)
         voluptuous.humanize.validate_with_humanized_errors(run, schema)
     except (ImportError, ModuleNotFoundError):
@@ -221,11 +221,6 @@ def _status():
 # }
 def _run_schema():
     import voluptuous
-
-    # This schema describes Litani's run.json file. *outcome*, *status*, and
-    # *single_job_schema* are sub-schemata that are referenced multiple times
-    # within this schema, and so are defined separately below. All timestamps
-    # are in ISO-8601.
 
     return {
         "run_id": str,
@@ -453,3 +448,70 @@ def _run_schema():
         # The symbolic link to the report advertised to users
     }
 # end-doc-gen
+
+
+def validate_outcome_table(table):
+    try:
+        import voluptuous
+    except ImportError:
+        logging.debug("Skipping outcome table validation as voluptuous is not installed")
+        return
+
+    schema = voluptuous.Schema(_outcome_table_schema())
+    voluptuous.humanize.validate_with_humanized_errors(table, schema)
+
+
+# doc-gen
+# {
+#   "page": "litani-outcome-table.json",
+#   "order": 0,
+#   "title": "Schema for user-provided outcome table"
+# }
+def _outcome_table_schema():
+    import voluptuous
+
+    return {
+        voluptuous.Optional("comment"): str,
+        # A description of the outcome table as a whole.
+
+        "outcomes": [
+        # The outcome of the job will be the first item in this list that
+        # matches.
+
+            voluptuous.Any({
+                "type": "return-code",
+                # If the return code of the job matches the value of *value*,
+                # the outcome will be set to the value of *action*. The value
+                # of the optional *comment* key can contain a human-readable
+                # explanation for this outcome.
+
+                "value": int,
+
+                "action": _outcome(),
+
+                voluptuous.Optional("comment"): str,
+
+            }, {
+                "type": "timeout",
+                # If this job timed out, the outcome will be set to the value of
+                # *action*. The value of the optional *comment* key can contain
+                # a human-readable explanation for this outcome.
+
+                "action": _outcome(),
+
+                voluptuous.Optional("comment"): str,
+
+            }, {
+                "type": "wildcard",
+                # The *"wildcard"* action type matches any job and sets its
+                # outcome to the value of *action*. It is recommended to place a
+                # *wildcard* action as the last element of the list of
+                # *outcomes* to catch all jobs that were not matched by a
+                # previous rule.
+
+                "action": _outcome(),
+
+                voluptuous.Optional("comment"): str,
+
+        })]
+    }
