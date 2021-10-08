@@ -44,7 +44,7 @@ litani add-job - Add a single command with its dependencies
 # DESCRIPTION
 
 This program adds a job to an existing Litani run. The run must have been
-previously created *litani-init(1)*; you may add as many jobs as you need before
+previously created with *litani-init(1)*; you may add as many jobs as you need before
 running them with *litani-run-build(1)*.
 
 A _job_ is a command that is part of a dependency graph. Litani runs the command
@@ -59,7 +59,7 @@ inputs and outputs up-to-date.
 
 Many of the flags to this command give you platform-portable control on various
 aspects of the program: timeouts, dealing with return codes, output streams, and
-more
+more.
 
 
 # MULTIPROCESS SAFETY
