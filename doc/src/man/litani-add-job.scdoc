@@ -193,7 +193,7 @@ configure times.
 	depend on. To achieve this, you could pass *--outputs phony-file* when adding
 	the first job, and *--inputs phony-file* when adding the second job. However,
 	Litani will print a warning if the first job exits without writing a file
-	called _phony-file_. To suppress the warning, also pass *--phony-outputs
+	called _phony-file_. To suppress the warning, instead pass *--phony-outputs
 	phony-file* when adding the first job. Doing this obviates the need to use
 	touchfiles for dependency ordering, which is how this must be done when using
 	a traditional build system like *make(1)*.
