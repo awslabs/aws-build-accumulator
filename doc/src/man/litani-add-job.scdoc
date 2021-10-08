@@ -20,7 +20,24 @@ litani add-job - Add a single command with its dependencies
 
 # SYNOPSIS
 
-litani add-job --command C --pipeline-name P --ci-stage S [OPTIONS...]
+*litani add-job --command* _C_ *--pipeline-name* _P_ *--ci-stage* _S_
+	\[*--inputs* _F_ [_F_ ...]]
+	\[*--outputs* _F_ [_F_ ...]]
+	\[*--phony-outputs* _F_ [_F_ ...]]
+	\[*--description* _D_]
+	\[*--tags* _T_ [_T_ ...]]
+	\[*--cwd* _dir_]
+	\[*--ok-returns* _RC_ [_RC_ ...]]
+	\[*--ignore-returns* _RC_ [_RC_ ...]]
+	\[*--timeout* _N_]
+	\[*--timeout-ok*]
+	\[*--timeout-ignore*]
+	\[*--interleave-stdout-stderr*]
+	\[*--stdout-file* _F_]
+	\[*--stderr-file* _F_]
+	\[*--pool* _P_]
+	\[*--profile-memory*]
+	\[*--profile-memory-interval* _N_]
 
 
 # DESCRIPTION
@@ -133,6 +150,12 @@ configure times.
 	*--timeout* flag.
 
 *--timeout-ignore*
+	Set the job outcome to _fail_ignore_ if it reaches the timeout specified in the
+	*--timeout* flag. This means that jobs that depend on this one will still run
+	as if this job had passed, but the pipeline that contains this job will fail
+	after it completes.
+
+*--outcome-table* _outcome-table.json_
 	Set the job outcome to _fail_ignore_ if it reaches the timeout specified in the
 	*--timeout* flag. This means that jobs that depend on this one will still run
 	as if this job had passed, but the pipeline that contains this job will fail

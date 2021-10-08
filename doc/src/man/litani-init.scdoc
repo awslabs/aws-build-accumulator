@@ -20,7 +20,12 @@ litani init - Set up a new Litani run
 
 # SYNOPSIS
 
-litani init --project-name NAME [OPTION...]
+*litani init --project-name* _NAME_
+	\[*--pools* _NAME:DEPTH_ [_NAME:DEPTH_ ...]]
+	\[*--output-directory* _DIR_]
+	\[*--output-prefix* _DIR_]
+	\[*--output-symlink* _DIR_]
+	\[*--no-print-out-dir*]
 
 # DESCRIPTION
 

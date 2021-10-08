@@ -20,7 +20,13 @@ litani run-build - Start a Litani run
 
 # SYNOPSIS
 
-litani run-build [OPTION...]
+*litani run-build*
+	\[*-n*/*--dry-run*]
+	\[*-j*/*--parallel* _N_]
+	\[*-o*/*--out-file* _F_]
+	\[*--fail-on-pipeline-failure*]
+	\[*-p*/*--pipelines* _P_ [_P_ ...]]
+	\[*-s*/*--ci-stage* _S_]
 
 # DESCRIPTION
 
