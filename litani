@@ -615,6 +615,16 @@ async def init(args):
 
 
 async def add_job(args):
+    cache_file = litani.get_cache_dir() / litani.CACHE_FILE
+    with open(cache_file) as handle:
+        cache_contents = json.load(handle)
+    if args.ci_stage not in cache_contents["stages"]:
+        valid_stages = "', '".join(cache_contents["stages"])
+        logging.error(
+            "Invalid stage name '%s' was provided, possible "
+            "stage names are: '%s'", args.ci_stage, valid_stages)
+        sys.exit(1)
+
     jobs_dir = litani.get_cache_dir() / litani.JOBS_DIR
     jobs_dir.mkdir(exist_ok=True, parents=True)
 
