@@ -237,6 +237,9 @@ def _run_schema():
         # runs, but is otherwise not used by litani.
 
         "stages": [str],
+        # The CI stages that each job can be a member of. Stage names can
+        # be provided through the --stages flag of *litani-init(1)*. Default
+        # stages "build", "test" and "report" are used if the flag is not used.
 
         "pools": {voluptuous.Optional(str): int},
         # A mapping from pool names to the depth of the pool. Jobs can be a
@@ -327,9 +330,8 @@ def _run_schema():
                 # Whether all the jobs in this stage are complete.
 
                 "name": str,
-                # The stage's name. In the future, it may be possible for users
-                # to pass arbitrary names here, so it is advisable not to assume
-                # that these are the only three permissable values.
+                # The stage's name. This is any of the *stages* of
+                # the project.
 
                 "status": _outcome(),
                 # The stage's state, see the outcome schema below.
