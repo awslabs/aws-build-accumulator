@@ -236,6 +236,11 @@ def _run_schema():
         # the HTML report generator and can be used to group related sets of
         # runs, but is otherwise not used by litani.
 
+        "stages": [str],
+        # The CI stages that each job can be a member of. Stage names can
+        # be provided through the --stages flag of *litani-init(1)*. Default
+        # stages "build", "test" and "report" are used if the flag is not used.
+
         "pools": {voluptuous.Optional(str): int},
         # A mapping from pool names to the depth of the pool. Jobs can be a
         # member of zero or one pool. The depth of a pool that a set of jobs
@@ -324,10 +329,9 @@ def _run_schema():
                 "complete": bool,
                 # Whether all the jobs in this stage are complete.
 
-                "name": voluptuous.Any("build", "test", "report"),
-                # The stage's name. In the future, it may be possible for users
-                # to pass arbitrary names here, so it is advisable not to assume
-                # that these are the only three permissable values.
+                "name": str,
+                # The stage's name. This is any of the *stages* of
+                # the project.
 
                 "status": _outcome(),
                 # The stage's state, see the outcome schema below.
