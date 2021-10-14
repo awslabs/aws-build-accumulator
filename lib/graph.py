@@ -66,10 +66,11 @@ class DependencyNode(Node):
 
 
 class CommandNode(Node):
-    def __init__(self, pipeline_name, description, command, line_width=40, **style):
+    def __init__(
+            self, pipeline_name, description, command, line_width=40, **style):
         self.id = hash(command)
-        self.pipeline_name = '<BR/>'.join(textwrap.wrap(pipeline_name, width=line_width))
-        self.description = '<BR/>'.join(textwrap.wrap(description, width=line_width))
+        self.pipeline_name = '<BR/>'.join(
+            textwrap.wrap(pipeline_name, width=line_width))
         if description:
             self.description = '<BR/>'.join(
                 textwrap.wrap(description, width=line_width))
