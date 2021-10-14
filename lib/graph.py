@@ -70,6 +70,11 @@ class CommandNode(Node):
         self.id = hash(command)
         self.pipeline_name = '<BR/>'.join(textwrap.wrap(pipeline_name, width=line_width))
         self.description = '<BR/>'.join(textwrap.wrap(description, width=line_width))
+        if description:
+            self.description = '<BR/>'.join(
+                textwrap.wrap(description, width=line_width))
+        else:
+            self.description = ""
         self.command = '<BR/>'.join(textwrap.wrap(command, width=line_width))
         self.style = style
 
