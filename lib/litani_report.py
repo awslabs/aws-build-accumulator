@@ -513,6 +513,19 @@ def get_git_hash():
         return None
 
 
+def get_summary(run):
+    ret = {
+        "in_progress": 0,
+        "success": 0,
+        "total": 0,
+        "fail": 0,
+    }
+    for pipe in run["pipelines"]:
+        ret["total"] += 1
+        ret[pipe["status"]] += 1
+    return ret
+
+
 def render(run, report_dir, pipeline_depgraph_renderer):
     temporary_report_dir = litani.get_report_data_dir() / str(uuid.uuid4())
     temporary_report_dir.mkdir(parents=True)
@@ -540,7 +553,8 @@ def render(run, report_dir, pipeline_depgraph_renderer):
     page = dash_templ.render(
         run=run, svgs=svgs, litani_hash=get_git_hash(),
         litani_version=litani.VERSION,
-        litani_report_archive_path=litani_report_archive_path)
+        litani_report_archive_path=litani_report_archive_path,
+        summary=get_summary(run))
     with litani.atomic_write(temporary_report_dir / "index.html") as handle:
         print(page, file=handle)
 
