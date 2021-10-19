@@ -92,21 +92,24 @@ class CommandNode(Node):
 
 
     def __str__(self):
+        if self.description:
+            desc_cell = f"\n<TD><B>{self.description}</B></TD>"
+        else:
+            desc_cell = ""
         return '''"{id}" [label=<
             <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
                 <TR>
-                    <TD><B>{pipeline_name}</B></TD>
-                    <TD><B>{description}</B></TD>
+                    <TD><B>{pipeline_name}</B></TD>{desc_cell}
                 </TR>
                 <TR>
                     <TD COLSPAN="2">{command}</TD>
                 </TR>
             </TABLE>> {style}];'''.format(
-            id=self.id, description = self.description,
-            command = self.command, pipeline_name = self.pipeline_name,
-            style=",".join([
-                f'{key}="{Node.escape(value)}"'
-                for key, value in self.style.items()]))
+                id=self.id, command=self.command, desc_cell=desc_cell,
+                pipeline_name=self.pipeline_name,
+                style=",".join([
+                    f'{key}="{Node.escape(value)}"'
+                    for key, value in self.style.items()]))
 
 
 
