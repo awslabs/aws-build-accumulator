@@ -92,7 +92,11 @@ class PipelineDepgraphRenderer:
                     ["dot", "-Tsvg"], text=True, stdin=subprocess.PIPE,
                     stdout=handle) as proc:
                 proc.communicate(input=dot_graph)
-        return not proc.returncode
+            if proc.returncode:
+                logging.error("Failed to run dot. Graph: ")
+                logging.error(dot_graph)
+                sys.exit(1)
+        return True
 
 
     def render(self, render_root, pipe_url, pipe):
