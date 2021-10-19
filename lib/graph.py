@@ -35,6 +35,20 @@ class Node:
         return string
 
 
+    def html_escape(string):
+        for match, repl in [(
+            '&', '&amp;'
+        ), (
+            '"', '&quot;'
+        ), (
+            '<', '&lt;'
+        ), (
+            '>', '&gt;'
+        )]:
+            string = re.sub(match, repl, string)
+        return string
+
+
 class DependencyNode(Node):
     def __init__(self, fyle, line_width=40, **style):
         self.file = fyle
@@ -70,13 +84,14 @@ class CommandNode(Node):
             self, pipeline_name, description, command, line_width=40, **style):
         self.id = hash(command)
         self.pipeline_name = '<BR/>'.join(
-            textwrap.wrap(pipeline_name, width=line_width))
+            textwrap.wrap(Node.html_escape(pipeline_name), width=line_width))
         if description:
             self.description = '<BR/>'.join(
-                textwrap.wrap(description, width=line_width))
+                textwrap.wrap(Node.html_escape(description), width=line_width))
         else:
             self.description = ""
-        self.command = '<BR/>'.join(textwrap.wrap(command, width=line_width))
+        self.command = '<BR/>'.join(
+            textwrap.wrap(Node.html_escape(command), width=line_width))
         self.style = style
 
         self.style["shape"] = "plain"
@@ -92,21 +107,25 @@ class CommandNode(Node):
 
 
     def __str__(self):
+        if self.description:
+            desc_cell = f"\n<TD><B>{self.description}</B></TD>"
+        else:
+            desc_cell = ""
         return '''"{id}" [label=<
             <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
                 <TR>
-                    <TD><B>{pipeline_name}</B></TD>
-                    <TD><B>{description}</B></TD>
+                    <TD><B>{pipeline_name}</B></TD>{desc_cell}
                 </TR>
                 <TR>
                     <TD COLSPAN="2">{command}</TD>
                 </TR>
             </TABLE>> {style}];'''.format(
-            id=self.id, description = self.description,
-            command = self.command, pipeline_name = self.pipeline_name,
-            style=",".join([
-                f'{key}="{Node.escape(value)}"'
-                for key, value in self.style.items()]))
+                id=self.id, command=self.command,
+                desc_cell=desc_cell,
+                pipeline_name=self.pipeline_name,
+                style=",".join([
+                    f'{key}="{Node.escape(value)}"'
+                    for key, value in self.style.items()]))
 
 
 
