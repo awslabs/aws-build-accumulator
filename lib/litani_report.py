@@ -513,7 +513,7 @@ def get_git_hash():
         return None
 
 
-def render(run, report_dir, pipeline_degraph_renderer):
+def render(run, report_dir, pipeline_depgraph_renderer):
     temporary_report_dir = litani.get_report_data_dir() / str(uuid.uuid4())
     temporary_report_dir.mkdir(parents=True)
     old_report_dir_path = litani.get_report_dir().resolve()
@@ -549,7 +549,7 @@ def render(run, report_dir, pipeline_degraph_renderer):
 
     pipe_templ = env.get_template("pipeline.jinja.html")
     for pipe in run["pipelines"]:
-        pipeline_degraph_renderer.render(
+        pipeline_depgraph_renderer.render(
             render_root=temporary_report_dir,
             pipe_url=pathlib.Path(pipe["url"]), pipe=pipe)
         for stage in pipe["ci_stages"]:
