@@ -78,9 +78,7 @@ def get_add_job_args():
             "flags": ["--ci-stage"],
             "required": True,
             "metavar": "S",
-            "choices": litani.CI_STAGES,
             "help": "which CI stage this job should execute in. "
-                    "Must be one of {%(choices)s}.",
         }, {
             "flags": ["--cwd"],
             "metavar": "DIR",
@@ -221,6 +219,12 @@ def get_args():
             "flags": ["--output-symlink"],
             "help": "create a symbolic link from DIR to litani's output directory",
             "metavar": "DIR"
+        }, {
+            "flags": ["--stages"],
+            "default": litani.DEFAULT_STAGES,
+            "help": "stages that a job can be a member of. Default: %(default)s",
+            "metavar": "NAME",
+            "nargs": "+",
     }]:
         flags = arg.pop("flags")
         init_pars.add_argument(*flags, **arg)
@@ -300,6 +304,10 @@ def get_args():
             "flags": ["--fail-on-pipeline-failure"],
             "action": "store_true",
             "help": "exit with a non-zero return code if some pipelines failed"
+    }, {
+            "flags": ["--no-pipeline-dep-graph"],
+            "action": "store_true",
+            "help": "do not attempt to generate pipeline dependency graph"
     }]:
         flags = arg.pop("flags")
         run_build_pars.add_argument(*flags, **arg)
@@ -312,10 +320,8 @@ def get_args():
     }, {
             "flags": ["-s", "--ci-stage"],
             "metavar": "S",
-            "choices": litani.CI_STAGES,
             "help": (
                 "only run jobs that are part of the specified ci stage. S "
-                "must be one of %(choices)s."
             )
     }]:
         flags = arg.pop("flags")
@@ -358,7 +364,8 @@ def get_args():
 
 
 
-def continuous_render_report(cache_dir, report_dir, killer, out_file):
+def continuous_render_report(
+    cache_dir, report_dir, killer, out_file, pipeline_degraph_renderer):
     try:
         while True:
             run = litani_report.get_run_data(cache_dir)
@@ -368,7 +375,7 @@ def continuous_render_report(cache_dir, report_dir, killer, out_file):
             if out_file is not None:
                 with litani.atomic_write(out_file) as handle:
                     print(json.dumps(run, indent=2), file=handle)
-            litani_report.render(run, report_dir)
+            litani_report.render(run, report_dir, pipeline_degraph_renderer)
             if killer.is_set():
                 break
             time.sleep(2)
@@ -597,6 +604,7 @@ async def init(args):
             "version_patch": litani.VERSION_PATCH,
             "release_candidate": litani.RC,
             "run_id": run_id,
+            "stages": args.stages,
             "start_time": now,
             "status": "in_progress",
             "pools": get_pools(args),
@@ -612,6 +620,16 @@ async def init(args):
 
 
 async def add_job(args):
+    cache_file = litani.get_cache_dir() / litani.CACHE_FILE
+    with open(cache_file) as handle:
+        cache_contents = json.load(handle)
+    if args.ci_stage not in cache_contents["stages"]:
+        valid_stages = "', '".join(cache_contents["stages"])
+        logging.error(
+            "Invalid stage name '%s' was provided, possible "
+            "stage names are: '%s'", args.ci_stage, valid_stages)
+        sys.exit(1)
+
     jobs_dir = litani.get_cache_dir() / litani.JOBS_DIR
     jobs_dir.mkdir(exist_ok=True, parents=True)
 
@@ -664,15 +682,17 @@ async def run_build(args):
         for build in builds:
             logging.debug(build)
             ninja.build(**build)
-
     report_dir = litani.get_report_dir()
     run = litani_report.get_run_data(cache_dir)
     lib.validation.validate_run(run)
-    litani_report.render(run, report_dir)
+    pipeline_degraph_renderer = litani_report.PipelineDepgraphRenderer(
+        should_render=not args.no_pipeline_dep_graph)
+    litani_report.render(run, report_dir, pipeline_degraph_renderer)
     killer = threading.Event()
     render_thread = threading.Thread(
         group=None, target=continuous_render_report,
-        args=(cache_dir, report_dir, killer, args.out_file))
+        args=(cache_dir, report_dir, killer, args.out_file,
+        pipeline_degraph_renderer))
     render_thread.start()
 
     runner = lib.ninja.Runner(
@@ -710,7 +730,7 @@ async def run_build(args):
     render_thread.join()
     run = litani_report.get_run_data(cache_dir)
     lib.validation.validate_run(run)
-    litani_report.render(run, report_dir)
+    litani_report.render(run, report_dir, pipeline_degraph_renderer)
 
     with litani.atomic_write(cache_dir / litani.RUN_FILE) as handle:
         print(json.dumps(run, indent=2), file=handle)

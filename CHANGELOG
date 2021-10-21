@@ -1,6 +1,15 @@
                               CHANGELOG
                               `````````
 
+Version 1.14.0 -- 2021-10-21
+----------------------------
+
+- This release introduces custom stage names to Litani. It also improves the
+  user experience by showcasing better synopses for jobs in the pipeline graphs
+  as well as a pipeline summary at the top of the dashboard. Finally, this
+  release also contains other QoL changes.
+
+
 
 Version 1.13.0 -- 2021-09-29
 ----------------------------

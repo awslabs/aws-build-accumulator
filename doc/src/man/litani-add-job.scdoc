@@ -20,13 +20,32 @@ litani add-job - Add a single command with its dependencies
 
 # SYNOPSIS
 
-litani add-job --command C --pipeline-name P --ci-stage S [OPTIONS...]
+*litani add-job --command* _C_ *--pipeline-name* _P_ *--ci-stage*
+<_build_|_test_|_report_>
+	\[*--inputs* _F_ [_F_ ...]]
+	\[*--outputs* _F_ [_F_ ...]]
+	\[*--phony-outputs* [_F_ ...]]
+	\[*--description* _D_]
+	\[*--tags* _T_ [_T_ ...]]
+	\[*--cwd* _D_]
+	\[*--ok-returns* _RC_ [_RC_ ...]]
+	\[*--ignore-returns* _RC_ [_RC_ ...]]
+	\[*--timeout* _N_]
+	\[*--timeout-ok*]
+	\[*--timeout-ignore*]
+	\[*--interleave-stdout-stderr*]
+	\[*--outcome-table* _F.json_]
+	\[*--stdout-file* _F_]
+	\[*--stderr-file* _F_]
+	\[*--pool* _P_]
+	\[*--profile-memory*]
+	\[*--profile-memory-interval* _N_]
 
 
 # DESCRIPTION
 
 This program adds a job to an existing Litani run. The run must have been
-previously created *litani-init(1)*; you may add as many jobs as you need before
+previously created with *litani-init(1)*; you may add as many jobs as you need before
 running them with *litani-run-build(1)*.
 
 A _job_ is a command that is part of a dependency graph. Litani runs the command
@@ -41,7 +60,7 @@ inputs and outputs up-to-date.
 
 Many of the flags to this command give you platform-portable control on various
 aspects of the program: timeouts, dealing with return codes, output streams, and
-more
+more.
 
 
 # MULTIPROCESS SAFETY
@@ -60,7 +79,7 @@ configure times.
 	through a subshell, so wildcards and shell expansions are supported and
 	special characters must be escaped.
 
-*--inputs* _F_ _[F ...]_
+*--inputs* _F_ [_F_ ...]
 	A list of inputs that this job depends on. Litani interprets each _F_ as a file:
 	- If every _F_ exists and has an older timestamp than all of this job's
 	  outputs, then Litani will not run this job.
@@ -71,7 +90,7 @@ configure times.
 	- If option 2 applies, but there is no job whose output includes the
 	  out-of-date files, then the build will fail.
 
-*--outputs* _F_ _[F ...]_
+*--outputs* _F_ [_F_ ...]
 	A list of outputs that this job emits. Litani interprets each _F_ as a file,
 	and expects that the command will write a file with that name upon completion.
 	If a job _J_ has _F_ as an output, but does not actually write a file called
@@ -79,11 +98,27 @@ configure times.
 	out of date. Furthermore, all jobs whose inputs include _F_, and all their
 	descendants, will also always run.
 
+*--phony-outputs* [_OUT_ ...]
+	Do not print a warning if this job has not written the named _OUT_ files by
+	the time it finishes running. If you do not specify any _OUT_ files, Litani
+	will not warn when _any_ output specified to the *--outputs* flag does not
+	exist when the job has finished running.
+
+	This is useful when you want to create a dependency ordering between two jobs,
+	but the first job does not write any output files that the second job can
+	depend on. To achieve this, you could pass *--outputs phony-file* when adding
+	the first job, and *--inputs phony-file* when adding the second job. However,
+	Litani will print a warning if the first job exits without writing a file
+	called _phony-file_. To suppress the warning, instead pass *--phony-outputs
+	phony-file* when adding the first job. Doing this obviates the need to use
+	touchfiles for dependency ordering, which is how this must be done when using
+	a traditional build system like *make(1)*.
+
 *--description* _D_
 	A human-readable description for this job. This flag is optional but highly
 	recommended, as it makes the HTML dashboard much easier to navigate.
 
-*--tags* _TAG_ _[TAG ...]_
+*--tags* _TAG_ [_TAG_ ...]
 	A list of tags for this job. Litani does not interpret tags (although the HTML
 	dashboard generator does use some of them). Each tag can be in whatever format
 	you prefer, e.g. a plain string, key-value pair, or even arbitrary JSON. A
@@ -96,7 +131,7 @@ configure times.
 	pipeline does not affect how it is scheduled to run, but is used for grouping
 	related jobs in the HTML dashboard.
 
-*--ci-stage* _<build|test|report>_
+*--ci-stage* <_build_|_test_|_report_>
 	The 'CI stage' that this job is part of. A CI stage is a subgraph of the
 	overall build, representing a set of jobs that should complete before Litani
 	moves onto the next stage. A job's CI stage does not affect how it is
@@ -105,13 +140,13 @@ configure times.
 *--cwd* _DIR_
 	The directory that this job should execute in.
 
-*--ok-returns* _RC_ _[RC ...]_
+*--ok-returns* _RC_ [_RC_ ...]
 	Set the job outcome to _success_ if the command exits with a return code of
 	_RC_. By default, a job is only considered successful if it returns with _0_.
 	You can also use the *--outcome-table* option for fine-grained control over
 	job outcomes.
 
-*--ignore-returns* _RC_ _[RC ...]_
+*--ignore-returns* _RC_ [_RC_ ...]
 	Set the job outcome to _fail_ignore_ if the command exits with a return code
 	of _RC_. This means that jobs that depend on this one will still run as if
 	this job had passed, but the pipeline that contains this job will fail after
@@ -138,6 +173,15 @@ configure times.
 	as if this job had passed, but the pipeline that contains this job will fail
 	after it completes.
 
+*--outcome-table* _F_
+	Use the JSON-formatted outcome table _F_ to determine the outcome (_success_,
+	_fail_, _fail-ignored_) of this job. Using outcome tables gives finer-grained
+	control over outcomes than using the _--_..._-ok_ and _--_..._-ignore_ flags:
+	in particular, it is possible to specify an action other than _success_ if the
+	underlying *command* returns 0. This can be used, for example, to define
+	negative tests. The schema for JSON outcome tables is specified in
+	*litani-outcome-table.json(5)*.
+
 *--interleave-stdout-stderr*
 	Use a single pipe for the job's stdout and stderr. Similar to redirecting
 	stderr to stdout using _2>&1 >..._. The job's _stdout_ list in the _run.json_
@@ -153,22 +197,6 @@ configure times.
 	Redirect the command's stderr to _F_. Litani will still retain a copy of the
 	output in the _stderr_ field of the _run.json_ file. This flag is a useful
 	alternative to using shell redirection (_2>_).
-
-*--phony-outputs* _[OUT ...]_
-	Do not print a warning if this job has not written the named _OUT_ files by
-	the time it finishes running. If you do not specify any _OUT_ files, Litani
-	will not warn when _any_ output specified to the *--outputs* flag does not
-	exist when the job has finished running.
-
-	This is useful when you want to create a dependency ordering between two jobs,
-	but the first job does not write any output files that the second job can
-	depend on. To achieve this, you could pass *--outputs phony-file* when adding
-	the first job, and *--inputs phony-file* when adding the second job. However,
-	Litani will print a warning if the first job exits without writing a file
-	called _phony-file_. To suppress the warning, also pass *--phony-outputs
-	phony-file* when adding the first job. Doing this obviates the need to use
-	touchfiles for dependency ordering, which is how this must be done when using
-	a traditional build system like *make(1)*.
 
 *--pool* _P_
 	Place this job in the pool named _P_. This pool must have been declared using

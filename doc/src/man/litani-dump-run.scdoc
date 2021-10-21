@@ -21,7 +21,8 @@ litani dump-run - Print the current run as a JSON document to stdout
 
 # SYNOPSIS
 
-litani dump-run [OPTIONS]
+*litani dump-run*
+	\[*--retries* _N_]
 
 
 # DESCRIPTION

@@ -20,7 +20,13 @@ litani init - Set up a new Litani run
 
 # SYNOPSIS
 
-litani init --project-name NAME [OPTION...]
+*litani init --project-name* _NAME_
+	\[*--stages* _NAME_ [_NAME_ ...]]
+	\[*--pools* _NAME:DEPTH_ [_NAME:DEPTH_ ...]]
+	\[*--output-directory* _DIR_]
+	\[*--output-prefix* _DIR_]
+	\[*--output-symlink* _DIR_]
+	\[*--no-print-out-dir*]
 
 # DESCRIPTION
 
@@ -54,7 +60,12 @@ of *litani add-job* will add jobs to a single run.
 	at the top of the HTML report. The project name is also included in the
 	_run.json_ file to help find all the runs for a particular project.
 
-*--pools* _NAME:DEPTH_ _[NAME:DEPTH...]_
+*--stages* _NAME_ [_NAME_ ...]
+	The stages that this run is composed of. At least one stage has to be
+	provided. If this flag is not specified, the default stages _build_, _test_
+	and _report_ are used.
+
+*--pools* _NAME:DEPTH_ [_NAME:DEPTH_ ...]
 	The job pools that you will subsequently add jobs into using the *--pool* flag
 	of *litani add-job*. Each argument to this flag 'declares' the named pool with
 	a particular depth, where the depth is an integer greater than zero. If you

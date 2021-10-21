@@ -13,4 +13,9 @@ header: >
   jobs' stdout and stderr; any output will be available in _run.json_.)
   This manual page describes _run.json_ 's format.
 
+
+  *outcome_*, *status_*, and *single_job_schema_* are sub-schemata that
+  are referenced multiple times within this schema, and so are defined
+  separately below. All timestamps are in ISO-8601.
+
 footer: ""
