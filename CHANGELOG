@@ -1,6 +1,14 @@
                               CHANGELOG
                               `````````
 
+Version 1.15.0 -- 2021-10-29
+----------------------------
+
+This is a bugfix release. It changes how Litani spawns commands so that it can
+correctly terminate the command and all descendant processes if the job has an
+associated timeout.
+
+
 Version 1.14.0 -- 2021-10-21
 ----------------------------
 
