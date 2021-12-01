@@ -54,7 +54,9 @@ class Gnuplot:
         if proc.returncode:
             logging.error("Failed to render gnuplot file:")
             logging.error(gnu_file)
-            sys.exit(1)
+            self._should_render = False
+            return
+
         lines = [
             l for l in out.splitlines()
             if "<?xml version" not in l
