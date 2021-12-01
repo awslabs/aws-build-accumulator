@@ -35,6 +35,7 @@ class Node:
         return string
 
 
+    @staticmethod
     def html_escape(string):
         for match, repl in [(
             '&', '&amp;'
