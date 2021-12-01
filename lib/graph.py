@@ -60,7 +60,8 @@ class DependencyNode(Node):
 
         self.style = style
 
-        path_name = "\n".join(textwrap.wrap(path.name, width=line_width))
+        wrapper = get_text_wrapper(line_width)
+        path_name = "\n".join(wrapper.wrap(path.name))
         self.style["label"] = f"{path_name}{ext}"
 
 
@@ -84,15 +85,17 @@ class CommandNode(Node):
     def __init__(
             self, pipeline_name, description, command, line_width=40, **style):
         self.id = hash(command)
+
+        wrapper = get_text_wrapper(line_width)
+
         self.pipeline_name = '<BR/>'.join(
-            textwrap.wrap(Node.html_escape(pipeline_name), width=line_width))
+            wrapper.wrap(Node.html_escape(pipeline_name)))
         if description:
             self.description = '<BR/>'.join(
-                textwrap.wrap(Node.html_escape(description), width=line_width))
+                wrapper.wrap(Node.html_escape(description)))
         else:
             self.description = ""
-        self.command = '<BR/>'.join(
-            textwrap.wrap(Node.html_escape(command), width=line_width))
+        self.command = '<BR/>'.join(wrapper.wrap(Node.html_escape(command)))
         self.style = style
 
         self.style["shape"] = "plain"
@@ -270,6 +273,9 @@ class Graph:
         buf.append("}")
         return "\n".join(buf)
 
+
+def get_text_wrapper(line_width):
+    return textwrap.TextWrapper(width=line_width, break_long_words=False)
 
 
 async def print_graph(args):
