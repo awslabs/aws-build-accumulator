@@ -154,10 +154,6 @@ def _get_cache_dir(path=os.getcwd()):
         while current.parent != current:
             current = current.parent
             yield current
-        current = pathlib.Path(os.getcwd()).resolve(strict=True)
-        for root, _, dirs in os.walk(current):
-            for dyr in dirs:
-                yield pathlib.Path(os.path.join(root, dyr))
 
     for possible_dir in cache_pointer_dirs():
         logging.debug(
