@@ -40,6 +40,7 @@ import lib.ninja
 import lib.pid_file
 import lib.process
 import lib.run_printer
+import lib.transform_jobs
 import lib.validation
 
 
@@ -273,6 +274,13 @@ def get_args():
     }]:
         flags = arg.pop("flags")
         graph_pars.add_argument(*flags, **arg)
+
+    transform_jobs_pars = subs.add_parser("transform-jobs",
+        help="print jobs, then read jobs on stdin to save")
+    transform_jobs_pars.set_defaults(func=lib.transform_jobs.main)
+    for arg in []:
+        flags = arg.pop("flags")
+        transform_jobs_pars.add_argument(*flags, **arg)
 
     caps_pars = subs.add_parser("print-capabilities",
         help="Print out Litani's capabilities in a list")
