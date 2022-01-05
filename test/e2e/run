@@ -79,6 +79,25 @@ def add_jobs(litani, run_dir, mod):
             litani, "add-job", *job.get("args", []), **job.get("kwargs", {}))
 
 
+def transform_jobs(litani, run_dir, mod):
+    os.chdir(run_dir)
+    proc = subprocess.Popen(
+        [litani, "transform-jobs"], stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE, text=True, bufsize=0)
+
+    old_jobs = json.loads(proc.stdout.read())
+    new_jobs = mod.transform_jobs(old_jobs)
+
+    print(json.dumps(new_jobs), file=proc.stdin)
+    proc.stdin.flush()
+    proc.stdin.close()
+
+    proc.wait()
+    if proc.returncode:
+        logging.error("Return code: %d", proc.returncode)
+        sys.exit(1)
+
+
 def run_build(litani, run_dir, mod):
     os.chdir(run_dir)
     args = mod.get_run_build_args()
@@ -109,6 +128,7 @@ OPERATIONS = {
     "add-jobs": add_jobs,
     "run-build": run_build,
     "check-run": check_run,
+    "transform-jobs": transform_jobs,
 }
 
 
