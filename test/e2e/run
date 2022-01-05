@@ -104,6 +104,14 @@ def add_global_context(args):
     os.environ["LITANI_E2E_LITANI_PATH"] = str(args.litani.resolve())
 
 
+OPERATIONS = {
+    "init": init,
+    "add-jobs": add_jobs,
+    "run-build": run_build,
+    "check-run": check_run,
+}
+
+
 def get_args():
     pars = argparse.ArgumentParser(description=DESCRIPTION, epilog=EPILOG)
     for arg in [{
@@ -124,7 +132,7 @@ def get_args():
     }, {
             "flags": ["--operation"],
             "required": True,
-            "choices": ["init", "add-jobs", "run-build", "check-run"],
+            "choices": list(OPERATIONS.keys())
     }]:
         flags = arg.pop("flags")
         pars.add_argument(*flags, **arg)
@@ -139,12 +147,7 @@ def main():
 
     mod = get_test_module(args.test_file)
 
-    {
-        "init": init,
-        "add-jobs": add_jobs,
-        "run-build": run_build,
-        "check-run": check_run,
-    }[args.operation](args.litani, args.run_dir, mod)
+    OPERATIONS[args.operation](args.litani, args.run_dir, mod)
 
 
 if __name__ == "__main__":
