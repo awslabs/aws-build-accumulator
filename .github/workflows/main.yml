@@ -18,10 +18,10 @@ jobs:
   # This workflow contains a single job called "build"
   build:
     # The type of runner that the job will run on
-    runs-on: ubuntu-20.04
+    runs-on: macos
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10"]
+        python-version: ["3.9"]
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
@@ -33,27 +33,12 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install voluptuous jinja2
-      - name: Install ninja
+      - name: Install Litani
         run: |
            brew update
-           brew install ninja
-           brew upgrade
-      - name: Install graphviz
-        run: |
-           brew update
-           brew install graphviz
-           brew upgrade
-      - name: Install gnuplot
-        run: |
-           brew update
-           brew install gnuplot
-           brew upgrade
-      - name: Install scdoc
-        run: |
-           brew update
-           brew install scdoc
+           brew tap ronakfof/litani
+           brew install litani
            brew upgrade
       # Runs tests
       - name: Run tests
-        run: ./test/run
+        run: brew test litani
