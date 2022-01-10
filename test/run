@@ -27,7 +27,8 @@ def run_cmd(cmd):
     try:
         subprocess.run([str(c) for c in cmd], check=True)
     except subprocess.CalledProcessError:
-        logging.error("Failed to run command '%s'", " ".join(cmd))
+        logging.error(
+            "Failed to run command '%s'", " ".join([str(c) for c in cmd]))
         sys.exit(1)
 
 

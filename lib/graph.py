@@ -172,8 +172,9 @@ class SinglePipelineGraph:
         for job in self.iter_jobs():
             args = job["wrapper_arguments"]
             cmd_node = self._make_cmd_node(
-                job["complete"], job.get("outcome", None),
-                args["pipeline_name"], args["description"], args["command"])
+                job["complete"], bool(job.get("start_time")), job.get("outcome",
+                None), args["pipeline_name"], args["description"],
+                args["command"])
             self.nodes.add(cmd_node)
 
             for inputt in args.get("inputs") or []:
@@ -188,7 +189,8 @@ class SinglePipelineGraph:
 
 
     @staticmethod
-    def _make_cmd_node(complete, outcome, pipeline_name, description, command):
+    def _make_cmd_node(complete, started, outcome, pipeline_name, description,
+            command):
         cmd_style = {"style": "filled"}
         if complete and outcome == "success":
             cmd_style["fillcolor"] = "#90caf9"
@@ -196,6 +198,11 @@ class SinglePipelineGraph:
             cmd_style["fillcolor"] = "#ffecb3"
         elif complete and outcome == "fail":
             cmd_style["fillcolor"] = "#ef9a9a"
+        elif not complete and started:
+            cmd_style["fillcolor"] = "#ffffff"
+        elif not complete and not started:
+            cmd_style["fillcolor"] = "#bfbfbf"
+            cmd_style["fontcolor"] = "#4d4d4d"
         elif complete:
             raise RuntimeError("Unknown outcome '%s'" % outcome)
         else:

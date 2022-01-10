@@ -1,6 +1,15 @@
                               CHANGELOG
                               `````````
 
+Version 1.17.0 -- 2022-01-10
+----------------------------
+
+- Litani will no longer crash when running in a directory where one of the
+subdirectories contains a cache pointer from an earlier run.
+- Litani will distinguish on the pipeline HTML page the jobs that are currently
+running from ones whose execution has not started.
+
+
 Version 1.16.0 -- 2021-12-01
 ----------------------------
 

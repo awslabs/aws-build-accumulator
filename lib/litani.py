@@ -33,7 +33,7 @@ TIME_FORMAT_R = "%Y-%m-%dT%H:%M:%SZ"
 TIME_FORMAT_W = "%Y-%m-%dT%H:%M:%SZ"
 TIME_FORMAT_MS = "%Y-%m-%dT%H:%M:%S.%fZ"
 VERSION_MAJOR = 1
-VERSION_MINOR = 16
+VERSION_MINOR = 17
 VERSION_PATCH = 0
 RC = False
 
@@ -154,10 +154,6 @@ def _get_cache_dir(path=os.getcwd()):
         while current.parent != current:
             current = current.parent
             yield current
-        current = pathlib.Path(os.getcwd()).resolve(strict=True)
-        for root, _, dirs in os.walk(current):
-            for dyr in dirs:
-                yield pathlib.Path(os.path.join(root, dyr))
 
     for possible_dir in cache_pointer_dirs():
         logging.debug(
