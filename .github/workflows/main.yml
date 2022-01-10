@@ -39,6 +39,7 @@ jobs:
            brew tap ronakfof/litani
            brew install litani
            brew upgrade
-      # Runs tests
-      - name: Run tests
-        run: brew test litani
+      - name: Get help option
+        run: litani -h
+      - name: Get version
+        run: litani -V
