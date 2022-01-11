@@ -38,8 +38,11 @@ jobs:
            brew update
            brew tap ronakfof/litani
            brew install litani
-           brew upgrade
-      - name: Get help option
-        run: litani -h
+      - name: Get pythonpath
+        run: python3 -m site
       - name: Get version
         run: litani -V
+      - name: Get help option
+        run: litani -h
+      - name: run tests
+        run: brew test litani
