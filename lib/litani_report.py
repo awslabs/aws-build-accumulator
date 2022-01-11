@@ -508,17 +508,6 @@ def get_dashboard_svgs(run, env, gnuplot):
     }
 
 
-def get_git_hash():
-    try:
-        cmd = ["git", "show", "--no-patch", "--pretty=format:%h"]
-        litani_dir = pathlib.Path(os.path.realpath(__file__)).parent
-        proc = subprocess.run(
-            cmd, text=True, stdout=subprocess.PIPE, check=True, cwd=litani_dir)
-        return proc.stdout.strip()
-    except RuntimeError:
-        return None
-
-
 def get_summary(run):
     ret = {
         "in_progress": 0,
@@ -557,7 +546,7 @@ def render(run, report_dir, pipeline_depgraph_renderer):
 
     dash_templ = env.get_template("dashboard.jinja.html")
     page = dash_templ.render(
-        run=run, svgs=svgs, litani_hash=get_git_hash(),
+        run=run, svgs=svgs,
         litani_version=litani.VERSION,
         litani_report_archive_path=litani_report_archive_path,
         summary=get_summary(run))
