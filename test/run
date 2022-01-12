@@ -14,6 +14,7 @@
 # permissions and limitations under the License.
 
 
+import argparse
 import logging
 import os
 import pathlib
@@ -21,6 +22,21 @@ import re
 import subprocess
 import sys
 import uuid
+
+DESCRIPTION = "Execute e2e and unit tests for Litani"
+
+
+def get_args():
+    pars = argparse.ArgumentParser(description=DESCRIPTION)
+    for arg in [{
+            "flags": ["--output-dir"],
+            "help": "output dir for test results",
+            "default": pathlib.Path(__file__).resolve().parent / "output",
+            "type": pathlib.Path
+    }]:
+        flags = arg.pop("flags")
+        pars.add_argument(*flags, **arg)
+    return pars.parse_args()
 
 
 def run_cmd(cmd):
@@ -53,7 +69,7 @@ def collapse(string):
     return re.sub(r"\s+", " ", string)
 
 
-def add_e2e_tests(litani, test_dir, root_dir, counter):
+def add_e2e_tests(litani, test_dir, counter, output_dir):
     e2e_test_dir = test_dir / "e2e"
     # 4 jobs per test (init, add-jobs, run-build, check-run)
     # skip __init__.py and __pycache__
@@ -63,7 +79,7 @@ def add_e2e_tests(litani, test_dir, root_dir, counter):
         if test_file.name in ["__init__.py", "__pycache__"]:
             continue
 
-        run_dir = e2e_test_dir / "output" / str(uuid.uuid4())
+        run_dir = output_dir / "e2e_outputs" / str(uuid.uuid4())
 
         litani_add(
             litani, counter,
@@ -143,16 +159,21 @@ def print_counter(counter):
 
 
 def main():
+    args = get_args()
     logging.basicConfig(format="run-tests: %(message)s")
     test_dir = pathlib.Path(__file__).resolve().parent
     root = test_dir.parent
     litani = root / "litani"
 
+    output_dir = args.output_dir.resolve()
+    output_dir.mkdir(exist_ok=True, parents=True)
+    os.chdir(output_dir)
+
     run_cmd([
         litani, "init",
         "--project", "Litani Test Suite",
-        "--output-prefix", test_dir / "output",
-        "--output-symlink", test_dir / "output" / "latest"])
+        "--output-prefix", ".",
+        "--output-symlink", "latest"])
 
     counter = {
         "added": 0,
@@ -160,7 +181,8 @@ def main():
     }
 
     add_unit_tests(litani, test_dir, root, counter)
-    add_e2e_tests(litani, test_dir, root, counter)
+    add_e2e_tests(
+        litani, test_dir, counter, output_dir=output_dir)
     print()
 
     run_cmd([litani, "run-build"])
