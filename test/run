@@ -15,6 +15,7 @@
 
 
 import argparse
+import importlib
 import logging
 import os
 import pathlib
@@ -33,7 +34,11 @@ def get_args():
             "help": "output dir for test results",
             "default": pathlib.Path(__file__).resolve().parent / "output",
             "type": pathlib.Path
-    }]:
+        }, {
+            "flags": ["--fast"],
+            "help": "run fast tests only",
+            "action": "store_true"
+        }]:
         flags = arg.pop("flags")
         pars.add_argument(*flags, **arg)
     return pars.parse_args()
@@ -45,6 +50,14 @@ def run_cmd(cmd):
     except subprocess.CalledProcessError:
         logging.error(
             "Failed to run command '%s'", " ".join([str(c) for c in cmd]))
+        sys.exit(1)
+
+
+def is_slow_test(module_file):
+    try:
+        return importlib.import_module(str(module_file.stem)).SLOW
+    except AttributeError:
+        logging.error("Variable SLOW is missing from: %s", module_file.name)
         sys.exit(1)
 
 
@@ -69,12 +82,12 @@ def collapse(string):
     return re.sub(r"\s+", " ", string)
 
 
-def add_e2e_tests(litani, test_dir, counter, output_dir):
+def add_e2e_tests(litani, test_dir, counter, output_dir, fast):
     e2e_test_dir = test_dir / "e2e"
     # 4 jobs per test (init, add-jobs, run-build, check-run)
     # skip __init__.py and __pycache__
     counter["total"] += (len(os.listdir(e2e_test_dir / "tests")) - 2) * 4
-
+    sys.path.insert(1, str(e2e_test_dir / "tests"))
     for test_file in (e2e_test_dir / "tests").iterdir():
         if test_file.name in ["__init__.py", "__pycache__"]:
             continue
@@ -85,8 +98,12 @@ def add_e2e_tests(litani, test_dir, counter, output_dir):
                 if line.strip().startswith("def transform_jobs("):
                     add_transform_jobs = True
                     break
+        if fast and is_slow_test(test_file):
+            continue
 
         run_dir = output_dir / "e2e_outputs" / str(uuid.uuid4())
+
+        timeout=10 if fast else 0
 
         litani_add(
             litani, counter,
@@ -100,7 +117,8 @@ def add_e2e_tests(litani, test_dir, counter, output_dir):
             ci_stage="test",
             description=f"{test_file.stem}: init",
             outputs=run_dir / ".litani_cache_dir",
-            cwd=run_dir)
+            cwd=run_dir,
+            timeout=timeout)
 
         run_build_input = str(uuid.uuid4())
         litani_add(
@@ -116,7 +134,9 @@ def add_e2e_tests(litani, test_dir, counter, output_dir):
             description=f"{test_file.stem}: add jobs",
             inputs=run_dir / ".litani_cache_dir",
             phony_outputs=run_build_input,
-            cwd=run_dir)
+            outputs=f"{run_dir}/output/jobs",
+            cwd=run_dir,
+            timeout=timeout)
 
         if add_transform_jobs:
             add_jobs_output = run_build_input
@@ -149,7 +169,8 @@ def add_e2e_tests(litani, test_dir, counter, output_dir):
             description=f"{test_file.stem}: run build",
             inputs=run_build_input,
             outputs=f"{run_dir}/output/run.json",
-            cwd=run_dir)
+            cwd=run_dir,
+            timeout=timeout)
 
         litani_add(
             litani, counter,
@@ -163,7 +184,8 @@ def add_e2e_tests(litani, test_dir, counter, output_dir):
             ci_stage="report",
             description=f"{test_file.stem}: check run",
             inputs=f"{run_dir}/output/run.json",
-            cwd=run_dir)
+            cwd=run_dir,
+            timeout=timeout)
 
 
 def add_unit_tests(litani, test_dir, root_dir, counter):
@@ -186,7 +208,7 @@ def print_counter(counter):
 
 def main():
     args = get_args()
-    logging.basicConfig(format="run-tests: %(message)s")
+    logging.basicConfig(format="\nrun-tests: %(message)s")
     test_dir = pathlib.Path(__file__).resolve().parent
     root = test_dir.parent
     litani = root / "litani"
@@ -208,7 +230,7 @@ def main():
 
     add_unit_tests(litani, test_dir, root, counter)
     add_e2e_tests(
-        litani, test_dir, counter, output_dir=output_dir)
+        litani, test_dir, counter, output_dir, args.fast)
     print()
 
     run_cmd([litani, "run-build"])

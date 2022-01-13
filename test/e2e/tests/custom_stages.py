@@ -1,4 +1,5 @@
 NUM_STAGES = 4
+SLOW = False
 
 def get_stages():
     stages = []
