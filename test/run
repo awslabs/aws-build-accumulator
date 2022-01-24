@@ -79,6 +79,13 @@ def add_e2e_tests(litani, test_dir, counter, output_dir):
         if test_file.name in ["__init__.py", "__pycache__"]:
             continue
 
+        add_transform_jobs = False
+        with open(test_file) as handle:
+            for line in handle:
+                if line.strip().startswith("def transform_jobs("):
+                    add_transform_jobs = True
+                    break
+
         run_dir = output_dir / "e2e_outputs" / str(uuid.uuid4())
 
         litani_add(
@@ -95,6 +102,7 @@ def add_e2e_tests(litani, test_dir, counter, output_dir):
             outputs=run_dir / ".litani_cache_dir",
             cwd=run_dir)
 
+        run_build_input = str(uuid.uuid4())
         litani_add(
             litani, counter,
             command=collapse(f"""
@@ -107,8 +115,26 @@ def add_e2e_tests(litani, test_dir, counter, output_dir):
             ci_stage="test",
             description=f"{test_file.stem}: add jobs",
             inputs=run_dir / ".litani_cache_dir",
-            outputs=f"{run_dir}/output/jobs",
+            phony_outputs=run_build_input,
             cwd=run_dir)
+
+        if add_transform_jobs:
+            add_jobs_output = run_build_input
+            run_build_input = str(uuid.uuid4())
+            litani_add(
+                litani, counter,
+                command=collapse(f"""
+                    {e2e_test_dir / 'run'}
+                    --test-file {test_file}
+                    --litani {litani}
+                    --run-dir {run_dir}
+                    --operation transform-jobs"""),
+                pipeline=f"End-to-end: {test_file.stem}",
+                ci_stage="test",
+                description=f"{test_file.stem}: transform jobs",
+                inputs=add_jobs_output,
+                phony_outputs=run_build_input,
+                cwd=run_dir)
 
         litani_add(
             litani, counter,
@@ -121,7 +147,7 @@ def add_e2e_tests(litani, test_dir, counter, output_dir):
             pipeline=f"End-to-end: {test_file.stem}",
             ci_stage="test",
             description=f"{test_file.stem}: run build",
-            inputs=f"{run_dir}/output/jobs",
+            inputs=run_build_input,
             outputs=f"{run_dir}/output/run.json",
             cwd=run_dir)
 
