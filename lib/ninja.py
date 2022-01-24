@@ -57,6 +57,8 @@ class _OutputAccumulator:
 
     @staticmethod
     def get_tty_width():
+        if os.getenv("TERM") is None:
+            return 80
         try:
             proc = subprocess.run(
                 ["tput", "cols"], text=True, stdout=subprocess.PIPE, check=True)
