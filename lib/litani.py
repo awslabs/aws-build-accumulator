@@ -239,6 +239,11 @@ def add_jobs_to_cache():
     jobs = []
     cache_dir = get_cache_dir()
     jobs_dir = cache_dir / JOBS_DIR
+    if not jobs_dir.exists():
+        logging.error(
+            "Cannot run build: no jobs were added. Run `litani add-job` one or "
+            "more times before running `litani run-build`.")
+        sys.exit(1)
     for job_file in os.listdir(jobs_dir):
         with open(jobs_dir / job_file) as handle:
             jobs.append(json.load(handle))
