@@ -1,3 +1,5 @@
+#!/bin/sh
+#
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License").
@@ -11,29 +13,22 @@
 # express or implied. See the License for the specific language governing
 # permissions and limitations under the License.
 
-SLOW = False
+LITANI=${LITANI:-litani}
 
-def get_init_args():
-    return {
-        "kwargs": {
-            "project": "foo",
-        }
-    }
+if [ "$1" != "--no-standalone" ]; then
+  "${LITANI}" init --project-name "project-1"
+fi
 
+"${LITANI}" add-job \
+  --command ">&2 echo foo" \
+  --pipeline foo \
+  --ci-stage build
 
-def get_jobs():
-    return [{
-        "kwargs": {
-            "command": "echo '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'",
-            "ci-stage": "build",
-            "pipeline": "foo",
-        }
-    }]
+"${LITANI}" add-job \
+  --command ">&2 echo bar" \
+  --pipeline foo \
+  --ci-stage build
 
-
-def get_run_build_args():
-    return {}
-
-
-def check_run(run):
-    return True
+if [ "$1" != "--no-standalone" ]; then
+  "${LITANI}" run-build
+fi

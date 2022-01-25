@@ -1,6 +1,15 @@
                               CHANGELOG
                               `````````
 
+Version 1.18.0 -- 2022-01-24
+----------------------------
+- Add new transform-jobs command
+- Add --fast option to Litani test suite
+- Add --output-dir flag to Litani test suite
+- Litani will no longer print errors when not connected to a tty device
+- Add documentation for new flags
+
+
 Version 1.17.0 -- 2022-01-10
 ----------------------------
 

@@ -24,11 +24,25 @@ def get_init_args():
 def get_jobs():
     return [{
         "kwargs": {
-            "command": "echo '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'",
+            "command": "echo foo",
+            "ci-stage": "build",
+            "pipeline": "foo",
+        }
+    }, {
+        "kwargs": {
+            "command": "echo bar",
             "ci-stage": "build",
             "pipeline": "foo",
         }
     }]
+
+
+def transform_jobs(jobs):
+    new_jobs = []
+    for job in jobs:
+        if job["command"] != "echo bar":
+            new_jobs.append(job)
+    return new_jobs
 
 
 def get_run_build_args():
@@ -36,4 +50,5 @@ def get_run_build_args():
 
 
 def check_run(run):
-    return True
+    jobs = run["pipelines"][0]["ci_stages"][0]["jobs"]
+    return all((len(jobs) == 1, jobs[0]["stdout"][0].strip() == "foo"))

@@ -29,33 +29,6 @@ DESCRIPTION = "Execute a single Litani run and test the resulting run.json"
 EPILOG = "See test/e2e/README for the organization of this test suite"
 
 
-def get_args():
-    pars = argparse.ArgumentParser(description=DESCRIPTION, epilog=EPILOG)
-    for arg in [{
-            "flags": ["--test-file"],
-            "required": True,
-            "type": pathlib.Path,
-            "help": "file under test/e2e/tests containing test definition",
-    }, {
-            "flags": ["--litani"],
-            "required": True,
-            "type": pathlib.Path,
-            "help": "path to Litani under test",
-    }, {
-            "flags": ["--run-dir"],
-            "required": True,
-            "type": pathlib.Path,
-            "help": "a fresh directory in which Litani will be run",
-    }, {
-            "flags": ["--operation"],
-            "required": True,
-            "choices": ["init", "add-jobs", "run-build", "check-run"],
-    }]:
-        flags = arg.pop("flags")
-        pars.add_argument(*flags, **arg)
-    return pars.parse_args()
-
-
 def run_cmd(cmd):
     cmd_list = [str(c) for c in cmd]
     print(" ".join(cmd_list))
@@ -106,6 +79,25 @@ def add_jobs(litani, run_dir, mod):
             litani, "add-job", *job.get("args", []), **job.get("kwargs", {}))
 
 
+def transform_jobs(litani, run_dir, mod):
+    os.chdir(run_dir)
+    proc = subprocess.Popen(
+        [litani, "transform-jobs"], stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE, text=True, bufsize=0)
+
+    old_jobs = json.loads(proc.stdout.read())
+    new_jobs = mod.transform_jobs(old_jobs)
+
+    print(json.dumps(new_jobs), file=proc.stdin)
+    proc.stdin.flush()
+    proc.stdin.close()
+
+    proc.wait()
+    if proc.returncode:
+        logging.error("Return code: %d", proc.returncode)
+        sys.exit(1)
+
+
 def run_build(litani, run_dir, mod):
     os.chdir(run_dir)
     args = mod.get_run_build_args()
@@ -131,6 +123,42 @@ def add_global_context(args):
     os.environ["LITANI_E2E_LITANI_PATH"] = str(args.litani.resolve())
 
 
+OPERATIONS = {
+    "init": init,
+    "add-jobs": add_jobs,
+    "run-build": run_build,
+    "check-run": check_run,
+    "transform-jobs": transform_jobs,
+}
+
+
+def get_args():
+    pars = argparse.ArgumentParser(description=DESCRIPTION, epilog=EPILOG)
+    for arg in [{
+            "flags": ["--test-file"],
+            "required": True,
+            "type": pathlib.Path,
+            "help": "file under test/e2e/tests containing test definition",
+    }, {
+            "flags": ["--litani"],
+            "required": True,
+            "type": pathlib.Path,
+            "help": "path to Litani under test",
+    }, {
+            "flags": ["--run-dir"],
+            "required": True,
+            "type": pathlib.Path,
+            "help": "a fresh directory in which Litani will be run",
+    }, {
+            "flags": ["--operation"],
+            "required": True,
+            "choices": list(OPERATIONS.keys())
+    }]:
+        flags = arg.pop("flags")
+        pars.add_argument(*flags, **arg)
+    return pars.parse_args()
+
+
 def main():
     args = get_args()
     logging.basicConfig(format="run-tests: %(message)s")
@@ -139,12 +167,7 @@ def main():
 
     mod = get_test_module(args.test_file)
 
-    {
-        "init": init,
-        "add-jobs": add_jobs,
-        "run-build": run_build,
-        "check-run": check_run,
-    }[args.operation](args.litani, args.run_dir, mod)
+    OPERATIONS[args.operation](args.litani, args.run_dir, mod)
 
 
 if __name__ == "__main__":
