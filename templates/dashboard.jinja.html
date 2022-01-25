@@ -251,6 +251,11 @@ p {
   font-weight: bold;
 }
 
+.stage-stats {
+  font-size: xx-small;
+  font-style: normal;
+}
+
 @media (max-width: 640px){
   .pipeline-progress {
     width: 10em;
@@ -375,7 +380,15 @@ p {
 
       <div class="pipeline-progress pipeline-header">
         {% for stage in run["stages"] %}
-        <p>{{ stage }}</p>
+        <div class="stage-box">
+          <div class="stage-name">
+            <p>{{ stage }}</p>
+          </div><!-- class="stage-name" -->
+          <div class="stage-stats">
+            <p>{{ summary["stages"][stage]["completed"] }} Completed</p>
+            <p>{{ summary["stages"][stage]["success"] }} Successful</p>
+          </div><!-- class="stage-stats" -->
+        </div><!-- class="stage-box" -->
         {% endfor %}{# stage in run["stages"] #}
       </div><!-- class="pipeline-progress" -->
     </div><!-- class="pipeline-row" -->

@@ -514,10 +514,25 @@ def get_summary(run):
         "success": 0,
         "total": 0,
         "fail": 0,
+        "stages": {
+        }
     }
     for pipe in run["pipelines"]:
         ret["total"] += 1
         ret[pipe["status"]] += 1
+        for stage in pipe["ci_stages"]:
+            try:
+                ret["stages"][stage["name"]]
+            except KeyError:
+                ret["stages"][stage["name"]] = {
+                    "completed": 0,
+                    "success": 0,
+                }
+            if stage["progress"] != 100:
+                continue
+            ret["stages"][stage["name"]]["completed"] += 1
+            if stage["status"] == "success":
+                ret["stages"][stage["name"]]["success"] += 1
     return ret
 
 
