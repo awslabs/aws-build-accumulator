@@ -33,7 +33,7 @@ def get_args():
             "required": True,
             "type": pathlib.Path,
     }, {
-            "flags": ["--roff-html-dir"],
+            "flags": ["--man-html-dir"],
             "required": True,
             "type": pathlib.Path,
     }, {
@@ -50,12 +50,12 @@ def get_args():
     return pars.parse_args()
 
 
-def get_manual(man, roff_html_dir):
+def get_manual(man, man_html_dir):
     record = {
         "title": re.sub("litani-", "litani ", man.stem),
         "anchor": man.stem,
         "body": [],
-        "chapter": get_chapter(roff_html_dir / man.name),
+        "chapter": get_chapter(man_html_dir / man.name),
     }
     with open(man) as handle:
         for line in handle:
@@ -70,14 +70,14 @@ def get_chapter(man_html):
             if m:
                 return int(m["chap"])
     raise UserWarning(
-        f"No line of roff html output '{man_html}' matched chapter pattern "
+        f"No line of man html output '{man_html}' matched chapter pattern "
         f"'{CHAPTER_PAT_STR}'")
 
 
-def get_manuals(html_manuals, roff_html_dir):
+def get_manuals(html_manuals, man_html_dir):
     ret = []
     for man in html_manuals:
-        ret.append(get_manual(man, roff_html_dir))
+        ret.append(get_manual(man, man_html_dir))
     return ret
 
 
@@ -88,7 +88,7 @@ def main():
         autoescape=jinja2.select_autoescape(
             enabled_extensions=('html'),
             default_for_string=True))
-    manuals = get_manuals(args.html_manuals, args.roff_html_dir)
+    manuals = get_manuals(args.html_manuals, args.man_html_dir)
 
     templ = env.get_template("index.jinja.html")
     page = templ.render(manuals=manuals)

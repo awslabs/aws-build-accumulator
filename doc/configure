@@ -17,8 +17,6 @@
 import sys
 import pathlib
 
-import jinja2
-
 
 DOC_DIR = pathlib.Path(sys.path[0]).resolve()
 sys.path.insert(1, str(DOC_DIR.parent))
@@ -36,19 +34,19 @@ SRC_DIR = DOC_DIR / "src"
 TEMPLATE_DIR = DOC_DIR / "templates"
 TMP_DIR = DOC_DIR / "tmp"
 
-ROFF_DIR = OUT_DIR / "man"
+MAN_DIR = OUT_DIR / "man"
 
-HTML_MAN_SRC_DIR = TMP_DIR / "roff_to_html"
+HTML_MAN_SRC_DIR = TMP_DIR / "man_to_html"
 HTML_UNIQUE_DIR = TMP_DIR / "html_unique"
 
 
 RULES = [{
-    "name": "sc_to_roff",
-    "description": "converting ${man-name} to roff",
+    "name": "sc_to_man",
+    "description": "converting ${man-name} to man",
     "command": "scdoc < ${in} > ${out}"
 }, {
-    "name": "voluptuous_to_roff",
-    "description": "converting ${man-name} to roff",
+    "name": "voluptuous_to_man",
+    "description": "converting ${man-name} to man",
     "command": f"{BIN_DIR / 'schema-to-scdoc'}"
                f" --project-root { DOC_DIR.parent }"
                " --page-name ${man-name}"
@@ -57,8 +55,8 @@ RULES = [{
                f" { TEMPLATE_DIR / 'voluptuous-man.jinja.scdoc' }"
                " | scdoc > ${out}"
 }, {
-    "name": "roff_to_html",
-    "description": "converting ${man-name}.roff HTML",
+    "name": "man_to_html",
+    "description": "converting ${man-name} HTML",
     "command": "mandoc -O fragment -Thtml < ${in} > ${out}"
 }, {
     "name": "uniquify_header_ids",
@@ -79,7 +77,7 @@ RULES = [{
                "  --html-manuals ${html-mans}"
                f" --template-dir {TEMPLATE_DIR}"
                "  --out-file ${out}"
-               "  --roff-html-dir ${roff-html-dir}"
+               "  --man-html-dir ${man-html-dir}"
 }]
 
 
@@ -97,12 +95,12 @@ def make_html_unique(man, html_man, html_mans, builds):
     html_mans.append(html_unique)
 
 
-def roff_to_html(man, roff_out, builds):
+def man_to_html(man, man_out, builds):
     html_man = HTML_MAN_SRC_DIR / f"{man.stem}.html"
     builds.append({
-        "inputs": [roff_out],
+        "inputs": [man_out],
         "outputs": [html_man],
-        "rule": "roff_to_html",
+        "rule": "man_to_html",
         "variables": {
             "man-name": man.stem,
             "in-file": html_man,
@@ -111,19 +109,25 @@ def roff_to_html(man, roff_out, builds):
     return html_man
 
 
-def convert_man_dir_to_roff(src_dir, dst_dir, rule, html_mans, builds):
+def convert_man_dir_to_man(src_dir, dst_dir, rule, html_mans, builds):
     for man in (src_dir).iterdir():
-        roff_out = dst_dir / f"{man.stem}.roff"
+        if man.suffix == ".scdoc":
+            with open(man) as fp:
+                line = fp.readline().rstrip()
+            index = line[line.find('(')+1:line.find(')')]
+            man_out = dst_dir / f"{man.stem}.{index}"
+        else:
+            man_out = dst_dir / f"{man.stem}.5"
         builds.append({
             "inputs": [man],
-            "outputs": [roff_out],
+            "outputs": [man_out],
             "rule": rule,
             "variables": {
                 "man-name": man.stem,
                 "data-path": man.resolve(),
             }
         })
-        html_man = roff_to_html(man, roff_out, builds)
+        html_man = man_to_html(man, man_out, builds)
         make_html_unique(man, html_man, html_mans, builds)
 
 
@@ -131,10 +135,10 @@ def main():
     builds = []
     html_mans = []
 
-    convert_man_dir_to_roff(
-        SRC_DIR / "man", ROFF_DIR, "sc_to_roff", html_mans, builds)
-    convert_man_dir_to_roff(
-        SRC_DIR / "voluptuous-man", ROFF_DIR, "voluptuous_to_roff", html_mans,
+    convert_man_dir_to_man(
+        SRC_DIR / "man", MAN_DIR, "sc_to_man", html_mans, builds)
+    convert_man_dir_to_man(
+        SRC_DIR / "voluptuous-man", MAN_DIR, "voluptuous_to_man", html_mans,
         builds)
 
     builds.append({
@@ -146,7 +150,7 @@ def main():
         "rule": "build_html_doc",
         "variables": {
             "html-mans": " ".join([str(h) for h in html_mans]),
-            "roff-html-dir": HTML_MAN_SRC_DIR,
+            "man-html-dir": HTML_MAN_SRC_DIR,
         }
     })
 
