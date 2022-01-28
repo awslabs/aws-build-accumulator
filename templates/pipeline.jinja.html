@@ -194,6 +194,14 @@ p {
   text-shadow: 0 0 2px #82ada944;
   font-weight: bold;
 }
+.literal-stdout {
+  margin-top: 0.4em;
+  margin-bottom: 0.2em;
+  padding: 1em;
+  border-radius: 0.5em;
+  overflow-x: auto;
+  overflow-y: auto;
+}
 .output-box {
   margin-top: 0.4em;
   margin-bottom: 0.2em;
@@ -773,12 +781,20 @@ a:visited:active {
 
 
           {% if job["stdout"] %}
-          <div class="output-box"><xmp>stdout:
-            {% for line in job["stdout"] %}
-{{ line.strip() }}
-            {%- endfor %}{# line in job["stdout"] #}
-            </xmp>
-          </div><!-- class="output-box" -->
+            {% if job["wrapper_arguments"]["tags"] is not none and "literal-stdout" in job["wrapper_arguments"]["tags"] %}
+            <div class="literal-stdout">
+              {% for line in job["stdout"] %}
+  {{ line.strip() }}
+              {%- endfor %}{# line in job["stdout"] #}
+            </div><!-- class="literal-stdout" -->
+            {% else %}
+            <div class="output-box"><xmp>stdout:
+              {% for line in job["stdout"] %}
+  {{ line.strip() }}
+              {%- endfor %}{# line in job["stdout"] #}
+              </xmp>
+            </div><!-- class="output-box" -->
+            {% endif %}{# is literal-stdout in tags #}
           {% endif %}{# job["stdout"] #}
 
           {% if job["stderr"] %}
