@@ -1,8 +1,21 @@
                               CHANGELOG
                               `````````
+Version 1.19.0 -- 2022-01-24
+----------------------------
+
+- Change man page extension from .roff to its chapter. 
+
+  This commit is in preparation for Litani to be installed on users'
+  systems, where the man pages need to be installed in the correct
+  location and have the correct prefix in order for the man program to
+  find them.
+
+- Inform user that jobs must be added in order for Litani to run a build
+
 
 Version 1.18.0 -- 2022-01-24
 ----------------------------
+
 - Add new transform-jobs command
 - Add --fast option to Litani test suite
 - Add --output-dir flag to Litani test suite
