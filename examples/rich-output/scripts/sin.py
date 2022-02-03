@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-#
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License").
@@ -13,22 +11,20 @@
 # express or implied. See the License for the specific language governing
 # permissions and limitations under the License.
 
-
-import os
-import pathlib
-import re
-import subprocess
+import argparse
+import math
 
 
-litani = os.getenv("LITANI", "litani")
-this_dir = pathlib.Path(__file__).parent
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-o", "--output", required=True, help="output file")
+    args = parser.parse_args()
+    with open(args.output, "w") as handle:
+        for i in range(9):
+            val = ((2.0 * math.pi) / 8.0) * i
+            print(f"{val}, {math.sin(val)}",
+                file=handle)
 
-subprocess.run(
-    [litani, "init", "--project-name", "rich-output-examples"], check=True)
 
-pat = re.compile(r"run-\d.sh")
-for fyle in this_dir.iterdir():
-    if pat.match(fyle.name):
-        subprocess.run([fyle, "--no-standalone"], check=True)
-
-subprocess.run([litani, "run-build"], check=True)
+if __name__ == "__main__":
+    main()
