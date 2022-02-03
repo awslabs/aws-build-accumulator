@@ -784,13 +784,13 @@ a:visited:active {
             {% if job["wrapper_arguments"]["tags"] is not none and "literal-stdout" in job["wrapper_arguments"]["tags"] %}
             <div class="literal-stdout">
               {% for line in job["stdout"] %}
-  {{ line.strip() }}
+{{ line.strip() }}
               {%- endfor %}{# line in job["stdout"] #}
             </div><!-- class="literal-stdout" -->
             {% else %}
             <div class="output-box"><xmp>stdout:
               {% for line in job["stdout"] %}
-  {{ line.strip() }}
+{{ line.strip() }}
               {%- endfor %}{# line in job["stdout"] #}
               </xmp>
             </div><!-- class="output-box" -->

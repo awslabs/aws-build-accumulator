@@ -1,7 +1,7 @@
 README
 
 The run-all.py script will run examples that demonstrate how jobs in Litani can
-display "rich" output either on the dasboard or pipeline pages
+display rich output either on the dashboard or pipeline pages
 
 To try this out, run
 
