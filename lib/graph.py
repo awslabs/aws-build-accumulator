@@ -56,12 +56,12 @@ class DependencyNode(Node):
         self.id = hash(fyle)
 
         path = pathlib.Path(fyle)
-        _, ext = os.path.splitext(path.name)
+        name, ext = os.path.splitext(path.name)
 
         self.style = style
 
         wrapper = get_text_wrapper(line_width)
-        path_name = "\n".join(wrapper.wrap(path.name))
+        path_name = "\n".join(wrapper.wrap(name))
         self.style["label"] = f"{path_name}{ext}"
 
 
