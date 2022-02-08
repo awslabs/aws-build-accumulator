@@ -31,9 +31,8 @@ This program prints the _run.json_ file for an in-progress Litani run to stdout.
 The JSON file's schema is documented in *litani-run.json(5)*.
 
 This program is intended to be used while an invocation of *litani-run-build(1)*
-is running. After the *run-build* process has terminated, this program will not
-work (though this may change in future versions). Instead, you can access the
-_run.json_ file in the run's output directory.
+is running. You can access the _run.json_ file in the run's output directory
+both during and after termination of the *run-build* process.
 
 This program may be run as a Litani job, and it may be run as a subprocess from
 a command that is part of a Litani job. This allows commands to 'introspect' on
