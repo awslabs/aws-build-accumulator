@@ -55,6 +55,7 @@ for job in jobs:
 
 print(json.dumps(jobs), file=proc.stdin)
 proc.stdin.close()
+proc.wait()
 
 # Now, add the new root job. (It's also fine to do this before or during the
 # transformation, but remember to skip the new job when iterating!)

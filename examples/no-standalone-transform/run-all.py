@@ -52,7 +52,9 @@ print(json.dumps(jobs), file=proc.stdin)
 
 # ``````````````````````````````````````````````````````````````````````````````
 # IMPORTANT! close "litani transform-jobs"'s stdin, otherwise it will block.
+# This process should wait until all jobs have been transformed
 #
 proc.stdin.close()
+proc.wait()
 
 subprocess.run([litani, "run-build"], check=True)
