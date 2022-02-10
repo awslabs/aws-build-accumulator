@@ -464,7 +464,7 @@ def sort_run(run):
         pipe["ci_stages"] = stages
         add_pipe_stats(pipe)
         pipelines.append(pipe)
-    pipelines = sorted(pipelines, key=lambda p: p["status"])
+    pipelines = sorted(pipelines, key=lambda p: (p["status"], p["name"]))
     run["pipelines"] = pipelines
     add_run_stats(run)
 
