@@ -73,8 +73,8 @@ The following is a synopsis of Litani's subcommands:
 	you ran *litani init*.
 
 *litani dump-run*
-	Print a JSON representation of the run so far to stdout while the
-	build is running.
+	Print a JSON representation of the run so far to stdout both while the
+	build is running as well as after it has completed.
 
 *litani graph*
 	Print the dependency graph of the build in Graphviz format, ready to

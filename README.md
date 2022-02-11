@@ -13,22 +13,41 @@ a unified interface describing heterogeneous build jobs.
 Hosted [here](https://awslabs.github.io/aws-build-accumulator/).
 
 
-### Requirements
+### Installation
 
-* Python 3
+To install with [Homebrew](https://brew.sh):
+
+```bash
+brew tap aws/tap
+brew install litani
+```
+
+Documentation can also be accessed using `man`:
+
+```bash
+man litani
+```
+
+### Dependencies
+
+If you are cloning the source code, you will need the following dependencies:
+
+#### Required
+
+* Python3
 * [Ninja](https://ninja-build.org/)
   * `apt-get install ninja-build`, `brew install ninja`
 * [Jinja](https://jinja.palletsprojects.com/en/2.11.x/)
   * `pip3 install jinja2`
+
+#### Recommended
+
 * [Graphviz DOT](https://graphviz.org/)
   * `apt-get install graphviz`, `brew install graphviz`
-
-Recommended:
-
 * [Gnuplot](http://www.gnuplot.info/) to generate graphs on the dashboard
   * `apt-get install gnuplot`, `brew install gnuplot`
 
-Optional:
+#### Optional
 
 * [Voluptuous](https://pypi.org/project/voluptuous/) to perform
   sanity-checking on internal data structures

@@ -1,6 +1,22 @@
                               CHANGELOG
                               `````````
-Version 1.19.0 -- 2022-01-24
+Version 1.20.0 -- 2022-02-11
+----------------------------
+
+This release introduces workflows for Litani that use GitHub Actions. It
+additionally contains bug fixes.
+
+- Workflow were added, which will create a Debian package as well as a PR
+  against the aws/homebrew-tap repository in order to update the brew formula.
+
+Bug fixes:
+
+- Prevent file extension from appearing twice in dot dependency diagram.
+- Litani dump-run will dump the latest run, if no build is concurrently running.
+- Update doc, examples for transform-jobs command.
+
+
+Version 1.19.0 -- 2022-02--01
 ----------------------------
 
 - Change man page extension from .roff to its chapter. 

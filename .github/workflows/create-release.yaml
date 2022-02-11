@@ -1,0 +1,50 @@
+on:
+  push:
+    tags:
+      - '*'
+
+name: Create Release
+
+jobs:
+  perform-release:
+    name: Perform Release
+    runs-on: ubuntu-20.04
+    env:
+      GITHUB_TOKEN: ${{ secrets.RELEASE_CI_ACCESS_TOKEN }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Get Version
+        run: echo "VERSION=${GITHUB_REF/refs\/tags\/}" >> $GITHUB_ENV
+      - name: Create release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ env.VERSION }}
+          release_name: ${{ env.VERSION }}
+          body: |
+            This is Litani version ${{ env.VERSION }}.
+
+            ## MacOS
+
+            On MacOS, install Litani using [Homebrew](https://brew.sh/) with
+
+            ```sh
+            brew install aws/tap/litani
+            ```
+
+            or upgrade (if it's already been installed) with:
+
+            ```sh
+            brew upgrade litani
+            ```
+
+            ## Ubuntu
+
+            On Ubuntu, install Litani by downloading the *.deb package below for ubuntu-20.04 and install with
+
+            ```sh
+            # Ubuntu 20.04:
+            $ apt install -y ./litani-${{ env.VERSION }}.deb
+            ```
+          draft: false
+          prerelease: false

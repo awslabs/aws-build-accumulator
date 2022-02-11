@@ -123,7 +123,21 @@ def _exit_error():
 
 
 def _try_dump_run(cache_dir, pid, sleeper, check_run):
-    os.kill(pid, DUMP_SIGNAL)
+    try:
+        os.kill(pid, DUMP_SIGNAL)
+    except ProcessLookupError:
+        logging.debug("pid %s does not match to a running process", pid)
+        latest_run_file = cache_dir / lib.litani.RUN_FILE
+        try:
+            with open(latest_run_file) as handle:
+                latest_run = json.load(handle)
+            check_run(latest_run)
+            _exit_success(latest_run)
+        except (
+            FileNotFoundError, json.decoder.JSONDecodeError,
+            InconsistentRunError):
+            logging.warning("Could not find run.json inside the latest run")
+            _exit_error()
     try:
         with open(cache_dir / _DUMPED_RUN) as handle:
             run = json.load(handle)
