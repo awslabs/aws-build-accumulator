@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Get Version
-        run: echo "VERSION=$(echo ${{ github.ref }} | cut -d "/" -f 3 | cut -d "-" -f 2)" >> $GITHUB_ENV
+        run: echo "VERSION=${GITHUB_REF/refs\/tags\/}" >> $GITHUB_ENV
       - name: Setup directory for deb package
         run: |
           sudo apt-get install -y mandoc scdoc ninja-build
