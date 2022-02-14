@@ -1,0 +1,25 @@
+on:
+  release:
+    types: [created]  
+
+name: Update documentation
+jobs:
+  update-documentation:
+    name: Update gh-pages
+    runs-on:  macos-10.15
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Install utilities
+        run: |
+          brew install scdoc mandoc coreutils ninja
+          pip3 install pyyaml jinja2
+      - name: Build doc
+        run: ./doc/configure && ninja
+      - name: Publish Documentation
+        uses: JamesIves/github-pages-deploy-action@4.1.4
+        with:
+          branch: gh-pages
+          folder: doc/out/html
