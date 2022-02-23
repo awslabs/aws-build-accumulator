@@ -251,6 +251,42 @@ p {
   font-weight: bold;
 }
 
+.job-outputs-header {
+  color: #263238;
+}
+.job-output-content {
+  background-color: #eceff1;
+  padding: 0.3em 1em;
+  border-radius: 0.3em;
+  margin-bottom: 4em;
+}
+.job-output-title {
+  margin: 0.3em 0 1em;
+}
+.job-output-title a {
+  text-decoration: none;
+  color: #29b6f6;
+}
+.job-output-title a:link, .job-output-title a:visited {
+  color: #29b6f6;
+}
+.job-output-title a:hover, .job-output-title a:visited:hover {
+  color: #ec407a;
+  text-decoration: none;
+}
+.job-output-title a:active, .job-output-title a:visited:active {
+  color: #ffeb3b;
+  text-decoration: none;
+}
+.job-output-box {
+  margin-top: 0.4em;
+  margin-bottom: 0.2em;
+  padding: 1em;
+  border-radius: 0.5em;
+  overflow-x: auto;
+  overflow-y: auto;
+}
+
 @media (max-width: 640px){
   .pipeline-progress {
     width: 10em;
@@ -278,6 +314,15 @@ p {
   }
   .downloads a {
     color: #29b6f6;
+  }
+  .job-outputs-header {
+    color: #eceff1;
+  }
+  .job-output-content {
+    background-color: #37474f;
+  }
+  .job-output-title {
+    color: #eceff1;
   }
   .pipeline-row {
     color: #eceff1;
@@ -445,6 +490,28 @@ p {
     {% endfor %}{# pipe in run["pipelines"] #}
   </div><!-- id="pipeline-table" -->
 
+  {% if front_page_outputs %}
+    <div class="job-outputs">
+      <div class="job-outputs-header">
+        <h2>Job Outputs</h2>
+      </div>
+      {% for job_desc, job in front_page_outputs.items() %}
+        <div class="job-output-content">
+          <div class="job-output-title">
+            <h3>Output of job &quot;<a
+              href="pipelines/{{ job['wrapper_arguments']['pipeline_name'] }}/
+index.html#job-{{ job['wrapper_arguments']['job_id'] }}"
+            >{{ job_desc }}</a>&quot;:</h3>
+          </div>
+          <div class="job-output-box">
+            {% for line in job["stdout"] %}
+              {{ line.strip() }}
+            {%- endfor %}{# line in job["stdout"] #}
+          </div>
+        </div>
+      {% endfor %}{# job_desc, job in front_page_outputs.items() #}
+    </div>
+  {% endif %}{# front_page_outputs #}
 
   {% for title, svg_list in svgs.items() %}
     {% if svg_list %}

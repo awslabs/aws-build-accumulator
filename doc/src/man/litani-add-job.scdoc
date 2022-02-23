@@ -125,6 +125,13 @@ configure times.
 	job's list of tags is included in its _run.json_ and is intended to help with
 	analyzing run data.
 
+	If 'literal-stdout' is provided as a tag, then the report will render the
+	job's stdout underneath the boxes that indicate the command and its
+	statistics within the associated pipeline's page. If 'front-page-text' is
+	provided as a tag, then the report will render the job's stdout on the
+	front page of the report. These 2 tags allow users to render custom HTML
+	data, e.g. tables, graphs. Examples can be found at 'examples/rich-output'.
+
 *--pipeline-name* _P_
 	The 'pipeline' that this job is part of. A pipeline is a subgraph of the
 	overall build, representing a single 'end-to-end' set of related jobs. A job's

@@ -544,18 +544,10 @@ def render(run, report_dir, pipeline_depgraph_renderer):
 
     litani_report_archive_path = os.getenv("LITANI_REPORT_ARCHIVE_PATH")
 
-    dash_templ = env.get_template("dashboard.jinja.html")
-    page = dash_templ.render(
-        run=run, svgs=svgs,
-        litani_version=litani.VERSION,
-        litani_report_archive_path=litani_report_archive_path,
-        summary=get_summary(run))
-    with litani.atomic_write(temporary_report_dir / "index.html") as handle:
-        print(page, file=handle)
-
     with litani.atomic_write(temporary_report_dir / litani.RUN_FILE) as handle:
         print(json.dumps(run, indent=2), file=handle)
 
+    front_page_outputs = {}
     pipe_templ = env.get_template("pipeline.jinja.html")
     for pipe in run["pipelines"]:
         pipeline_depgraph_renderer.render(
@@ -570,10 +562,26 @@ def render(run, report_dir, pipeline_depgraph_renderer):
                     MemoryTraceRenderer.render(
                         temporary_report_dir / pipe["url"], env, job, gnuplot)
 
+                tags = job["wrapper_arguments"]["tags"]
+                description = job["wrapper_arguments"]["description"]
+                if tags and "front-page-text" in tags:
+                    if "stdout" in job and job["stdout"]:
+                        front_page_outputs[description] = job
+
         pipe_page = pipe_templ.render(run=run, pipe=pipe)
         with litani.atomic_write(
                 temporary_report_dir / pipe["url"] / "index.html") as handle:
             print(pipe_page, file=handle)
+
+    dash_templ = env.get_template("dashboard.jinja.html")
+    page = dash_templ.render(
+        run=run, svgs=svgs,
+        litani_version=litani.VERSION,
+        litani_report_archive_path=litani_report_archive_path,
+        summary=get_summary(run), front_page_outputs=front_page_outputs)
+
+    with litani.atomic_write(temporary_report_dir / "index.html") as handle:
+        print(page, file=handle)
 
 
     temp_symlink_dir = report_dir.with_name(report_dir.name + str(uuid.uuid4()))
