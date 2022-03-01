@@ -260,6 +260,11 @@ def get_args():
             "help":
                 "how many times to retry loading the run in 1 second intervals"
                 " (Default: %(default)s)"
+        }, {
+            "flags": ["-o", "--out-file"],
+            "metavar": "F",
+            "type": _non_directory_path,
+            "help": "Output file to dump run file in"
     }]:
         flags = arg.pop("flags")
         dump_run_pars.add_argument(*flags, **arg)
@@ -414,6 +419,14 @@ def non_negative_int(arg):
         raise argparse.ArgumentTypeError(
             "Timeout '%d' must be >= 0" % ret) from e
     return ret
+
+
+def _non_directory_path(arg):
+    path = pathlib.Path(arg)
+    if path.exists() and path.is_dir():
+        raise ValueError(
+          f"--out-file flag expects a file and not a directory: {arg}")
+    return path
 
 
 def list_of_ints(arg):

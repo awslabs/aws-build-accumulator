@@ -112,8 +112,12 @@ def get_run_checker():
 
 
 
-def _exit_success(run):
-    print(json.dumps(run, indent=2))
+def _exit_success(run, out_file):
+    if out_file:
+        with lib.litani.atomic_write(out_file) as handle:
+            print(json.dumps(run, indent=2), file=handle)
+    else:
+        print(json.dumps(run, indent=2))
     sys.exit(0)
 
 
@@ -122,7 +126,7 @@ def _exit_error():
     sys.exit(0)
 
 
-def _try_dump_run(cache_dir, pid, sleeper, check_run):
+def _try_dump_run(cache_dir, pid, sleeper, check_run, out_file):
     try:
         os.kill(pid, DUMP_SIGNAL)
     except ProcessLookupError:
@@ -132,7 +136,7 @@ def _try_dump_run(cache_dir, pid, sleeper, check_run):
             with open(latest_run_file) as handle:
                 latest_run = json.load(handle)
             check_run(latest_run)
-            _exit_success(latest_run)
+            _exit_success(latest_run, out_file)
         except (
             FileNotFoundError, json.decoder.JSONDecodeError,
             InconsistentRunError):
@@ -142,7 +146,7 @@ def _try_dump_run(cache_dir, pid, sleeper, check_run):
         with open(cache_dir / _DUMPED_RUN) as handle:
             run = json.load(handle)
         check_run(run)
-        _exit_success(run)
+        _exit_success(run, out_file)
     except (
             FileNotFoundError, json.decoder.JSONDecodeError,
             InconsistentRunError):
@@ -161,13 +165,14 @@ async def dump_run(args):
 
     sleeper = BackoffSleeper(jitter=random.random())
     check_run = get_run_checker()
+    out_file = args.out_file if args.out_file else None
 
     if args.retries:
         for _ in range(args.retries):
-            _try_dump_run(cache_dir, pid, sleeper, check_run)
+            _try_dump_run(cache_dir, pid, sleeper, check_run, out_file)
     else:
         while True:
-            _try_dump_run(cache_dir, pid, sleeper, check_run)
+            _try_dump_run(cache_dir, pid, sleeper, check_run, out_file)
     _exit_error()
 
 
