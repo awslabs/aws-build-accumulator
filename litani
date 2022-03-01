@@ -269,6 +269,27 @@ def get_args():
         flags = arg.pop("flags")
         dump_run_pars.add_argument(*flags, **arg)
 
+
+    dump_jobs_pars = subs.add_parser("dump-jobs")
+    dump_jobs_pars.set_defaults(func=lib.run_printer.dump_jobs)
+    for arg in [{
+            "flags": ["-r", "--retries"],
+            "metavar": "N",
+            "type": non_negative_int,
+            "default": 10,
+            "help":
+                "how many times to retry loading the jobs in 1 second intervals"
+                " (Default: %(default)s)"
+        }, {
+            "flags": ["--out-file"],
+            "metavar": "F",
+            "type": _non_directory_path,
+            "help": "Output file to dump jobs in"
+    }]:
+        flags = arg.pop("flags")
+        dump_jobs_pars.add_argument(*flags, **arg)
+
+
     graph_pars = subs.add_parser("graph")
     graph_pars.set_defaults(func=lib.graph.print_graph)
     for arg in [{

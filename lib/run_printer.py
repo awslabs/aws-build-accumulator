@@ -23,6 +23,7 @@ import os
 import pathlib
 import random
 import signal
+import subprocess
 import sys
 import time
 
@@ -173,6 +174,37 @@ async def dump_run(args):
     else:
         while True:
             _try_dump_run(cache_dir, pid, sleeper, check_run, out_file)
+    _exit_error()
+
+
+def _try_dump_jobs(out_file):
+    try:
+        jobs = []
+        dump_run_output = subprocess.run(["litani dump-run"], shell=True,
+            check=True, capture_output=True).stdout.decode("utf-8").rstrip()
+        run_file = json.loads(dump_run_output)
+        for stage in run_file["pipelines"][0]["ci_stages"]:
+            jobs.extend(stage["jobs"])
+        _exit_success(jobs, out_file)
+    except (
+        FileNotFoundError, json.decoder.JSONDecodeError,
+        InconsistentRunError):
+        logging.warning("Could not find jobs inside the latest run")
+        _exit_error()
+
+
+async def dump_jobs(args):
+    out_file = args.out_file.resolve() if args.out_file else None
+    if out_file and out_file.is_dir():
+        logging.error("--out-file flag expects a file path and not directory")
+        sys.exit(0)
+
+    if args.retries:
+        for _ in range(args.retries):
+            _try_dump_jobs(out_file)
+    else:
+        while True:
+            _try_dump_jobs(out_file)
     _exit_error()
 
 
