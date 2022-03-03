@@ -18,9 +18,17 @@ Hosted [here](https://awslabs.github.io/aws-build-accumulator/).
 To install with [Homebrew](https://brew.sh):
 
 ```bash
-brew tap aws/tap
 brew install litani
 ```
+
+On Ubuntu, Install Litani by downloading the `*.deb` package built by each release,
+available on the [releases](https://github.com/awslabs/aws-build-accumulator/releases) page
+and run (with `root` privileges)-
+
+```bash
+apt install -y litani-x.xx.x.deb  # where x.xx.x is the release version.
+```
+
 
 Documentation can also be accessed using `man`:
 
