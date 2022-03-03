@@ -80,7 +80,6 @@ jobs:
       - name: Create homebrew PR
         run: |
           brew update-reset
-          brew tap aws/tap
-          brew bump-formula-pr --tag "$RELEASE_TAG" --revision "$GITHUB_SHA" aws/tap/litani
+          brew bump-formula-pr --tag "$RELEASE_TAG" --revision "$GITHUB_SHA" litani
         env:
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.RELEASE_CI_ACCESS_TOKEN }}
