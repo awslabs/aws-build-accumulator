@@ -101,7 +101,7 @@ create-rc: $(TMP)/rc-number
 	git add lib/litani.py
 	major=$$(grep -e '^VERSION_MAJOR' lib/litani.py | head -n 1 | awk -F= '{print $$2}'); \
 	minor=$$(cat $(TMP)/rc-number); \
-	  git commit -m "Create version $${major}.$${minor} release candidate"
+	  git commit -m "Create version$${major}.$${minor} release candidate"
 
 $(TMP)/rc-number:
 	$(info --- Generating RC number)
