@@ -1,5 +1,57 @@
                               CHANGELOG
                               `````````
+
+Version 1.21.0 -- 2022-03-04
+----------------------------
+- Add release script
+  This commit adds a script that creates a new release when run. It takes
+  the following actions:
+
+  - Update the version number in lib/litani.py;
+  - Generate a changelog and prompt the user to edit it;
+  - Merge the release branch into develop, using the changelog for the
+    merge commit;
+  - Tag the release;
+  - Create a new release candidate on the develop branch.
+
+- Litani's homebrew formula is now released on homebrew-core
+
+- Add --out-file flag to litani-dump-run
+
+  With this commit, users can now dump run files to a file instead
+  by passing --out-file flag with the file path to litani dump-run.
+
+- Add run-tests workflow
+  This commit runs Litani's test suite on PRs with label 'test'.
+
+- Render rich output in dashboard, pipeline pages
+
+  This feature allows users to render custom HTML data onto the HTML
+  dashboard, allowing Litani jobs to display their results through tables,
+  graphs, and other HTML format. This can be done both for the front page
+  or on the pipeline page.
+
+  The intention is that individual litani jobs can be used to measure
+  metrics, and then print those metrics out in an easily-viewable format.
+  Jobs that calculate metrics for the entire run can present those metrics
+  as a graph on the front page. Jobs that calculate metrics for a single
+  pipeline (or proof) can display the result on the pipeline page.
+
+  Users use this feature by adding a tag to a litani job, using the --tags
+  flag. If a job is tagged with front-page-text, Litani will render the
+  job's output onto the front page, in its own section. A tag of
+  literal-stdout will make Litani render the job's output onto the
+  pipeline page, but without any HTML escaping.
+
+- Add workflow to update gh-pages on release
+
+- Sort pipelines by status and then name.
+
+  The order with which pipelines appear in both the HTML dashboard is
+  the same as the order with which they appear in the run.json. An e2e
+  test was added to ensure that the order is indeed the intended one.
+
+
 Version 1.20.0 -- 2022-02-11
 ----------------------------
 

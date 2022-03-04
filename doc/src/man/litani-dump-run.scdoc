@@ -22,12 +22,13 @@ litani dump-run - Print the current run as a JSON document to stdout
 # SYNOPSIS
 
 *litani dump-run*
-	\[*--retries* _N_]
+	\[*-r*/*--retries* _N_]
+	\[*-o*/*--out-file* _F_]
 
 
 # DESCRIPTION
 
-This program prints the _run.json_ file for an in-progress Litani run to stdout.
+This program prints the run.json file for a Litani run to stdout or to the specified output file.
 The JSON file's schema is documented in *litani-run.json(5)*.
 
 This program is intended to be used while an invocation of *litani-run-build(1)*
@@ -62,6 +63,8 @@ _"complete"_ field set to *true*.
 	every second up to the limit given in this flag. If _N_ is *0*, this program
 	will retry indefinitely---this is not recommended.
 
+*-o* _F_, *--out-file* _F_
+	Print the run to _F_ instead of stdout
 
 # OUTPUT
 
