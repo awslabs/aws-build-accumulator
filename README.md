@@ -1,16 +1,16 @@
-AWS Build Accumulator
+Litani
 =
 
-AWS Build Accumulator collects build jobs from multiple sources before executing them
-concurrently. It provides platform-independent job control (timeouts,
-return code control) and an output format that is easy to render into
-reports (for example, using the built-in renderer).  AWS Build Accumulator
-shines where your project uses multiple different build systems or requires
-a unified interface describing heterogeneous build jobs.
+Litani is a build system that provides an HTML dashboard of job results, as well
+as a JSON-formatted record of job results. It provides platform-independent job
+control (timeouts, return code control) and an output format that is easy to
+render into reports (for example, using the built-in renderer).
 
 ### Documentation
 
-Hosted [here](https://awslabs.github.io/aws-build-accumulator/).
+Hosted [here](https://awslabs.github.io/aws-build-accumulator/). The Homebrew
+and Debian packages also install the man pages locally, try
+`man litani-add-job`.
 
 
 ### Installation
@@ -18,15 +18,18 @@ Hosted [here](https://awslabs.github.io/aws-build-accumulator/).
 To install with [Homebrew](https://brew.sh):
 
 ```bash
-brew tap aws/tap
 brew install litani
 ```
 
-Documentation can also be accessed using `man`:
+On Ubuntu, Install Litani by downloading the `*.deb` package built by each release,
+available on the
+[releases](https://github.com/awslabs/aws-build-accumulator/releases) page and
+run
 
 ```bash
-man litani
+apt install -y litani-x.xx.x.deb  # where x.xx.x is the release version.
 ```
+
 
 ### Dependencies
 
