@@ -1,11 +1,13 @@
 name: Run Litani Tests
 on:
   pull_request:
-    types: [ labeled ]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+  push:
+    branches: [ release, develop ]
 
 jobs:
   test-litani:
-    if: ${{ github.event.label.name == 'test' }}
+    if: "!contains(github.event.pull_request.labels.*.name, 'no-test')"
     name: Run Litani Tests
     runs-on: macos-latest
     steps:
