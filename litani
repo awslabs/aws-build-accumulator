@@ -32,6 +32,7 @@ import traceback
 import uuid
 
 from lib import litani, litani_report, ninja_syntax
+import lib.add_job
 import lib.capabilities
 import lib.graph
 import lib.job_outcome
@@ -641,39 +642,7 @@ async def init(args):
 
 
 async def add_job(args):
-    cache_file = litani.get_cache_dir() / litani.CACHE_FILE
-    with open(cache_file) as handle:
-        cache_contents = json.load(handle)
-    if args.ci_stage not in cache_contents["stages"]:
-        valid_stages = "', '".join(cache_contents["stages"])
-        logging.error(
-            "Invalid stage name '%s' was provided, possible "
-            "stage names are: '%s'", args.ci_stage, valid_stages)
-        sys.exit(1)
-
-    jobs_dir = litani.get_cache_dir() / litani.JOBS_DIR
-    jobs_dir.mkdir(exist_ok=True, parents=True)
-
-    if args.phony_outputs:
-        if not args.outputs:
-            args.outputs = args.phony_outputs
-        else:
-            for phony_output in args.phony_outputs:
-                if phony_output not in args.outputs:
-                    args.outputs.append(phony_output)
-
-    job = vars(args)
-    job.pop("func")
-
-    job_id = str(uuid.uuid4())
-    job["job_id"] = job_id
-    job["status_file"] = str(
-        litani.get_status_dir() / ("%s.json" % job_id))
-
-    logging.debug("Adding job: %s", json.dumps(job, indent=2))
-
-    with litani.atomic_write(jobs_dir / ("%s.json" % job_id)) as handle:
-        print(json.dumps(job, indent=2), file=handle)
+    await lib.add_job.add_job(vars(args))
 
 
 async def run_build(args):
