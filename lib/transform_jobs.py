@@ -20,7 +20,7 @@ import pathlib
 import sys
 
 import lib.litani
-import lib.add_job
+import lib.jobs
 
 
 @dataclasses.dataclass
@@ -37,7 +37,7 @@ class _JobsTransformer:
     async def _add_new_jobs(self, user_jobs):
         for job in user_jobs:
             job["subcommand"] = "add-job"
-            await lib.add_job.add_job(job)
+            await lib.jobs.add_job(job)
 
 
     def _delete_old_jobs(self):
@@ -50,15 +50,9 @@ class _JobsTransformer:
 
 
 
-def _print_jobs(job_paths):
-    out = []
-    for job in job_paths:
-        with open(job) as handle:
-            job_dict = json.load(handle)
-            for key in ("job_id", "status_file", "subcommand"):
-                job_dict.pop(key)
-            out.append(job_dict)
-    print(json.dumps(out, indent=2))
+def _print_jobs():
+    jobs = lib.jobs.get_jobs()
+    print(json.dumps(jobs, indent=2))
     sys.stdout.flush()
     os.close(sys.stdout.fileno())
 
@@ -70,13 +64,11 @@ def _read_jobs():
 
 async def main(_):
     jobs_dir = lib.litani.get_cache_dir() / lib.litani.JOBS_DIR
-    old_jobs = list()
     old_uuids = set()
     for job in jobs_dir.iterdir():
-        old_jobs.append(job)
         old_uuids.add(str(job.stem))
 
-    _print_jobs(old_jobs)
+    _print_jobs()
 
     new_jobs = _read_jobs()
 

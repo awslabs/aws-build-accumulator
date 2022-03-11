@@ -19,6 +19,8 @@ import uuid
 from lib import litani
 
 
+_PRIVATE_JOB_FIELDS = ("job_id", "status_file", "subcommand")
+
 async def add_job(job_dict):
     cache_file = litani.get_cache_dir() / litani.CACHE_FILE
     with open(cache_file) as handle:
@@ -51,5 +53,26 @@ async def add_job(job_dict):
 
     logging.debug("Adding job: %s", json.dumps(job_dict, indent=2))
 
+    for key in _PRIVATE_JOB_FIELDS:
+        if key not in job_dict:
+            raise AssertionError(f"Key {key} missing from job definition")
+
     with litani.atomic_write(jobs_dir / ("%s.json" % job_id)) as handle:
         print(json.dumps(job_dict, indent=2), file=handle)
+
+
+def get_jobs():
+    out = []
+    jobs_dir = litani.get_cache_dir() / litani.JOBS_DIR
+
+    if not jobs_dir.exists():
+        logging.warning("No jobs have been added")
+        return out
+
+    for job in jobs_dir.iterdir():
+        with open(job) as handle:
+            job_dict = json.load(handle)
+            for key in _PRIVATE_JOB_FIELDS:
+                job_dict.pop(key)
+            out.append(job_dict)
+    return out

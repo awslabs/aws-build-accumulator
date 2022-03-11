@@ -32,12 +32,12 @@ import traceback
 import uuid
 
 from lib import litani, litani_report, ninja_syntax
-import lib.add_job
 import lib.capabilities
 import lib.graph
 import lib.job_outcome
-import lib.output_artifact
+import lib.jobs
 import lib.ninja
+import lib.output_artifact
 import lib.pid_file
 import lib.process
 import lib.run_printer
@@ -642,7 +642,7 @@ async def init(args):
 
 
 async def add_job(args):
-    await lib.add_job.add_job(vars(args))
+    await lib.jobs.add_job(vars(args))
 
 
 async def run_build(args):
