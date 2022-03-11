@@ -292,6 +292,24 @@ def get_args():
         get_jobs_pars.add_argument(*flags, **arg)
     get_jobs_pars.set_defaults(func=lib.jobs.print_jobs)
 
+    set_jobs_pars = subs.add_parser("set-jobs",
+        help="set jobs to run")
+    set_jobs_mutually_exclusive = set_jobs_pars.add_mutually_exclusive_group()
+    for arg in [{
+            "flags": ["-f", "--from-file"],
+            "help": "read a list of jobs from a JSON file, default: stdin",
+            "metavar": "F",
+            "default": sys.stdin,
+            "type": argparse.FileType("r")
+    }, {
+            "flags": ["-s", "--from-string"],
+            "help": "read a list of jobs from a JSON string",
+            "metavar": "S"
+    }]:
+        flags = arg.pop("flags")
+        set_jobs_mutually_exclusive.add_argument(*flags, **arg)
+    set_jobs_pars.set_defaults(func=set_jobs)
+
     transform_jobs_pars = subs.add_parser("transform-jobs",
         help="print jobs, then read jobs on stdin to save")
     transform_jobs_pars.set_defaults(func=lib.jobs.transform_jobs)
@@ -654,6 +672,19 @@ async def init(args):
 
 async def add_job(args):
     await lib.jobs.add_job(vars(args))
+
+
+async def set_jobs(args):
+    try:
+        if args.from_string:
+            job_list = json.loads(args.from_string)
+        else:
+            job_list = json.load(args.from_file)
+    except json.JSONDecodeError:
+        logging.error("Could not read jobs provided to set-jobs")
+        sys.exit(1)
+
+    await lib.jobs.set_jobs(job_list)
 
 
 async def run_build(args):
