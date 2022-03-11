@@ -93,3 +93,36 @@ async def print_jobs(args=None):
     # close it for transform_jobs
     sys.stdout.flush()
     os.close(sys.stdout.fileno())
+
+
+def _delete_jobs():
+    jobs_dir = litani.get_cache_dir() / litani.JOBS_DIR
+
+    try:
+        for job_file in jobs_dir.iterdir():
+            os.unlink(job_file)
+    except FileNotFoundError:
+        pass
+
+
+async def set_jobs(job_list):
+    _delete_jobs()
+    for job in job_list:
+        job["subcommand"] = "add-job"
+        await add_job(job)
+
+
+def _read_jobs():
+    in_text = sys.stdin.read()
+    try:
+        jobs = json.loads(in_text)
+    except json.JSONDecodeError:
+        logging.error("Could not read jobs due to malformatted JSON")
+        sys.exit(1)
+    return jobs
+
+
+async def transform_jobs(_):
+    await print_jobs()
+    new_jobs = _read_jobs()
+    await set_jobs(new_jobs)

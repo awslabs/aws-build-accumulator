@@ -41,7 +41,6 @@ import lib.output_artifact
 import lib.pid_file
 import lib.process
 import lib.run_printer
-import lib.transform_jobs
 import lib.validation
 
 
@@ -295,7 +294,7 @@ def get_args():
 
     transform_jobs_pars = subs.add_parser("transform-jobs",
         help="print jobs, then read jobs on stdin to save")
-    transform_jobs_pars.set_defaults(func=lib.transform_jobs.main)
+    transform_jobs_pars.set_defaults(func=lib.jobs.transform_jobs)
     for arg in []:
         flags = arg.pop("flags")
         transform_jobs_pars.add_argument(*flags, **arg)
