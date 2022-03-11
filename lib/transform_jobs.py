@@ -14,7 +14,6 @@
 
 import dataclasses
 import json
-import logging
 import os
 import pathlib
 import sys
@@ -50,13 +49,6 @@ class _JobsTransformer:
 
 
 
-def _print_jobs():
-    jobs = lib.jobs.get_jobs()
-    print(json.dumps(jobs, indent=2))
-    sys.stdout.flush()
-    os.close(sys.stdout.fileno())
-
-
 def _read_jobs():
     in_text = sys.stdin.read()
     return json.loads(in_text)
@@ -68,7 +60,7 @@ async def main(_):
     for job in jobs_dir.iterdir():
         old_uuids.add(str(job.stem))
 
-    _print_jobs()
+    lib.jobs.print_jobs()
 
     new_jobs = _read_jobs()
 

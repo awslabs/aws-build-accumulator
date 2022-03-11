@@ -13,6 +13,7 @@
 
 import json
 import logging
+import os
 import sys
 import uuid
 
@@ -61,7 +62,7 @@ async def add_job(job_dict):
         print(json.dumps(job_dict, indent=2), file=handle)
 
 
-def get_jobs():
+async def get_jobs():
     out = []
     jobs_dir = litani.get_cache_dir() / litani.JOBS_DIR
 
@@ -76,3 +77,19 @@ def get_jobs():
                 job_dict.pop(key)
             out.append(job_dict)
     return out
+
+
+async def print_jobs(args=None):
+    jobs = await get_jobs()
+
+    out_file = sys.stdout
+    if args and args.out_file:
+        out_file = args.out_file
+
+    print(json.dumps(jobs, indent=2), file=out_file)
+
+    # sys.stdout.close() only closes the python file object, but the underlying
+    # file handle in the C stdlib would remain open, so this is how we need to
+    # close it for transform_jobs
+    sys.stdout.flush()
+    os.close(sys.stdout.fileno())

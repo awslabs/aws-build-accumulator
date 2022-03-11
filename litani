@@ -281,6 +281,18 @@ def get_args():
         flags = arg.pop("flags")
         graph_pars.add_argument(*flags, **arg)
 
+    get_jobs_pars = subs.add_parser("get-jobs", help="print jobs")
+    for arg in [{
+        "flags": ["-f", "--out-file"],
+        "help": "write the list of jobs to a JSON file, default: stdout",
+        "default": sys.stdout,
+        "metavar": "F",
+        "type": argparse.FileType("w")
+    }]:
+        flags = arg.pop("flags")
+        get_jobs_pars.add_argument(*flags, **arg)
+    get_jobs_pars.set_defaults(func=lib.jobs.print_jobs)
+
     transform_jobs_pars = subs.add_parser("transform-jobs",
         help="print jobs, then read jobs on stdin to save")
     transform_jobs_pars.set_defaults(func=lib.transform_jobs.main)
