@@ -20,6 +20,7 @@ import pathlib
 import sys
 
 import lib.litani
+import lib.add_job
 
 
 @dataclasses.dataclass
@@ -28,68 +29,24 @@ class _JobsTransformer:
     old_uuids: list
 
 
-    def __call__(self, user_jobs):
+    async def __call__(self, user_jobs):
+        self._delete_old_jobs()
+        await self._add_new_jobs(user_jobs)
+
+
+    async def _add_new_jobs(self, user_jobs):
+        for job in user_jobs:
+            job["subcommand"] = "add-job"
+            await lib.add_job.add_job(job)
+
+
+    def _delete_old_jobs(self):
         for uuid in self.old_uuids:
             job_file = self.jobs_dir / ("%s.json" % uuid)
             try:
-                with open(job_file) as handle:
-                    old_job = json.load(handle)
-                    uuid = old_job["job_id"]
+                os.unlink(job_file)
             except FileNotFoundError:
-                logging.warning(
-                    "file for job %s disappeared; not updating", uuid)
                 continue
-
-            updated_job = [
-                j for j in user_jobs if j["job_id"] == uuid
-            ]
-            if not updated_job:
-                self._delete_job(old_job)
-            elif len(updated_job) > 1:
-                logging.error(
-                    "user input contained two jobs with uuid %s", uuid)
-                sys.exit(1)
-            elif updated_job[0] == old_job:
-                self._write_unmodified_job(old_job)
-            else:
-                self._write_transformed_job(updated_job[0])
-
-        new_jobs = [
-            j for j in user_jobs
-            if j["job_id"] not in self.old_uuids]
-        for job in new_jobs:
-            self._write_new_job(job)
-
-
-    @staticmethod
-    def _job_name(job):
-        desc = f" ({job['description']})" if job["description"] else ''
-        return f"{job['job_id']}{desc}"
-
-
-    def _path_to_job(self, job):
-        return self.jobs_dir / ("%s.json" % job["job_id"])
-
-
-    def _write_new_job(self, job):
-        logging.info("writing new job %s", self._job_name(job))
-        with lib.litani.atomic_write(self._path_to_job(job)) as handle:
-            print(json.dumps(job, indent=2), file=handle)
-
-
-    def _write_unmodified_job(self, job):
-        logging.debug("not changing job %s", self._job_name(job))
-
-
-    def _write_transformed_job(self, job):
-        logging.info("transforming job %s", self._job_name(job))
-        with lib.litani.atomic_write(self._path_to_job(job)) as handle:
-            print(json.dumps(job, indent=2), file=handle)
-
-
-    def _delete_job(self, job):
-        logging.info("deleting job %s", self._job_name(job))
-        os.unlink(self._path_to_job(job))
 
 
 
@@ -97,7 +54,10 @@ def _print_jobs(job_paths):
     out = []
     for job in job_paths:
         with open(job) as handle:
-            out.append(json.load(handle))
+            job_dict = json.load(handle)
+            for key in ("job_id", "status_file", "subcommand"):
+                job_dict.pop(key)
+            out.append(job_dict)
     print(json.dumps(out, indent=2))
     sys.stdout.flush()
     os.close(sys.stdout.fileno())
@@ -121,4 +81,4 @@ async def main(_):
     new_jobs = _read_jobs()
 
     transform = _JobsTransformer(jobs_dir, old_uuids)
-    transform(new_jobs)
+    await transform(new_jobs)

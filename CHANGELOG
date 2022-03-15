@@ -1,6 +1,47 @@
                               CHANGELOG
                               `````````
 
+Version 1.22.0 -- 2022-03-15
+----------------------------
+- Print out stderr when a job fails
+  The entire buffered stderr of a job that fails will now be printed to
+  the terminal after the failing command line. This is to help users
+  quickly debug these jobs without viewing the HTML report.
+
+  This commit fixes #131.
+
+- Fix content colour in dark mode
+
+  Previously, some content would appear in a dark colour in dark mode
+  because the "color" property was set in the .content class for light
+  mode but the <body> element for dark mode.
+
+- Rebuild run graph in transform jobs
+
+  After receiving user input in transform jobs, discard old jobs and make
+  a new run graph using the jobs received on stdin. This makes it so that
+  running add-job in parallel with transform-jobs will fail.
+
+- Add ids to sections on HTML dashboard
+
+  Every major section on the HTML dashboard now has an "id" attribute,
+  making it possible to link to those sections. Prior to this commit, it
+  was not possible to link to specific graphs on the front page, for
+  example. This PR also introduces a CONTRIBUTING.md file that contains
+  guidance to continue this pattern.
+
+- Do not run litani tests if 'no-test' label is set
+
+- Fix space in release script
+
+- Tell release engineer to push develop and release
+
+  Previously, following the instructions would only push the release
+  branch to origin, not the develop branch.
+
+- Fix run-tests workflow file name
+
+
 Version 1.21.0 -- 2022-03-04
 ----------------------------
 - Add release script

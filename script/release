@@ -62,8 +62,11 @@ create-release: $(SANITY_CHECKS) $(STATE_FILES) $(RELEASE_PROCESS)
 	$(info --- Finished)
 	git checkout release
 	@>&2 printf '\n```````````````````````````````````````````````````````````\n'
-	@>&2 printf \
-	  "Now run\n\n  git push -u origin release\n  git push origin --tags\n\n"
+	@>&2 printf "Now run\n\n"
+	@>&2 printf "  git push -u origin release\n"
+	@>&2 printf "  git checkout develop\n"
+	@>&2 printf "  git push -u origin develop\n"
+	@>&2 printf "  git push origin --tags\n\n"
 	@>&2 printf '___________________________________________________________\n'
 
 .PHONY: $(SANITY_CHECKS) $(PHONY_DEPS)
@@ -98,7 +101,7 @@ create-rc: $(TMP)/rc-number
 	git add lib/litani.py
 	major=$$(grep -e '^VERSION_MAJOR' lib/litani.py | head -n 1 | awk -F= '{print $$2}'); \
 	minor=$$(cat $(TMP)/rc-number); \
-	  git commit -m "Create version $${major}.$${minor} release candidate"
+	  git commit -m "Create version$${major}.$${minor} release candidate"
 
 $(TMP)/rc-number:
 	$(info --- Generating RC number)

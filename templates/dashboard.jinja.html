@@ -52,13 +52,15 @@ h1 {
   font-size: small;
   color: #ec407a;
 }
+body {
+  color: #263238;
+}
 #content {
   max-width: 800px;
   margin-left: auto;
   margin-right: auto;
   padding-top: 2em;
   padding-bottom: 2em;
-  color: #263238;
   font-family: Helvetica, sans-serif;
 }
 p {
@@ -302,9 +304,6 @@ p {
   .status-icon-in-progress { fill: #ddd; }
   .status-icon-in-progress circle { stroke: #ddd; }
 
-  .pipeline-header {
-    color: #eceff1;
-  }
   .downloads-header {
     color: #eceff1;
   }
@@ -325,15 +324,11 @@ p {
     color: #eceff1;
   }
   .pipeline-row {
-    color: #eceff1;
     background-color: #37474f;
   }
   body {
     color: #babdbe;
     background-color: #263238;
-  }
-  p {
-    color: #babdbe;
   }
   #subtitle {
     color: #fff;
@@ -426,7 +421,7 @@ p {
     </div><!-- class="pipeline-row" -->
 
     {% for pipe in run["pipelines"] %}
-    <div class="pipeline-row">
+    <div class="pipeline-row" id="pipe_row_{{ pipe['name'] }}">
 
       <div class="pipeline-link">
             <svg height="16px" width="32px" class="pipeline-icon">
@@ -496,7 +491,9 @@ p {
         <h2>Job Outputs</h2>
       </div>
       {% for job_desc, job in front_page_outputs.items() %}
-        <div class="job-output-content">
+        <div
+            class="job-output-content"
+            id="job_front_page_output_{{ job['wrapper_arguments']['job_id']}}">
           <div class="job-output-title">
             <h3>Output of job &quot;<a
               href="pipelines/{{ job['wrapper_arguments']['pipeline_name'] }}/
@@ -515,7 +512,9 @@ index.html#job-{{ job['wrapper_arguments']['job_id'] }}"
 
   {% for title, svg_list in svgs.items() %}
     {% if svg_list %}
-      <h2 class="downloads-header">{{ title }}</h2>
+      <h2
+          class="downloads-header"
+          id="svg_{{ title }}">{{ title }}</h2>
       <div class="graphs">
       {% for svg in svg_list %}
         <div class="graph">
@@ -529,7 +528,7 @@ index.html#job-{{ job['wrapper_arguments']['job_id'] }}"
   {% endfor -%}{# title, svg_list in svgs #}
 
 
-  <h2 class="downloads-header">Downloads</h2>
+  <h2 class="downloads-header" id="downloads">Downloads</h2>
   <div class="downloads">
     <ul>
       <li>
@@ -549,7 +548,7 @@ index.html#job-{{ job['wrapper_arguments']['job_id'] }}"
     </ul>
   </div>
 
-  <div class="footer">
+  <div class="footer" id="footer">
     <div class="footer-cell">
       <p>
         Report generated with
