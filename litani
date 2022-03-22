@@ -357,6 +357,16 @@ def get_args():
             flags = arg.pop("flags")
             group.add_argument(*flags, **arg)
 
+    get_html_dir_pars = subs.add_parser("get-html-dir")
+    get_html_dir_pars.set_defaults(func=lib.litani.get_html_dir)
+    for arg in [{
+            "flags": ["-d", "--display"],
+            "action": "store_true",
+            "help": "Print path of html dir to stdout"
+        }]:
+        flags = arg.pop("flags")
+        get_html_dir_pars.add_argument(*flags, **arg)
+
     all_args = sys.argv[1:]
     wrapped_command = None
     if "--" in all_args:

@@ -84,6 +84,9 @@ The following is a synopsis of Litani's subcommands:
 	Print a list of features that this version of Litani supports. This
 	can be used as an alternative to checking the version string.
 
+*litani get-html-dir*
+	Returns the path to html directory of latest run.
+
 
 # SEE ALSO
 

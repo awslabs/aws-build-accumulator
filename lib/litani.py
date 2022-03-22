@@ -193,6 +193,13 @@ def get_report_dir():
     return get_cache_dir() / "html"
 
 
+async def get_html_dir(args):
+    html_dir = get_report_dir()
+    if args.display:
+        print(html_dir)
+    return html_dir
+
+
 def get_report_data_dir():
     return get_cache_dir() / "report_data"
 
