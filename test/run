@@ -110,6 +110,7 @@ def add_e2e_tests(litani, test_dir, counter, output_dir, fast):
 
         add_transform_jobs = has_line(test_file, "def transform_jobs(")
         add_get_jobs = has_line(test_file, "def check_get_jobs(")
+        add_set_jobs = has_line(test_file, "def get_set_jobs_args(")
 
         if fast and is_slow_test(test_file):
             continue
@@ -195,6 +196,24 @@ def add_e2e_tests(litani, test_dir, counter, output_dir, fast):
                 phony_outputs=get_jobs_output,
                 cwd=run_dir)
             run_build_dependencies.append(get_jobs_output)
+
+        if add_set_jobs:
+            set_jobs_output = str(uuid.uuid4())
+            litani_add(
+                litani, counter,
+                command=collapse(f"""
+                    {e2e_test_dir / 'run'}
+                    --test-file {test_file}
+                    --litani {litani}
+                    --run-dir {run_dir}
+                    --operation set-jobs"""),
+                pipeline=f"e2e_{test_file.stem}",
+                ci_stage="test",
+                description=f"{test_file.stem}: set jobs",
+                inputs=add_jobs_output,
+                phony_outputs=set_jobs_output,
+                cwd=run_dir)
+            run_build_dependencies.append(set_jobs_output)
 
         litani_add(
             litani, counter,

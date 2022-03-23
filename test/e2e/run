@@ -119,6 +119,13 @@ def get_jobs(litani, run_dir, mod):
             litani, "add-job", *job.get("args", []), **job.get("kwargs", {}))
 
 
+def set_jobs(litani, run_dir, mod):
+    os.chdir(run_dir)
+    args = mod.get_set_jobs_args()
+    run_litani(
+        litani, "set-jobs", *args.get("args", []), **args.get("kwargs", {}))
+
+
 def run_build(litani, run_dir, mod):
     os.chdir(run_dir)
     args = mod.get_run_build_args()
@@ -151,6 +158,7 @@ OPERATIONS = {
     "check-run": check_run,
     "transform-jobs": transform_jobs,
     "get-jobs": get_jobs,
+    "set-jobs": set_jobs,
 }
 
 
