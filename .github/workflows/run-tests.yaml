@@ -18,3 +18,9 @@ jobs:
           python3 -m pip install jinja2
       - name: Run Unit and e2e tests
         run: ./test/run
+      - name: Upload bottles as artifact
+        if: always()
+        uses: actions/upload-artifact@main
+        with:
+          name: report
+          path: 'test/output/latest/html'
