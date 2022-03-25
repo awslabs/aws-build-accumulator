@@ -11,9 +11,11 @@
 # express or implied. See the License for the specific language governing
 # permissions and limitations under the License
 
+import argparse
 import json
 import logging
 import os
+import re
 import sys
 import uuid
 
@@ -21,6 +23,149 @@ from lib import litani
 
 
 _PRIVATE_JOB_FIELDS = ("job_id", "status_file", "subcommand")
+
+def get_add_job_args():
+    return [(
+        "describing the build graph", [{
+            "flags": ["--inputs"],
+            "nargs": "+",
+            "metavar": "F",
+            "help": "list of inputs that this job depends on",
+        }, {
+            "flags": ["--command"],
+            "metavar": "C",
+            "required": True,
+            "help": "the command to run once all dependencies are satisfied",
+        }, {
+            "flags": ["--outputs"],
+            "metavar": "F",
+            "nargs": "+",
+            "help": "list of outputs that this job generates",
+        }]), (
+        "job control", [{
+            "flags": ["--pipeline-name"],
+            "required": True,
+            "metavar": "P",
+            "help": "which pipeline this job is a member of",
+        }, {
+            "flags": ["--ci-stage"],
+            "required": True,
+            "metavar": "S",
+            "help": "which CI stage this job should execute in. "
+        }, {
+            "flags": ["--cwd"],
+            "metavar": "DIR",
+            "help": "directory that this job should execute in"
+        }, {
+            "flags": ["--timeout"],
+            "metavar": "N",
+            "type": int,
+            "help": "max number of seconds this job should run for"
+        }, {
+            "flags": ["--timeout-ok"],
+            "action": "store_true",
+            "help": "if the job times out, terminate it and return success"
+        }, {
+            "flags": ["--timeout-ignore"],
+            "action": "store_true",
+            "help": "if the job times out, terminate it continue, but "
+                    "fail at the end",
+        }, {
+            "flags": ["--ignore-returns"],
+            "metavar": "RC",
+            "nargs": "+",
+            "help": "if the job exits with one of the listed return codes, "
+                    "return success"
+        }, {
+            "flags": ["--ok-returns"],
+            "metavar": "RC",
+            "nargs": "+",
+            "help": "if the job exits with one of the listed return codes, "
+                    "continue the build but fail at the end"
+        }, {
+            "flags": ["--outcome-table"],
+            "metavar": "F",
+            "help": "path to a JSON outcome table that determines the outcome "
+                    "of this job"
+        }, {
+            "flags": ["--interleave-stdout-stderr"],
+            "action": "store_true",
+            "help": "simulate '2>&1 >...'"
+        }, {
+            "flags": ["--stdout-file"],
+            "metavar": "FILE",
+            "help": "file to redirect stdout to"
+        }, {
+            "flags": ["--stderr-file"],
+            "metavar": "FILE",
+            "help": "file to redirect stderr to"
+        }, {
+            "flags": ["--pool"],
+            "metavar": "NAME",
+            "help": "pool to which this job should be added"
+        }]), (
+        "misc", [{
+            "flags": ["--description"],
+            "metavar": "DESC",
+            "help": "string to print when this job is being run",
+        }, {
+            "flags": ["--profile-memory"],
+            "action": "store_true",
+            "default": False,
+            "help": "profile the memory usage of this job"
+        }, {
+            "flags": ["--profile-memory-interval"],
+            "metavar": "N",
+            "default": 10,
+            "type": int,
+            "help": "seconds between memory profile polls"
+        }, {
+            "flags": ["--phony-outputs"],
+            "metavar": "OUT",
+            "nargs": "*",
+            "help": "do not warn if OUT does not exist upon job completion"
+        }, {
+            "flags": ["--tags"],
+            "metavar": "TAG",
+            "nargs": "+",
+            "help": "a list of tags for this job"
+        }]),
+    ]
+
+
+def configure_args(**kwargs):
+    cmd = []
+    for arg, value in kwargs.items():
+        switch = f"--{re.sub('_', '-', arg)}"
+        if value is None:
+            continue
+        if isinstance(value, bool):
+            if value:
+                cmd.append(switch)
+            continue
+
+        cmd.append(switch)
+        if isinstance(value, list):
+            cmd.extend(str(v) for v in value)
+        else:
+            cmd.append(str(value))
+    return cmd
+
+
+def fill_job(job):
+    parser = argparse.ArgumentParser()
+    for group_name, args in get_add_job_args():
+        group = parser.add_argument_group(title=group_name)
+        for arg in args:
+            flags = arg.pop("flags")
+            group.add_argument(*flags, **arg)
+    args = configure_args(**job)
+    job_dict = vars(parser.parse_known_args(args)[0])
+    for key in job:
+        if key not in job_dict:
+            job_dict[key] = job[key]
+    return job_dict
+
 
 async def add_job(job_dict):
     cache_file = litani.get_cache_dir() / litani.CACHE_FILE
@@ -108,8 +253,9 @@ def _delete_jobs():
 async def set_jobs(job_list):
     _delete_jobs()
     for job in job_list:
-        job["subcommand"] = "add-job"
-        await add_job(job)
+        filled_job = fill_job(job)
+        filled_job["subcommand"] = "add-job"
+        await add_job(filled_job)
 
 
 def _read_jobs():
