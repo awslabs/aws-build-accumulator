@@ -113,7 +113,7 @@ def add_e2e_tests(litani, test_dir, counter, output_dir, fast):
                 --litani {litani}
                 --run-dir {run_dir}
                 --operation init"""),
-            pipeline=f"End-to-end: {test_file.stem}",
+            pipeline=f"e2e_{test_file.stem}",
             ci_stage="test",
             description=f"{test_file.stem}: init",
             outputs=run_dir / ".litani_cache_dir",
@@ -129,7 +129,7 @@ def add_e2e_tests(litani, test_dir, counter, output_dir, fast):
                 --litani {litani}
                 --run-dir {run_dir}
                 --operation add-jobs"""),
-            pipeline=f"End-to-end: {test_file.stem}",
+            pipeline=f"e2e_{test_file.stem}",
             ci_stage="test",
             description=f"{test_file.stem}: add jobs",
             inputs=run_dir / ".litani_cache_dir",
@@ -149,7 +149,7 @@ def add_e2e_tests(litani, test_dir, counter, output_dir, fast):
                     --litani {litani}
                     --run-dir {run_dir}
                     --operation transform-jobs"""),
-                pipeline=f"End-to-end: {test_file.stem}",
+                pipeline=f"e2e_{test_file.stem}",
                 ci_stage="test",
                 description=f"{test_file.stem}: transform jobs",
                 inputs=add_jobs_output,
@@ -164,7 +164,7 @@ def add_e2e_tests(litani, test_dir, counter, output_dir, fast):
                 --litani {litani}
                 --run-dir {run_dir}
                 --operation run-build"""),
-            pipeline=f"End-to-end: {test_file.stem}",
+            pipeline=f"e2e_{test_file.stem}",
             ci_stage="test",
             description=f"{test_file.stem}: run build",
             inputs=run_build_input,
@@ -180,7 +180,7 @@ def add_e2e_tests(litani, test_dir, counter, output_dir, fast):
                 --litani {litani}
                 --run-dir {run_dir}
                 --operation check-run"""),
-            pipeline=f"End-to-end: {test_file.stem}",
+            pipeline=f"e2e_{test_file.stem}",
             ci_stage="report",
             description=f"{test_file.stem}: check run",
             inputs=f"{run_dir}/output/run.json",
