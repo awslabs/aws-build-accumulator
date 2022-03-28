@@ -56,13 +56,10 @@ jobs:
           litani init --project-name test
           litani add-job --command '/usr/bin/true' --pipeline-name 'test' --ci-stage test
           litani run-build
-      - name: Get release
-        id: get_release_info
-        uses: bruceadams/get-release@v1.2.3
       - name: Upload release binary
         uses: actions/upload-release-asset@v1.0.2
         with:
-          upload_url: ${{ steps.get_release_info.outputs.upload_url }}
+          upload_url: ${{ github.event.release.upload_url }}
           asset_path: ${{ steps.create_packages.outputs.deb_package }}
           asset_name: ${{ steps.create_packages.outputs.deb_package_name }}
           asset_content_type: application/x-deb
