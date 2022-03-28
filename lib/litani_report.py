@@ -616,8 +616,11 @@ def render(run, report_dir, pipeline_depgraph_renderer):
 
     locked_dir.release()
 
-    if old_report_dir_path.exists():
+    try:
         old_report_dir.expire()
+    except FileNotFoundError:
+        pass
+
     litani.unlink_expired()
 
 
