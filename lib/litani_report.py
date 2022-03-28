@@ -583,14 +583,38 @@ def render(run, report_dir, pipeline_depgraph_renderer):
     with litani.atomic_write(temporary_report_dir / "index.html") as handle:
         print(page, file=handle)
 
+    # The sequence is:
+    #
+    # Initially:
+    # |\_ report_data_dir
+    # |    |\_ 1234-abcd [report data that has just been written]
+    # |    \__ 5678-olde
+    # \__ html  -symlink->  report_data_dir/5678-olde
+    #
+    # 1. 1234-abcd gets locked
+    #
+    # 2. report_data_dir
+    #    |- 1234-abcd
+    #    |- 5678-olde
+    #    html  -symlink->  report_data_dir/5678-olde
+    #    html.987-xzy  -symlink->  1234-abcd
+    #
+    # 3. report_data_dir
+    #    |- 1234-abcd
+    #    |- 5678-olde
+    #    html  -symlink->  1234-abcd
+    #
+    # 4. 1234-abcd gets unlocked
+    #
+    # 5. 5678-olde gets marked as expired.
+
+    locked_dir = litani.LockableDirectory(temporary_report_dir)
 
     temp_symlink_dir = report_dir.with_name(report_dir.name + str(uuid.uuid4()))
     os.symlink(temporary_report_dir, temp_symlink_dir)
     os.rename(temp_symlink_dir, report_dir)
 
-    # Release lock so that other processes can read from this directory
-    new_report_dir = litani.LockableDirectory(report_dir.resolve())
-    new_report_dir.release()
+    locked_dir.release()
 
     if old_report_dir_path.exists():
         old_report_dir.expire()
