@@ -76,6 +76,15 @@ The following is a synopsis of Litani's subcommands:
 	Print a JSON representation of the run so far to stdout both while the
 	build is running as well as after it has completed.
 
+*litani print-html-dir*
+	Print the path to a continually-updated HTML report directory
+
+*litani acquire-html-dir*
+	Print the path to a locked HTML report directory
+
+*litani release-html-dir*
+	Unlock a previously-locked HTML report directory
+
 *litani graph*
 	Print the dependency graph of the build in Graphviz format, ready to
 	be rendered into an image using *dot(1)*.
