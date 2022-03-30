@@ -209,6 +209,38 @@ def get_args():
         flags = arg.pop("flags")
         transform_jobs_pars.add_argument(*flags, **arg)
 
+    release_html_dir_pars = subs.add_parser("release-html-dir",
+        help="Unlock a previously-locked HTML report directory")
+    release_html_dir_pars.set_defaults(func=lib.litani_report.release_html_dir)
+    for arg in [{
+            "flags": ["-d", "--dir"],
+            "help": "the locked HTML report directory to unlock",
+            "required": True,
+            "type": pathlib.Path,
+            "metavar": "D",
+    }]:
+        flags = arg.pop("flags")
+        release_html_dir_pars.add_argument(*flags, **arg)
+
+    acquire_html_dir_pars = subs.add_parser("acquire-html-dir",
+        help="Print the path to a locked HTML report directory")
+    acquire_html_dir_pars.set_defaults(func=lib.litani_report.acquire_html_dir)
+    for arg in [{
+            "flags": ["-t", "--timeout"],
+            "help": (
+                "how many seconds to wait before giving up "
+                "(0 means forever)"),
+            "required": True,
+            "type": non_negative_int,
+            "metavar": "N",
+    }]:
+        flags = arg.pop("flags")
+        acquire_html_dir_pars.add_argument(*flags, **arg)
+
+    print_html_dir_pars = subs.add_parser("print-html-dir",
+        help="Print out the path to the HTML report directory")
+    print_html_dir_pars.set_defaults(func=lib.litani_report.print_html_dir)
+
     caps_pars = subs.add_parser("print-capabilities",
         help="Print out Litani's capabilities in a list")
     caps_pars.set_defaults(func=lib.capabilities.dump)
