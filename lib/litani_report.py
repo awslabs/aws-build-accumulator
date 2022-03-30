@@ -12,6 +12,7 @@
 # permissions and limitations under the License.
 
 
+import asyncio
 import dataclasses
 import datetime
 import enum
@@ -383,6 +384,32 @@ class ReportRenderer:
 
         litani.unlink_expired()
 
+
+
+async def release_html_dir(args):
+    lockable_dir = lib.litani.LockableDirectory(args.dir)
+    lockable_dir.release()
+
+
+async def acquire_html_dir(args):
+    remaining = args.timeout
+    while True:
+        html_dir = lib.litani.get_report_dir().resolve()
+        lockable_dir = lib.litani.LockableDirectory(html_dir)
+        if lockable_dir.acquire():
+            print(html_dir)
+            sys.exit(0)
+        remaining -= 1
+        if remaining == 0:
+            sys.exit(1)
+        await asyncio.sleep(1)
+
+
+async def print_html_dir(_):
+    html_dir = lib.litani.get_report_dir()
+    if not html_dir.exists():
+        sys.exit(1)
+    print(html_dir)
 
 
 def get_run(cache_dir):
