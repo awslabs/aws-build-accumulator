@@ -32,16 +32,15 @@ import traceback
 import uuid
 
 from lib import litani, litani_report, ninja_syntax
-import lib.add_job
 import lib.capabilities
 import lib.graph
 import lib.job_outcome
-import lib.output_artifact
+import lib.jobs
 import lib.ninja
+import lib.output_artifact
 import lib.pid_file
 import lib.process
 import lib.run_printer
-import lib.transform_jobs
 import lib.validation
 
 
@@ -53,117 +52,9 @@ VALIDATE_DATA = False
 ################################################################################
 
 
-def get_add_job_args():
-    return [(
-        "describing the build graph", [{
-            "flags": ["--inputs"],
-            "nargs": "+",
-            "metavar": "F",
-            "help": "list of inputs that this job depends on",
-        }, {
-            "flags": ["--command"],
-            "metavar": "C",
-            "required": True,
-            "help": "the command to run once all dependencies are satisfied",
-        }, {
-            "flags": ["--outputs"],
-            "metavar": "F",
-            "nargs": "+",
-            "help": "list of outputs that this job generates",
-        }]), (
-        "job control", [{
-            "flags": ["--pipeline-name"],
-            "required": True,
-            "metavar": "P",
-            "help": "which pipeline this job is a member of",
-        }, {
-            "flags": ["--ci-stage"],
-            "required": True,
-            "metavar": "S",
-            "help": "which CI stage this job should execute in. "
-        }, {
-            "flags": ["--cwd"],
-            "metavar": "DIR",
-            "help": "directory that this job should execute in"
-        }, {
-            "flags": ["--timeout"],
-            "metavar": "N",
-            "type": int,
-            "help": "max number of seconds this job should run for"
-        }, {
-            "flags": ["--timeout-ok"],
-            "action": "store_true",
-            "help": "if the job times out, terminate it and return success"
-        }, {
-            "flags": ["--timeout-ignore"],
-            "action": "store_true",
-            "help": "if the job times out, terminate it continue, but "
-                    "fail at the end",
-        }, {
-            "flags": ["--ignore-returns"],
-            "metavar": "RC",
-            "nargs": "+",
-            "help": "if the job exits with one of the listed return codes, "
-                    "return success"
-        }, {
-            "flags": ["--ok-returns"],
-            "metavar": "RC",
-            "nargs": "+",
-            "help": "if the job exits with one of the listed return codes, "
-                    "continue the build but fail at the end"
-        }, {
-            "flags": ["--outcome-table"],
-            "metavar": "F",
-            "help": "path to a JSON outcome table that determines the outcome "
-                    "of this job"
-        }, {
-            "flags": ["--interleave-stdout-stderr"],
-            "action": "store_true",
-            "help": "simulate '2>&1 >...'"
-        }, {
-            "flags": ["--stdout-file"],
-            "metavar": "FILE",
-            "help": "file to redirect stdout to"
-        }, {
-            "flags": ["--stderr-file"],
-            "metavar": "FILE",
-            "help": "file to redirect stderr to"
-        }, {
-            "flags": ["--pool"],
-            "metavar": "NAME",
-            "help": "pool to which this job should be added"
-        }]), (
-        "misc", [{
-            "flags": ["--description"],
-            "metavar": "DESC",
-            "help": "string to print when this job is being run",
-        }, {
-            "flags": ["--profile-memory"],
-            "action": "store_true",
-            "default": False,
-            "help": "profile the memory usage of this job"
-        }, {
-            "flags": ["--profile-memory-interval"],
-            "metavar": "N",
-            "default": 10,
-            "type": int,
-            "help": "seconds between memory profile polls"
-        }, {
-            "flags": ["--phony-outputs"],
-            "metavar": "OUT",
-            "nargs": "*",
-            "help": "do not warn if OUT does not exist upon job completion"
-        }, {
-            "flags": ["--tags"],
-            "metavar": "TAG",
-            "nargs": "+",
-            "help": "a list of tags for this job"
-        }]),
-    ]
-
 
 def get_exec_job_args():
-    exec_job_args = list(get_add_job_args())
+    exec_job_args = list(lib.jobs.get_add_job_args())
     exec_job_args.append((
         "`litani exec`-specific flags", [{
             "flags": ["--status-file"],
@@ -281,9 +172,39 @@ def get_args():
         flags = arg.pop("flags")
         graph_pars.add_argument(*flags, **arg)
 
+    get_jobs_pars = subs.add_parser("get-jobs", help="print jobs")
+    for arg in [{
+        "flags": ["-f", "--out-file"],
+        "help": "write the list of jobs to a JSON file, default: stdout",
+        "default": sys.stdout,
+        "metavar": "F",
+        "type": argparse.FileType("w")
+    }]:
+        flags = arg.pop("flags")
+        get_jobs_pars.add_argument(*flags, **arg)
+    get_jobs_pars.set_defaults(func=lib.jobs.print_jobs)
+
+    set_jobs_pars = subs.add_parser("set-jobs",
+        help="set jobs to run")
+    set_jobs_mutually_exclusive = set_jobs_pars.add_mutually_exclusive_group()
+    for arg in [{
+            "flags": ["-f", "--from-file"],
+            "help": "read a list of jobs from a JSON file, default: stdin",
+            "metavar": "F",
+            "default": sys.stdin,
+            "type": argparse.FileType("r")
+    }, {
+            "flags": ["-s", "--from-string"],
+            "help": "read a list of jobs from a JSON string",
+            "metavar": "S"
+    }]:
+        flags = arg.pop("flags")
+        set_jobs_mutually_exclusive.add_argument(*flags, **arg)
+    set_jobs_pars.set_defaults(func=set_jobs)
+
     transform_jobs_pars = subs.add_parser("transform-jobs",
         help="print jobs, then read jobs on stdin to save")
-    transform_jobs_pars.set_defaults(func=lib.transform_jobs.main)
+    transform_jobs_pars.set_defaults(func=lib.jobs.transform_jobs)
     for arg in []:
         flags = arg.pop("flags")
         transform_jobs_pars.add_argument(*flags, **arg)
@@ -343,7 +264,7 @@ def get_args():
 
     add_job_pars = subs.add_parser("add-job")
     add_job_pars.set_defaults(func=add_job)
-    for group_name, args in get_add_job_args():
+    for group_name, args in lib.jobs.get_add_job_args():
         group = add_job_pars.add_argument_group(title=group_name)
         for arg in args:
             flags = arg.pop("flags")
@@ -642,7 +563,20 @@ async def init(args):
 
 
 async def add_job(args):
-    await lib.add_job.add_job(vars(args))
+    await lib.jobs.add_job(vars(args))
+
+
+async def set_jobs(args):
+    try:
+        if args.from_string:
+            job_list = json.loads(args.from_string)
+        else:
+            job_list = json.load(args.from_file)
+    except json.JSONDecodeError:
+        logging.error("Could not read jobs provided to set-jobs")
+        sys.exit(1)
+
+    await lib.jobs.set_jobs(job_list)
 
 
 async def run_build(args):
