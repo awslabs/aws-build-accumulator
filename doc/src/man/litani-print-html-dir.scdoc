@@ -1,0 +1,63 @@
+litani-print-html-dir(1) "" "Litani Build System"
+
+; Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+
+; Licensed under the Apache License, Version 2.0 (the "License").
+; You may not use this file except in compliance with the License.
+; A copy of the License is located at
+
+;     http://www.apache.org/licenses/LICENSE-2.0
+
+; or in the "license" file accompanying this file. This file is distributed
+; on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+; express or implied. See the License for the specific language governing
+; permissions and limitations under the License.
+
+
+# NAME
+
+litani print-html-dir - Print the path to a continually-updated report directory
+
+
+# SYNOPSIS
+
+*litani print-html-dir*
+
+
+# DESCRIPTION
+
+This program prints the path to a Litani HTML report directory that will be
+continuously updated while *litani-run-build(1)* is concurrently running.
+
+This command is intended to be used by clients who wish to read the most
+up-to-date report directory without modifying it. *litani-run-build(1)* will
+update the report directory periodically while it is running. Thus, this command
+can be used to print a path to be viewed in a web browser, for example.
+
+*litani-run-build(1)* refreshes the report directory atomically, that is, the
+entire HTML report (including the pipeline subpages) are updated all at once.
+Clients can continue to read the new report data using the same path that this
+command originally printed. This is implemented through atomically moving a
+symbolic link from the old to the new report directories.
+
+Clients should _not_ resolve the path that this command prints out before
+accessing it. This command prints out the path to a symbolic link, and access to
+report data should be through the symbolic link only. In particular,
+*litani-run-build(1)* will occasionally garbage-collect old HTML report
+directories, but the path that this command prints out will always point to a
+current (not garbage-collected) report.
+
+
+# MULTIPROCESS SAFETY
+
+It is safe to run this program concurrently with any other Litani command.
+
+
+# OUTPUT & RETURN CODE
+
+This program prints out the path to an HTML report directory and returns 0.
+
+
+# SEE ALSO
+
+- *litani-acquire-html-dir(1)*
