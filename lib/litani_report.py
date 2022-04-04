@@ -12,6 +12,7 @@
 # permissions and limitations under the License.
 
 
+import asyncio
 import dataclasses
 import datetime
 import enum
@@ -297,6 +298,120 @@ class StatsGroupRenderer:
 
 
 
+@dataclasses.dataclass
+class ReportRenderer:
+    report_dir: pathlib.Path
+    pipeline_depgraph_renderer: PipelineDepgraphRenderer
+
+
+    def __call__(self, run):
+        temporary_report_dir = litani.get_report_data_dir() / str(uuid.uuid4())
+        temporary_report_dir.mkdir(parents=True)
+        old_report_dir_path = litani.get_report_dir().resolve()
+        old_report_dir = litani.ExpireableDirectory(old_report_dir_path)
+
+        artifact_dir = temporary_report_dir / "artifacts"
+        shutil.copytree(litani.get_artifacts_dir(), artifact_dir)
+
+        template_dir = pathlib.Path(__file__).parent.parent / "templates"
+        env = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(str(template_dir)),
+            autoescape=jinja2.select_autoescape(
+                enabled_extensions=('html'),
+                default_for_string=True))
+
+        render_artifact_indexes(artifact_dir, env)
+
+        gnuplot = Gnuplot()
+        svgs = get_dashboard_svgs(run, env, gnuplot)
+
+        litani_report_archive_path = os.getenv("LITANI_REPORT_ARCHIVE_PATH")
+
+        with litani.atomic_write(
+                temporary_report_dir / litani.RUN_FILE) as handle:
+            print(json.dumps(run, indent=2), file=handle)
+
+        front_page_outputs = {}
+        pipe_templ = env.get_template("pipeline.jinja.html")
+        for pipe in run["pipelines"]:
+            self.pipeline_depgraph_renderer.render(
+                render_root=temporary_report_dir,
+                pipe_url=pathlib.Path(pipe["url"]), pipe=pipe)
+            for stage in pipe["ci_stages"]:
+                for job in stage["jobs"]:
+                    if JobOutcomeTableRenderer.should_render(job):
+                        JobOutcomeTableRenderer.render(
+                            temporary_report_dir / pipe["url"], env, job)
+                    if MemoryTraceRenderer.should_render(job):
+                        MemoryTraceRenderer.render(
+                            temporary_report_dir / pipe["url"], env, job,
+                            gnuplot)
+
+                    tags = job["wrapper_arguments"]["tags"]
+                    description = job["wrapper_arguments"]["description"]
+                    if tags and "front-page-text" in tags:
+                        if "stdout" in job and job["stdout"]:
+                            front_page_outputs[description] = job
+
+            pipe_page = pipe_templ.render(run=run, pipe=pipe)
+            with litani.atomic_write(
+                    temporary_report_dir / pipe["url"] / "index.html") as handle:
+                print(pipe_page, file=handle)
+
+        dash_templ = env.get_template("dashboard.jinja.html")
+        page = dash_templ.render(
+            run=run, svgs=svgs,
+            litani_version=litani.VERSION,
+            litani_report_archive_path=litani_report_archive_path,
+            summary=get_summary(run), front_page_outputs=front_page_outputs)
+
+        with litani.atomic_write(temporary_report_dir / "index.html") as handle:
+            print(page, file=handle)
+
+        locked_dir = litani.LockableDirectory(temporary_report_dir)
+
+        temp_symlink_dir = self.report_dir.with_name(
+            self.report_dir.name + str(uuid.uuid4()))
+        os.symlink(temporary_report_dir, temp_symlink_dir)
+        os.rename(temp_symlink_dir, self.report_dir)
+
+        locked_dir.release()
+
+        try:
+            old_report_dir.expire()
+        except FileNotFoundError:
+            pass
+
+        litani.unlink_expired()
+
+
+
+async def release_html_dir(args):
+    lockable_dir = lib.litani.LockableDirectory(args.dir)
+    lockable_dir.release()
+
+
+async def acquire_html_dir(args):
+    remaining = args.timeout
+    while True:
+        html_dir = lib.litani.get_report_dir().resolve()
+        lockable_dir = lib.litani.LockableDirectory(html_dir)
+        if lockable_dir.acquire():
+            print(html_dir)
+            sys.exit(0)
+        remaining -= 1
+        if remaining == 0:
+            sys.exit(1)
+        await asyncio.sleep(1)
+
+
+async def print_html_dir(_):
+    html_dir = lib.litani.get_report_dir()
+    if not html_dir.exists():
+        sys.exit(1)
+    print(html_dir)
+
+
 def get_run(cache_dir):
     with open(cache_dir / litani.CACHE_FILE) as handle:
         ret = json.load(handle)
@@ -519,82 +634,6 @@ def get_summary(run):
         ret["total"] += 1
         ret[pipe["status"]] += 1
     return ret
-
-
-def render(run, report_dir, pipeline_depgraph_renderer):
-    temporary_report_dir = litani.get_report_data_dir() / str(uuid.uuid4())
-    temporary_report_dir.mkdir(parents=True)
-    old_report_dir_path = litani.get_report_dir().resolve()
-    old_report_dir = litani.ExpireableDirectory(old_report_dir_path)
-
-    artifact_dir = temporary_report_dir / "artifacts"
-    shutil.copytree(litani.get_artifacts_dir(), artifact_dir)
-
-    template_dir = pathlib.Path(__file__).parent.parent / "templates"
-    env = jinja2.Environment(
-        loader=jinja2.FileSystemLoader(str(template_dir)),
-        autoescape=jinja2.select_autoescape(
-            enabled_extensions=('html'),
-            default_for_string=True))
-
-    render_artifact_indexes(artifact_dir, env)
-
-    gnuplot = Gnuplot()
-    svgs = get_dashboard_svgs(run, env, gnuplot)
-
-    litani_report_archive_path = os.getenv("LITANI_REPORT_ARCHIVE_PATH")
-
-    with litani.atomic_write(temporary_report_dir / litani.RUN_FILE) as handle:
-        print(json.dumps(run, indent=2), file=handle)
-
-    front_page_outputs = {}
-    pipe_templ = env.get_template("pipeline.jinja.html")
-    for pipe in run["pipelines"]:
-        pipeline_depgraph_renderer.render(
-            render_root=temporary_report_dir,
-            pipe_url=pathlib.Path(pipe["url"]), pipe=pipe)
-        for stage in pipe["ci_stages"]:
-            for job in stage["jobs"]:
-                if JobOutcomeTableRenderer.should_render(job):
-                    JobOutcomeTableRenderer.render(
-                        temporary_report_dir / pipe["url"], env, job)
-                if MemoryTraceRenderer.should_render(job):
-                    MemoryTraceRenderer.render(
-                        temporary_report_dir / pipe["url"], env, job, gnuplot)
-
-                tags = job["wrapper_arguments"]["tags"]
-                description = job["wrapper_arguments"]["description"]
-                if tags and "front-page-text" in tags:
-                    if "stdout" in job and job["stdout"]:
-                        front_page_outputs[description] = job
-
-        pipe_page = pipe_templ.render(run=run, pipe=pipe)
-        with litani.atomic_write(
-                temporary_report_dir / pipe["url"] / "index.html") as handle:
-            print(pipe_page, file=handle)
-
-    dash_templ = env.get_template("dashboard.jinja.html")
-    page = dash_templ.render(
-        run=run, svgs=svgs,
-        litani_version=litani.VERSION,
-        litani_report_archive_path=litani_report_archive_path,
-        summary=get_summary(run), front_page_outputs=front_page_outputs)
-
-    with litani.atomic_write(temporary_report_dir / "index.html") as handle:
-        print(page, file=handle)
-
-
-    temp_symlink_dir = report_dir.with_name(report_dir.name + str(uuid.uuid4()))
-    os.symlink(temporary_report_dir, temp_symlink_dir)
-    os.rename(temp_symlink_dir, report_dir)
-
-    # Release lock so that other processes can read from this directory
-    new_report_dir = litani.LockableDirectory(report_dir.resolve())
-    new_report_dir.release()
-
-    if old_report_dir_path.exists():
-        old_report_dir.expire()
-    litani.unlink_expired()
 
 
 def render_artifact_indexes(artifact_dir, env):
