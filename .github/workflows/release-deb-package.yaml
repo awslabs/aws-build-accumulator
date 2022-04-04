@@ -1,0 +1,27 @@
+on:
+  release:
+    types: [created]
+
+name: Release deb package
+jobs:
+  ubuntu-20_04-package:
+    name: Generate ubuntu-20.04 debian package
+    runs-on: ubuntu-20.04
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Get Version
+        run: echo "VERSION=${GITHUB_REF/refs\/tags\/}" >> $GITHUB_ENV
+      - name: Build Deb Package
+        id: build_deb_package
+        uses: ./.github/actions/build
+        with:
+            version: ${{ env.VERSION }}
+      - name: Upload release binary
+        uses: actions/upload-release-asset@v1.0.2
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ steps.build_deb_package.outputs.deb-package-path }}
+          asset_name: ${{ steps.build_deb_package.outputs.deb-package-name }}
+          asset_content_type: application/x-deb
