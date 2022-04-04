@@ -739,7 +739,7 @@ async def exec_job(args):
             with litani.atomic_write(arg_file) as handle:
                 print(out_str, file=handle)
 
-    if out_data["wrapper_return_code"] and out_data["stderr"]:
+    if out_data["stderr"]:
         print(
             "\n".join([l.rstrip() for l in out_data["stderr"]]),
             file=sys.stderr)
