@@ -1,0 +1,27 @@
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+name: Upload deb package to artifacts
+jobs:
+  ubuntu-20_04-package:
+    if: "contains(github.event.pull_request.labels.*.name, 'create-deb-package')"
+    name: Generate ubuntu-20.04 debian package on PR
+    runs-on: ubuntu-20.04
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Get Version
+        run: |
+          echo "VERSION=$(./litani -V)" >> $GITHUB_ENV
+      - name: Build Deb Package
+        id: build_deb_package
+        uses: ./.github/actions/build
+        with:
+            version: ${{ env.VERSION }}
+      - name: Upload report as artifact
+        uses: actions/upload-artifact@main
+        with:
+          name: ${{ env.VERSION }}-${{ runner.os }}-deb-package
+          path: ${{ steps.build_deb_package.outputs.deb-package-path }}
