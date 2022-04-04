@@ -40,20 +40,20 @@ same functionality as *litani transform-jobs*. A user can read the current
 jobs, make changes to them, and then set the new list of jobs for the litani
 run.
 
-This command may be run at any point after running `litani init` -- either
-before calling `litani run-build`, during the run, or after run-build has
+This command may be run at any point after running *litani init* -- either
+before calling *litani run-build*, during the run, or after run-build has
 terminated.
 
-Compared to `transform-jobs`, this command is useful if you just want to read
-the jobs and not write them, but can be used along with `set-jobs` to achieve a
+Compared to *transform-jobs*, this command is useful if you just want to read
+the jobs and not write them, but can be used along with *set-jobs* to achieve a
 similar end result.
 
 
 # MULTIPROCESS SAFETY
 
-This command is not safe to run concurrently with `set-jobs`, because
-`set-jobs` might delete a JSON file while this command reads it. This command
-is safe to run concurrently with `add-jobs` and `run-build` because new job
+This command is not safe to run concurrently with *set-jobs*, because
+*set-jobs* might delete a JSON file while this command reads it. This command
+is safe to run concurrently with *add-jobs* and *run-build* because new job
 files get written atomically.
 
 
