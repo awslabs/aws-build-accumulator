@@ -209,6 +209,38 @@ def get_args():
         flags = arg.pop("flags")
         transform_jobs_pars.add_argument(*flags, **arg)
 
+    release_html_dir_pars = subs.add_parser("release-html-dir",
+        help="Unlock a previously-locked HTML report directory")
+    release_html_dir_pars.set_defaults(func=lib.litani_report.release_html_dir)
+    for arg in [{
+            "flags": ["-d", "--dir"],
+            "help": "the locked HTML report directory to unlock",
+            "required": True,
+            "type": pathlib.Path,
+            "metavar": "D",
+    }]:
+        flags = arg.pop("flags")
+        release_html_dir_pars.add_argument(*flags, **arg)
+
+    acquire_html_dir_pars = subs.add_parser("acquire-html-dir",
+        help="Print the path to a locked HTML report directory")
+    acquire_html_dir_pars.set_defaults(func=lib.litani_report.acquire_html_dir)
+    for arg in [{
+            "flags": ["-t", "--timeout"],
+            "help": (
+                "how many seconds to wait before giving up "
+                "(0 means forever)"),
+            "required": True,
+            "type": non_negative_int,
+            "metavar": "N",
+    }]:
+        flags = arg.pop("flags")
+        acquire_html_dir_pars.add_argument(*flags, **arg)
+
+    print_html_dir_pars = subs.add_parser("print-html-dir",
+        help="Print out the path to the HTML report directory")
+    print_html_dir_pars.set_defaults(func=lib.litani_report.print_html_dir)
+
     caps_pars = subs.add_parser("print-capabilities",
         help="Print out Litani's capabilities in a list")
     caps_pars.set_defaults(func=lib.capabilities.dump)
@@ -300,7 +332,7 @@ def get_args():
 
 
 def continuous_render_report(
-    cache_dir, report_dir, killer, out_file, pipeline_degraph_renderer):
+    cache_dir, killer, out_file, render):
     try:
         while True:
             run = litani_report.get_run_data(cache_dir)
@@ -310,7 +342,7 @@ def continuous_render_report(
             if out_file is not None:
                 with litani.atomic_write(out_file) as handle:
                     print(json.dumps(run, indent=2), file=handle)
-            litani_report.render(run, report_dir, pipeline_degraph_renderer)
+            render(run)
             if killer.is_set():
                 break
             time.sleep(2)
@@ -606,17 +638,18 @@ async def run_build(args):
         for build in builds:
             logging.debug(build)
             ninja.build(**build)
-    report_dir = litani.get_report_dir()
     run = litani_report.get_run_data(cache_dir)
     lib.validation.validate_run(run)
-    pipeline_degraph_renderer = litani_report.PipelineDepgraphRenderer(
+    report_dir = lib.litani.get_report_dir()
+    pipeline_depgraph_renderer = litani_report.PipelineDepgraphRenderer(
         should_render=not args.no_pipeline_dep_graph)
-    litani_report.render(run, report_dir, pipeline_degraph_renderer)
+    render = litani_report.ReportRenderer(
+        report_dir, pipeline_depgraph_renderer)
+    render(run)
     killer = threading.Event()
     render_thread = threading.Thread(
         group=None, target=continuous_render_report,
-        args=(cache_dir, report_dir, killer, args.out_file,
-        pipeline_degraph_renderer))
+        args=(cache_dir, killer, args.out_file, render))
     render_thread.start()
 
     runner = lib.ninja.Runner(
@@ -654,7 +687,7 @@ async def run_build(args):
     render_thread.join()
     run = litani_report.get_run_data(cache_dir)
     lib.validation.validate_run(run)
-    litani_report.render(run, report_dir, pipeline_degraph_renderer)
+    render(run)
 
     with litani.atomic_write(cache_dir / litani.RUN_FILE) as handle:
         print(json.dumps(run, indent=2), file=handle)
