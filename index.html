@@ -938,6 +938,65 @@ subprocess.run([
 </div>
           </div>
           
+            <div class="content-title" id="litani-man_litani-get-jobs">
+              <h1>litani get-jobs</h1>
+            </div>
+            <div class="man-body">
+            
+<div class="manual-text">
+<section class="Sh">
+<h2 class="Sh" id="litani-get-jobs_NAME"><a class="permalink" href="#litani-get-jobs_NAME">NAME</a></h2>
+<p class="Pp">litani get-jobs - Print a list of jobs to be run</p>
+</section>
+<section class="Sh">
+<h2 class="Sh" id="litani-get-jobs_SYNOPSIS"><a class="permalink" href="#litani-get-jobs_SYNOPSIS">SYNOPSIS</a></h2>
+<p class="Pp"><b>litani get-jobs</b></p>
+<div class="Bd-indent">[<b>-f</b>/<b>--out-file</b> <i>F</i>]</div>
+</section>
+<section class="Sh">
+<h2 class="Sh" id="litani-get-jobs_DESCRIPTION"><a class="permalink" href="#litani-get-jobs_DESCRIPTION">DESCRIPTION</a></h2>
+<p class="Pp">This program prints the list of jobs that have been added so far
+    in JSON format. Each job in the list will follow the same schema as the
+    elements of the <b>[&quot;jobs&quot;][&quot;wrapper_arguments&quot;]</b> key
+    in the litani <i>run.json</i> file; see <b>litani-run.json(5)</b> for the
+    schema.</p>
+</section>
+<section class="Sh">
+<h2 class="Sh" id="MOTIVATION_&amp;_BEST_PRACTICES"><a class="permalink" href="#MOTIVATION_&amp;_BEST_PRACTICES">MOTIVATION
+  &amp; BEST PRACTICES</a></h2>
+<p class="Pp">This program can be used in conjunction with <b>litani
+    set-jobs</b> to achieve the same functionality as <b>litani
+    transform-jobs</b>. A user can read the current jobs, make changes to them,
+    and then set the new list of jobs for the litani run.</p>
+<p class="Pp">This command may be run at any point after running <b>litani
+    init</b> -- either before calling <b>litani run-build</b>, during the run,
+    or after run-build has terminated.</p>
+<p class="Pp">Compared to <b>transform-jobs</b>, this command is useful if you
+    just want to read the jobs and not write them, but can be used along with
+    <b>set-jobs</b> to achieve a similar end result.</p>
+</section>
+<section class="Sh">
+<h2 class="Sh" id="litani-get-jobs_MULTIPROCESS_SAFETY"><a class="permalink" href="#litani-get-jobs_MULTIPROCESS_SAFETY">MULTIPROCESS
+  SAFETY</a></h2>
+<p class="Pp">This command is not safe to run concurrently with <b>set-jobs</b>,
+    because <b>set-jobs</b> might delete a JSON file while this command reads
+    it. This command is safe to run concurrently with <b>add-jobs</b> and
+    <b>run-build</b> because new job files get written atomically.</p>
+</section>
+<section class="Sh">
+<h2 class="Sh" id="litani-get-jobs_OPTIONS"><a class="permalink" href="#litani-get-jobs_OPTIONS">OPTIONS</a></h2>
+<p class="Pp"><b>-f</b>, <b>--out-file</b> <i>F</i></p>
+<div class="Bd-indent">Write the list of jobs to a JSON file. If no path is
+  provided Litani will write the list of jobs to stdout</div>
+</section>
+<section class="Sh">
+<h2 class="Sh" id="litani-get-jobs_SEE_ALSO"><a class="permalink" href="#litani-get-jobs_SEE_ALSO">SEE
+  ALSO</a></h2>
+<div class="Bd-indent">&#x2022;<b>litani set-jobs(1)</b></div>
+</section>
+</div>
+          </div>
+          
             <div class="content-title" id="litani-man_litani-init">
               <h1>litani init</h1>
             </div>
@@ -1039,6 +1098,75 @@ subprocess.run([
   by <b>uuidgen</b>(1). Litani will use the value of this variable as the ID for
   the run. This can be used, for example, by a CI system to set the UUID of the
   Litani run to be the same as the UUID for the CI run.</div>
+</section>
+</div>
+          </div>
+          
+            <div class="content-title" id="litani-man_litani-set-jobs">
+              <h1>litani set-jobs</h1>
+            </div>
+            <div class="man-body">
+            
+<div class="manual-text">
+<section class="Sh">
+<h2 class="Sh" id="litani-set-jobs_NAME"><a class="permalink" href="#litani-set-jobs_NAME">NAME</a></h2>
+<p class="Pp">litani set-jobs - Set the list of jobs to be run</p>
+</section>
+<section class="Sh">
+<h2 class="Sh" id="litani-set-jobs_SYNOPSIS"><a class="permalink" href="#litani-set-jobs_SYNOPSIS">SYNOPSIS</a></h2>
+<p class="Pp"><b>litani set-jobs</b></p>
+<div class="Bd-indent">[<b>-f</b>/<b>--from-file</b> <i>F</i>]
+  [<b>-s</b>/<b>--from-string</b> <i>S</i>]</div>
+</section>
+<section class="Sh">
+<h2 class="Sh" id="litani-set-jobs_DESCRIPTION"><a class="permalink" href="#litani-set-jobs_DESCRIPTION">DESCRIPTION</a></h2>
+<p class="Pp">This program reads a list of jobs as a JSON list. Each job in the
+    list should be a dict with keys being the flags to <b>litani add-job(1)</b>.
+    This program will replace all previously-added jobs with the jobs in the
+    user-proveded list.</p>
+</section>
+<section class="Sh">
+<h2 class="Sh" id="MOTIVATION_&amp;_BEST_PRACTICES"><a class="permalink" href="#MOTIVATION_&amp;_BEST_PRACTICES">MOTIVATION
+  &amp; BEST PRACTICES</a></h2>
+<p class="Pp">This program can be used in conjunction with <b>litani
+    get-jobs</b> to achieve the same functionality as <b>litani
+    transform-jobs</b>. A user can read the current jobs, make changes to them,
+    and then set the new list of jobs for the litani run.</p>
+<p class="Pp">This command can be used along with <b>litani get-jobs</b> to
+    achieve a similar end result to <b>litani transform-jobs</b>, but instead of
+    having access to the stdin and stdout of a subprocess this command uses
+    input and output files, which may be more natural for use in a Unix
+    pipeline.</p>
+</section>
+<section class="Sh">
+<h2 class="Sh" id="litani-set-jobs_EXAMPLES"><a class="permalink" href="#litani-set-jobs_EXAMPLES">EXAMPLES</a></h2>
+<p class="Pp">Below is an example which demonstrates how to combine <b>litani
+    get-jobs</b> and <b>litani set-jobs</b> to prepend echo to each command that
+    has been added to a litani run either using a pipeline or a sequence</p>
+<p class="Pp"></p>
+<div class="Bd-indent">
+<pre># Pipeline
+litani get-jobs | jq '[.[] | (.command = &quot;echo &quot; + .command)]' | litani set-jobs
+# Sequence
+litani get-jobs --out-file /tmp/original.json
+jq '[.[] | (.command = &quot;echo &quot; + .command)]' &lt; /tmp/original.json &gt; /tmp/transformed.json
+litani set-jobs --from-file /tmp/transformed.JSON</pre>
+</div>
+</section>
+<section class="Sh">
+<h2 class="Sh" id="litani-set-jobs_OPTIONS"><a class="permalink" href="#litani-set-jobs_OPTIONS">OPTIONS</a></h2>
+<p class="Pp"><b>-f</b>, <b>--from-file</b> <i>F</i></p>
+<div class="Bd-indent">Read in the list of jobs to be set from a path to a JSON
+  file <i>F</i>. Litani will read from stdin if no JSON file or string is
+  provided</div>
+<p class="Pp"><b>-s</b>, <b>--from-string</b> <i>S</i></p>
+<div class="Bd-indent">Read in the list of jobs to be set from JSON string
+  <i>S</i></div>
+</section>
+<section class="Sh">
+<h2 class="Sh" id="litani-set-jobs_SEE_ALSO"><a class="permalink" href="#litani-set-jobs_SEE_ALSO">SEE
+  ALSO</a></h2>
+<div class="Bd-indent">&#x2022;<b>litani get-jobs(1)</b></div>
 </section>
 </div>
           </div>
@@ -1791,8 +1919,20 @@ subprocess.run([
             
               <li class="navL1">
 								<a
+                  href="#litani-man_litani-get-jobs"
+                  >litani get-jobs(1)</a>
+              </li>
+            
+              <li class="navL1">
+								<a
                   href="#litani-man_litani-init"
                   >litani init(1)</a>
+              </li>
+            
+              <li class="navL1">
+								<a
+                  href="#litani-man_litani-set-jobs"
+                  >litani set-jobs(1)</a>
               </li>
             
               <li class="navL1">
