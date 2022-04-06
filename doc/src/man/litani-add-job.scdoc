@@ -123,14 +123,8 @@ configure times.
 	dashboard generator does use some of them). Each tag can be in whatever format
 	you prefer, e.g. a plain string, key-value pair, or even arbitrary JSON. A
 	job's list of tags is included in its _run.json_ and is intended to help with
-	analyzing run data.
-
-	If 'literal-stdout' is provided as a tag, then the report will render the
-	job's stdout underneath the boxes that indicate the command and its
-	statistics within the associated pipeline's page. If 'front-page-text' is
-	provided as a tag, then the report will render the job's stdout on the
-	front page of the report. These 2 tags allow users to render custom HTML
-	data, e.g. tables, graphs. Examples can be found at 'examples/rich-output'.
+	analyzing run data. See *TAGS* below for a list of tags that affect the
+	display of the HTML report.
 
 *--pipeline-name* _P_
 	The 'pipeline' that this job is part of. A pipeline is a subgraph of the
@@ -217,18 +211,36 @@ configure times.
 	recorded in the _memory_trace_ field of _run.json_.
 
 	The memory usage will also be included on a graph on the HTML dashboard if
-	this job's tags include a "stats group". For each string _G_, all jobs that
-	are tagged with "_stats-group:G_" and that have enabled memory profiling will
-	be included on a graph comparing memory usage amongst those jobs. Different
-	values for _G_ are intended to group different types of jobs. For example, you
-	might tag all the compilation jobs with _stats-group:compilation_ and all the
-	test jobs with _stats-group:test_. This will result in two graphs on the HTML
-	dasahboard, each one depicting the memory usage of the compilation and test
-	jobs respectively.
+	this job's tags include _stats-group:_; see the *TAGS* section below for more
+	details.
 
 *--profile-memory-interval* _N_
 	Profiles the memory usage of this job every _N_ seconds. Has no effect unless
 	*--profile-memory* is also passed.
+
+
+# TAGS
+
+Litani jobs can be 'tagged' by providing one or more strings to the *--tags*
+flag. These are meant for users to add arbitrary metadata to jobs; there is no
+defined format for tags, and Litani does not attempt to parse them.
+
+There are some pre-defined tags that affect how Litani renders the HTML report:
+
+- _literal-stdout_: Litani will inline this job's stdout verbatim into the job's
+  div on the pipeline detail page. This has the effect of treating the stdout as
+  HTML rather than as plain text, allowing users to e.g. display arbitrary HTML
+  or SVG output in the job div.
+- _front-page-text_: Litani will inline this job's stdout verbatim onto the
+  front page of the dashboard, in its own section. Inlining verbatim means that
+  Litani will not escape XML constructs, so this allows users to display custom
+  HTML and SVG output on the front page.
+- _stats-group:_*G*: Litani will generate box-and-whiskers diagrams for jobs
+  whose tag begins with _stats-group:_. Litani considers each value of *G* to be
+  a different group. For each group, Litani will render:
+	- A box-and-whiskers diagram depicting the runtime of every job in that group
+	- A box-and-whiskers diagram depicting the peak memory use of every job in
+	  that group, if *--profile-memory* was also passed to those jobs.
 
 
 # ENVIRONMENT VARIABLES
