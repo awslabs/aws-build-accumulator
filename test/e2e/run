@@ -112,7 +112,8 @@ def get_jobs(litani, run_dir, mod):
     cmd.extend(configure_args(*args.get("args", []), **args.get("kwargs", {})))
     jobs = subprocess.check_output(cmd)
 
-    mod.check_get_jobs(jobs)
+    if not mod.check_get_jobs(jobs):
+        sys.exit(1)
 
     for job in mod.get_post_check_jobs():
         run_litani(
