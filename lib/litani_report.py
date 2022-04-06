@@ -392,15 +392,17 @@ async def release_html_dir(args):
 
 
 async def acquire_html_dir(args):
-    remaining = args.timeout
+    if args.timeout:
+        end = datetime.datetime.now() + datetime.timedelta(seconds=args.timeout)
+    else:
+        end = datetime.datetime.max
     while True:
         html_dir = lib.litani.get_report_dir().resolve()
         lockable_dir = lib.litani.LockableDirectory(html_dir)
         if lockable_dir.acquire():
             print(html_dir)
             sys.exit(0)
-        remaining -= 1
-        if remaining == 0:
+        if datetime.datetime.now() > end:
             sys.exit(1)
         await asyncio.sleep(1)
 
