@@ -401,6 +401,36 @@ a:visited:active {
   color: #4caf50;
 }
 
+.tags {
+  font-size: small;
+  display: flex;
+  align-content: center;
+  align-items: center;
+}
+
+.tags-label {
+  display: flex;
+  flex-grow: 0;
+  transform: uppercase;
+}
+.tags-box {
+  display: flex;
+  flex-grow: 1;
+  flex-wrap: wrap;
+}
+
+.tags-list li {
+  display: inline;
+  margin-right: 2em;
+  padding-top: 0.2em;
+  padding-bottom: 0.2em;
+  padding-left: 0.5em;
+  padding-right: 0.5em;
+  background-color: #ffcc80;
+  color: #263238;
+  border-radius: 20px;
+}
+
 
 @media (prefers-color-scheme: dark){
   a:link {
@@ -778,6 +808,22 @@ a:visited:active {
               </div><!--  class="memory-table" -->
             </div><!--  class="memory-box" -->
           {% endif %}{# job["memory_trace"] and "peak" in job["memory_trace"] #}
+
+
+          {% if job["wrapper_arguments"]["tags"] %}
+          <div class="tags">
+            <div class="tags-label">
+              <p>Tags:</p>
+            </div>
+            <div class="tags-box">
+              <ul class="tags-list">
+              {% for tag in job["wrapper_arguments"]["tags"] | sort %}
+                <li>{{ tag }}</li>
+              {% endfor %}{# tag in job["wrapper_arguments"]["tags"] #}
+              </ul><!-- class="tags-list" -->
+            </div><!-- class="tags-box" -->
+          </div><!-- class="tags" -->
+          {% endif %}{# job["wrapper_arguments"]["tags"] #}
 
 
           {% if job["stdout"] %}
