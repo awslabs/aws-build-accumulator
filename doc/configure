@@ -109,7 +109,8 @@ def man_to_html(man, man_out, builds):
     return html_man
 
 
-def convert_man_dir_to_man(src_dir, dst_dir, rule, html_mans, builds):
+def convert_man_dir_to_man(
+        src_dir, dst_dir, rule, html_mans, builds, extra_inputs=None):
     for man in (src_dir).iterdir():
         if man.suffix == ".scdoc":
             with open(man) as fp:
@@ -118,8 +119,11 @@ def convert_man_dir_to_man(src_dir, dst_dir, rule, html_mans, builds):
             man_out = dst_dir / f"{man.stem}.{index}"
         else:
             man_out = dst_dir / f"{man.stem}.5"
+        inputs = [man]
+        if extra_inputs:
+            inputs.extend(extra_inputs)
         builds.append({
-            "inputs": [man],
+            "inputs": inputs,
             "outputs": [man_out],
             "rule": rule,
             "variables": {
@@ -139,7 +143,7 @@ def main():
         SRC_DIR / "man", MAN_DIR, "sc_to_man", html_mans, builds)
     convert_man_dir_to_man(
         SRC_DIR / "voluptuous-man", MAN_DIR, "voluptuous_to_man", html_mans,
-        builds)
+        builds, extra_inputs=[TEMPLATE_DIR / "voluptuous-man.jinja.scdoc"])
 
     builds.append({
         "inputs": html_mans + [
