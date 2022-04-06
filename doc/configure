@@ -55,6 +55,14 @@ RULES = [{
                f" { TEMPLATE_DIR / 'voluptuous-man.jinja.scdoc' }"
                " | scdoc > ${out}"
 }, {
+    "name": "gen-litani7",
+    "description": "generating litani(7).scdoc",
+    "command":
+            "${script}"
+            " --dst ${out}"
+            " --src ${src}"
+            f" --man-dir {MAN_DIR}"
+}, {
     "name": "man_to_html",
     "description": "converting ${man-name} HTML",
     "command": "mandoc -O fragment -Thtml < ${in} > ${out}"
@@ -81,28 +89,28 @@ RULES = [{
 }]
 
 
-def make_html_unique(man, html_man, html_mans, builds):
-    html_unique = HTML_UNIQUE_DIR / f"{man.stem}.html"
+def make_html_unique(man_name, html_man, html_mans, builds):
+    html_unique = HTML_UNIQUE_DIR / f"{man_name}.html"
     builds.append({
         "inputs": [html_man, BIN_DIR / "uniquify-header-ids"],
         "outputs": [html_unique],
         "rule": "uniquify_header_ids",
         "variables": {
-            "man-name": man.stem,
+            "man-name": man_name,
             "in-file": html_man,
         }
     })
     html_mans.append(html_unique)
 
 
-def man_to_html(man, man_out, builds):
-    html_man = HTML_MAN_SRC_DIR / f"{man.stem}.html"
+def man_to_html(man_name, man_out, builds):
+    html_man = HTML_MAN_SRC_DIR / f"{man_name}.html"
     builds.append({
         "inputs": [man_out],
         "outputs": [html_man],
         "rule": "man_to_html",
         "variables": {
-            "man-name": man.stem,
+            "man-name": man_name,
             "in-file": html_man,
         }
     })
@@ -112,13 +120,14 @@ def man_to_html(man, man_out, builds):
 def convert_man_dir_to_man(
         src_dir, dst_dir, rule, html_mans, builds, extra_inputs=None):
     for man in (src_dir).iterdir():
+        man_name = str(man.name).split(".", 1)[0]
         if man.suffix == ".scdoc":
             with open(man) as fp:
                 line = fp.readline().rstrip()
             index = line[line.find('(')+1:line.find(')')]
-            man_out = dst_dir / f"{man.stem}.{index}"
+            man_out = dst_dir / f"{man_name}.{index}"
         else:
-            man_out = dst_dir / f"{man.stem}.5"
+            man_out = dst_dir / f"{man_name}.5"
         inputs = [man]
         if extra_inputs:
             inputs.extend(extra_inputs)
@@ -127,12 +136,43 @@ def convert_man_dir_to_man(
             "outputs": [man_out],
             "rule": rule,
             "variables": {
-                "man-name": man.stem,
+                "man-name": man_name,
                 "data-path": man.resolve(),
             }
         })
-        html_man = man_to_html(man, man_out, builds)
-        make_html_unique(man, html_man, html_mans, builds)
+        html_man = man_to_html(man_name, man_out, builds)
+        make_html_unique(man_name, html_man, html_mans, builds)
+
+
+def add_litani_7(builds, html_mans):
+    """The litani(7) man page is special because it contains a table of contents
+    of the other pages, so it depends on the others."""
+
+    templ = SRC_DIR / "litani7" / "litani.jinja.scdoc"
+    script = BIN_DIR / "gen-litani7"
+
+    inputs = [b["outputs"][0] for b in builds if str(b["outputs"][0])[-1].isdigit()]
+    inputs.extend([templ, script])
+
+    sc_out = TMP_DIR / "litani.scdoc"
+    man_out = MAN_DIR / "litani.7"
+
+    builds.extend([{
+        "inputs": inputs,
+        "outputs": [sc_out],
+        "rule": "gen-litani7",
+        "variables": {
+            "src": templ,
+            "script": script,
+            "man-dir": MAN_DIR,
+        }
+    }, {
+        "inputs": [sc_out],
+        "outputs": [man_out],
+        "rule": "sc_to_man",
+    }])
+    html_man = man_to_html("litani.7", man_out, builds)
+    make_html_unique("litani.7", html_man, html_mans, builds)
 
 
 def main():
@@ -144,6 +184,8 @@ def main():
     convert_man_dir_to_man(
         SRC_DIR / "voluptuous-man", MAN_DIR, "voluptuous_to_man", html_mans,
         builds, extra_inputs=[TEMPLATE_DIR / "voluptuous-man.jinja.scdoc"])
+
+    add_litani_7(builds, html_mans)
 
     builds.append({
         "inputs": html_mans + [
@@ -162,6 +204,8 @@ def main():
         for k, v in build.items():
             if isinstance(v, list):
                 build[k] = [str(s) for s in v]
+            elif isinstance(v, dict):
+                build[k] = {ik: str(iv) for ik, iv in v.items()}
         try:
             build["implicit"].append(str(DOC_DIR / "configure"))
         except KeyError:
