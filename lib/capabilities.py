@@ -31,6 +31,8 @@ _CAPABILITIES = {
     "acquire_html_dir": "The acquire-html-dir command is supported",
     "release_html_dir": "The release-html-dir command is supported",
     "print_html_dir": "The print-html-dir command is supported",
+    "get_jobs": "The get-jobs command is supported",
+    "set_jobs": "The set-jobs command is supported",
 }
 
 
