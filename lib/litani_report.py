@@ -358,6 +358,14 @@ class ReportRenderer:
                     temporary_report_dir / pipe["url"] / "index.html") as handle:
                 print(pipe_page, file=handle)
 
+        if "end_time" in run:
+            s = datetime.datetime.strptime(
+                run["start_time"], litani.TIME_FORMAT_R)
+            e = datetime.datetime.strptime(
+                run["end_time"], litani.TIME_FORMAT_R)
+            runtime = (e - s).seconds
+            run["__duration_str"] = s_to_hhmmss(runtime)
+
         dash_templ = env.get_template("dashboard.jinja.html")
         page = dash_templ.render(
             run=run, svgs=svgs,
