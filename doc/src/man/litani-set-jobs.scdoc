@@ -1,0 +1,77 @@
+litani-set-jobs(1) "" "Litani Build System"
+
+; Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+
+; Licensed under the Apache License, Version 2.0 (the "License").
+; You may not use this file except in compliance with the License.
+; A copy of the License is located at
+
+;     http://www.apache.org/licenses/LICENSE-2.0
+
+; or in the "license" file accompanying this file. This file is distributed
+; on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+; express or implied. See the License for the specific language governing
+; permissions and limitations under the License.
+
+
+# NAME
+
+litani set-jobs - Set the list of jobs to be run
+
+# SYNOPSIS
+
+*litani set-jobs*
+	\[*-f*/*--from-file* _F_]
+	\[*-s*/*--from-string* _S_]
+
+
+# DESCRIPTION
+
+This program reads a list of jobs as a JSON list. Each job in the list should
+be a dict with keys being the flags to *litani add-job(1)*. This program will
+replace all previously-added jobs with the jobs in the user-proveded list.
+
+
+# MOTIVATION & BEST PRACTICES
+
+This program can be used in conjunction with *litani get-jobs* to achieve the
+same functionality as *litani transform-jobs*. A user can read the current
+jobs, make changes to them, and then set the new list of jobs for the litani
+run.
+
+
+This command can be used along with *litani get-jobs* to achieve a similar end
+result to *litani transform-jobs*, but instead of having access to the stdin
+and stdout of a subprocess this command uses input and output files, which may
+be more natural for use in a Unix pipeline.
+
+
+# EXAMPLES
+
+Below is an example which demonstrates how to combine *litani get-jobs* and
+*litani set-jobs* to prepend echo to each command that has been added to a
+litani run either using a pipeline or a sequence
+
+```
+# Pipeline
+litani get-jobs | jq '[.[] | (.command = "echo " + .command)]' | litani set-jobs
+
+# Sequence
+litani get-jobs --out-file /tmp/original.json
+jq '[.[] | (.command = "echo " + .command)]' < /tmp/original.json > /tmp/transformed.json
+litani set-jobs --from-file /tmp/transformed.JSON
+```
+
+# OPTIONS
+
+*-f*, *--from-file* _F_
+	Read in the list of jobs to be set from a path to a JSON file _F_. Litani
+	will read from stdin if no JSON file or string is provided
+
+*-s*, *--from-string* _S_
+	Read in the list of jobs to be set from JSON string _S_
+
+
+# SEE ALSO
+
+- *litani get-jobs(1)*

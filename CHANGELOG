@@ -1,6 +1,79 @@
                               CHANGELOG
                               `````````
 
+Version 1.23.0 -- 2022-04-11
+----------------------------
+Summary=======
+
+- Add get-jobs and set-jobs subcommands
+
+- Add concurrency-safe HTML directory API
+
+- Various improvements to HTML output
+
+- Various improvements to user-facing and developer documentation
+
+- Various improvements to automated release workflow
+
+- Litani now dumps the stderr of all jobs regardless of return code
+
+
+Details
+=======
+
+- Add get-jobs and set-jobs subcommands
+
+  Add two new subcommands for litani, get-jobs and set-jobs. These
+  subcommands act as primitives for interacting with the list of jobs for a
+  litani run. Testing indicates that using set-jobs is ~80x faster than using
+  add-jobs sequentially.
+
+  get-jobs returns the list of jobs that have been added to a litani run
+  either to stdout or to a file specified by the user. set-jobs allows the
+  user to overwrite the job list by passing in a new list of jobs through
+  stdin, a file, or a json string.
+
+  set-jobs allows the user to set many jobs at the same time without the
+  overhead of starting up the python interpreter before each job is added.
+
+  Using get-jobs and set-jobs together, the user can achieve the same
+  effect as transform-jobs in a more flexible manner which may be more
+  familiar to those used to working with unix pipelines or sequences.
+  These functions have also replaced the underlying code of
+  transform-jobs.
+
+
+- Add concurrency-safe HTML directory API
+
+  This feature adds 3 new commands that allow Litani clients to access the
+  HTML report, either for continuous viewing or modification.
+
+  - `litani print-html-dir` prints the path to a HTML report directory
+    that will be continuously updated with new progress while litani
+    run-build runs. This is the command for local users to use for viewing
+    the HTML report in a browser, for example.
+  - `litani acquire-html-dir` prints the path to an exclusively-locked
+    HTML report directory. After this command terminates, the printed-out
+    directory will not be deleted or modified until `litani release-html-dir`
+    is subsequently called. This is the command to use when you require
+    prolonged exclusive access to HTML data, for example while doing a
+    file transfer.
+  - `litani release-html-dir` releases the lock on a previously-acquired
+    HTML report directory. This allows other processes to attempt to lock
+    the directory, and also allows `litani run-build` to acquire the
+    directory for garbage collection.
+
+  This feature gives users a safe way to get the path to a HTML report
+  directory that meets their usage requirements, and without relying on
+  internal Litani implementation details.
+
+
+- Improvements to HTML output:
+  - The pipeline page displays a list of tags for any job that has tags
+  - The front dashboard displays the total runtime after the run completes
+  - Minor colour, wording, and font fixes
+
+
 Version 1.22.0 -- 2022-03-15
 ----------------------------
 - Print out stderr when a job fails

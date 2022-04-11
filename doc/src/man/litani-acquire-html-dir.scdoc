@@ -1,0 +1,72 @@
+litani-acquire-html-dir(1) "" "Litani Build System"
+
+; Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+
+; Licensed under the Apache License, Version 2.0 (the "License").
+; You may not use this file except in compliance with the License.
+; A copy of the License is located at
+
+;     http://www.apache.org/licenses/LICENSE-2.0
+
+; or in the "license" file accompanying this file. This file is distributed
+; on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+; express or implied. See the License for the specific language governing
+; permissions and limitations under the License.
+
+
+# NAME
+
+litani acquire-html-dir - Print the path to a locked HTML report directory
+
+
+# SYNOPSIS
+
+*litani acquire-html-dir*
+	*-t*/*--timeout* _N_
+
+
+# DESCRIPTION
+
+This program attempts to acquire a lock on the most recently-written Litani HTML
+report, and prints the path to that locked directory.
+
+This command should be used to get a path to a HTML report that is guaranteed to
+not be deleted or modified by other processes that also use this locking API.
+If you instead want the path to a HTML report directory that Litani will
+continuously refresh with updated progress, use *litani-print-html-dir(1)*.
+
+If this command returns successfully, subsequent invocations of this command
+will either hang, time out, or print the path to a different report directory.
+That continues until *litani-release-html-dir(1)* is run. This program should
+thus be used by cooperating processes that wish to have exclusive access to a
+HTML report. Well-behaved processes should only modify HTML report directories
+after this command has successfully returned, and should run
+*litani-release-html-dir(1)* after finishing their modifications.
+
+
+# MULTIPROCESS SAFETY
+
+It is safe to run this program concurrently with any other Litani command.
+
+
+# OPTIONS
+
+*--t*/*--timeout* _N_
+	Terminate with a return code of 1 if unable to acquire an HTML report
+	directory after _N_ seconds. If _N_ is *0*, this program will continue trying
+	to acquire a directory forever. It is recommended to set a non-zero timeout
+	because this program might livelock if, for example, a concurrent invocation
+	of *litani run-build* crashes in the middle of writing a report directory.
+
+
+# OUTPUT & RETURN CODE
+
+This program prints out the path to an HTML report directory and returns 0 if it
+was able to acquire a lock on that directory. This program returns 2 if there
+was a command line error. Otherwise, this program prints nothing and returns 1.
+
+
+# SEE ALSO
+
+- *litani-print-html-dir(1)*
+- *litani-release-html-dir(1)*

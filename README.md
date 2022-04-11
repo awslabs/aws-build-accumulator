@@ -55,5 +55,9 @@ If you are cloning the source code, you will need the following dependencies:
 * [Voluptuous](https://pypi.org/project/voluptuous/) to perform
   sanity-checking on internal data structures
   * `pip3 install voluptuous`
+* [coreutils](https://www.gnu.org/software/coreutils/) to build the documentation
+  * `brew install coreutils`
+* [mandoc](https://mandoc.bsd.lv/) to build the documentation
+  * `brew install mandoc`
 * [scdoc](https://git.sr.ht/~sircmpwn/scdoc) to build the documentation
   * `brew install scdoc`

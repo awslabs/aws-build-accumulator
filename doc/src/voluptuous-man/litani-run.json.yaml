@@ -1,7 +1,7 @@
 header: > 
-  # SYNOPSIS
+  # NAME
 
-  _run.json_: description of a single Litani run
+  litani run.json - description of a single Litani run
 
 
   # DESCRIPTION

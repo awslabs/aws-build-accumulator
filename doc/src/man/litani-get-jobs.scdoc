@@ -1,0 +1,68 @@
+litani-get-jobs(1) "" "Litani Build System"
+
+; Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+
+; Licensed under the Apache License, Version 2.0 (the "License").
+; You may not use this file except in compliance with the License.
+; A copy of the License is located at
+
+;     http://www.apache.org/licenses/LICENSE-2.0
+
+; or in the "license" file accompanying this file. This file is distributed
+; on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+; express or implied. See the License for the specific language governing
+; permissions and limitations under the License.
+
+
+# NAME
+
+litani get-jobs - Print a list of jobs to be run
+
+
+# SYNOPSIS
+
+*litani get-jobs*
+	\[*-f*/*--out-file* _F_]
+
+
+# DESCRIPTION
+
+This program prints the list of jobs that have been added so far in JSON
+format. Each job in the list will follow the same schema as the elements of the
+*["jobs"]["wrapper_arguments"]* key in the litani _run.json_ file; see
+*litani-run.json(5)* for the schema.
+
+
+# MOTIVATION & BEST PRACTICES
+
+This program can be used in conjunction with *litani set-jobs* to achieve the
+same functionality as *litani transform-jobs*. A user can read the current
+jobs, make changes to them, and then set the new list of jobs for the litani
+run.
+
+This command may be run at any point after running *litani init* -- either
+before calling *litani run-build*, during the run, or after run-build has
+terminated.
+
+Compared to *transform-jobs*, this command is useful if you just want to read
+the jobs and not write them, but can be used along with *set-jobs* to achieve a
+similar end result.
+
+
+# MULTIPROCESS SAFETY
+
+This command is not safe to run concurrently with *set-jobs*, because
+*set-jobs* might delete a JSON file while this command reads it. This command
+is safe to run concurrently with *add-jobs* and *run-build* because new job
+files get written atomically.
+
+
+# OPTIONS
+
+*-f*, *--out-file* _F_
+	Write the list of jobs to a JSON file. If no path is provided
+	Litani will write the list of jobs to stdout
+
+# SEE ALSO
+
+- *litani set-jobs(1)*

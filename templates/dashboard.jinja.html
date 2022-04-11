@@ -220,7 +220,6 @@ p {
   text-transform: lowercase;
   font-style: italic;
   font-size: larger;
-  color: #26323899;
   width: 18em;
 }
 
@@ -364,8 +363,10 @@ p {
 
   <div class=run-info>
     <ul>
-      <li>{{ run["status"] }}</li>
-      <li>{{ run["start_time"] }}</li>
+      <li>{{ run["status"] }}{% if "__duration_str" in run %}
+      ({{ run["__duration_str"] }})
+      {% endif %}</li>
+      <li>started at {{ run["start_time"] }}</li>
       <li>{{ run["run_id"] }}</li>
     </ul>
   </div><!-- class=run-info -->

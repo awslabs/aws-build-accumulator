@@ -1,0 +1,68 @@
+litani-release-html-dir(1) "" "Litani Build System"
+
+; Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+
+; Licensed under the Apache License, Version 2.0 (the "License").
+; You may not use this file except in compliance with the License.
+; A copy of the License is located at
+
+;     http://www.apache.org/licenses/LICENSE-2.0
+
+; or in the "license" file accompanying this file. This file is distributed
+; on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+; express or implied. See the License for the specific language governing
+; permissions and limitations under the License.
+
+
+# NAME
+
+litani release-html-dir - Unlock a previously-locked HTML report directory
+
+
+# SYNOPSIS
+
+*litani release-html-dir*
+	*-d*/*--dir* _D_
+
+
+# DESCRIPTION
+
+This program releases a lock on a Litani HTML report directory that had
+previously been locked through an invocation of *litani-acquire-html-dir(1)*.
+This allows other processes to attempt to acquire the directory.
+
+After this command returns, it becomes possible for a single subsequent (or
+currently-running) invocation of *litani-acquire-html-dir(1)* to terminate
+successfully.
+
+It is an error to run this command if you have not previously acquired the
+specified report directory using *litani-acquire-html-dir(1)*. Litani does not
+check that the locking API is being used correctly, so doing this may cause a
+race where more than one process can modify a single report directory
+concurrently.
+
+It is important to release a directory after acquiring it and completing any
+modifications, so that a concurrent run of *litani-run-build(1)* can acquire
+stale HTML report directories for garbage collection.
+
+
+# MULTIPROCESS SAFETY
+
+It is safe to run this program concurrently with any other Litani command.
+
+
+# OPTIONS
+
+*-d*/*--dir* _D_
+	The path to a Litani HTML report directory that had previously been printed
+	out from an invocation of *litani-acquire-html-dir(1)*.
+
+
+# RETURN CODE
+
+This program returns 0.
+
+
+# SEE ALSO
+
+- *litani-acquire-html-dir(1)*

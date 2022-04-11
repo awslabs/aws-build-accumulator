@@ -61,6 +61,14 @@ def is_slow_test(module_file):
         sys.exit(1)
 
 
+def has_phony_add_jobs(module_file):
+    try:
+        return importlib.import_module(str(module_file.stem)).PHONY_ADD_JOBS
+    except AttributeError:
+        pass
+    return False
+
+
 def litani_add(litani, counter, *args, **kwargs):
     cmd = [litani, "add-job"]
     for arg in args:
@@ -82,6 +90,14 @@ def collapse(string):
     return re.sub(r"\s+", " ", string)
 
 
+def has_line(test_file, line):
+    with open(test_file) as handle:
+        for current_line in handle:
+            if current_line.strip().startswith(line):
+                return True
+    return False
+
+
 def add_e2e_tests(litani, test_dir, counter, output_dir, fast):
     e2e_test_dir = test_dir / "e2e"
     # 4 jobs per test (init, add-jobs, run-build, check-run)
@@ -92,12 +108,10 @@ def add_e2e_tests(litani, test_dir, counter, output_dir, fast):
         if test_file.name in ["__init__.py", "__pycache__"]:
             continue
 
-        add_transform_jobs = False
-        with open(test_file) as handle:
-            for line in handle:
-                if line.strip().startswith("def transform_jobs("):
-                    add_transform_jobs = True
-                    break
+        add_transform_jobs = has_line(test_file, "def transform_jobs(")
+        add_get_jobs = has_line(test_file, "def check_get_jobs(")
+        add_set_jobs = has_line(test_file, "def get_set_jobs_args(")
+
         if fast and is_slow_test(test_file):
             continue
 
@@ -113,14 +127,23 @@ def add_e2e_tests(litani, test_dir, counter, output_dir, fast):
                 --litani {litani}
                 --run-dir {run_dir}
                 --operation init"""),
-            pipeline=f"End-to-end: {test_file.stem}",
+            pipeline=f"e2e_{test_file.stem}",
             ci_stage="test",
             description=f"{test_file.stem}: init",
             outputs=run_dir / ".litani_cache_dir",
             cwd=run_dir,
             timeout=timeout)
 
-        run_build_input = str(uuid.uuid4())
+        add_jobs_output = str(uuid.uuid4())
+        add_jobs_kwargs = {
+            "phony_outputs": [add_jobs_output],
+        }
+        jobs_output = f"{run_dir}/output/jobs"
+        if has_phony_add_jobs(test_file):
+            add_jobs_kwargs["phony_outputs"].append(jobs_output)
+        else:
+            add_jobs_kwargs["outputs"] = [jobs_output]
+
         litani_add(
             litani, counter,
             command=collapse(f"""
@@ -129,18 +152,17 @@ def add_e2e_tests(litani, test_dir, counter, output_dir, fast):
                 --litani {litani}
                 --run-dir {run_dir}
                 --operation add-jobs"""),
-            pipeline=f"End-to-end: {test_file.stem}",
+            pipeline=f"e2e_{test_file.stem}",
             ci_stage="test",
             description=f"{test_file.stem}: add jobs",
             inputs=run_dir / ".litani_cache_dir",
-            phony_outputs=run_build_input,
-            outputs=f"{run_dir}/output/jobs",
             cwd=run_dir,
-            timeout=timeout)
+            timeout=timeout,
+            **add_jobs_kwargs)
 
+        run_build_dependencies = [add_jobs_output]
         if add_transform_jobs:
-            add_jobs_output = run_build_input
-            run_build_input = str(uuid.uuid4())
+            transform_jobs_output = str(uuid.uuid4())
             litani_add(
                 litani, counter,
                 command=collapse(f"""
@@ -149,12 +171,49 @@ def add_e2e_tests(litani, test_dir, counter, output_dir, fast):
                     --litani {litani}
                     --run-dir {run_dir}
                     --operation transform-jobs"""),
-                pipeline=f"End-to-end: {test_file.stem}",
+                pipeline=f"e2e_{test_file.stem}",
                 ci_stage="test",
                 description=f"{test_file.stem}: transform jobs",
                 inputs=add_jobs_output,
-                phony_outputs=run_build_input,
+                phony_outputs=transform_jobs_output,
                 cwd=run_dir)
+            run_build_dependencies.append(transform_jobs_output)
+
+        if add_get_jobs:
+            get_jobs_output = str(uuid.uuid4())
+            litani_add(
+                litani, counter,
+                command=collapse(f"""
+                    {e2e_test_dir / 'run'}
+                    --test-file {test_file}
+                    --litani {litani}
+                    --run-dir {run_dir}
+                    --operation get-jobs"""),
+                pipeline=f"e2e_{test_file.stem}",
+                ci_stage="test",
+                description=f"{test_file.stem}: get jobs",
+                inputs=add_jobs_output,
+                phony_outputs=get_jobs_output,
+                cwd=run_dir)
+            run_build_dependencies.append(get_jobs_output)
+
+        if add_set_jobs:
+            set_jobs_output = str(uuid.uuid4())
+            litani_add(
+                litani, counter,
+                command=collapse(f"""
+                    {e2e_test_dir / 'run'}
+                    --test-file {test_file}
+                    --litani {litani}
+                    --run-dir {run_dir}
+                    --operation set-jobs"""),
+                pipeline=f"e2e_{test_file.stem}",
+                ci_stage="test",
+                description=f"{test_file.stem}: set jobs",
+                inputs=add_jobs_output,
+                phony_outputs=set_jobs_output,
+                cwd=run_dir)
+            run_build_dependencies.append(set_jobs_output)
 
         litani_add(
             litani, counter,
@@ -164,10 +223,10 @@ def add_e2e_tests(litani, test_dir, counter, output_dir, fast):
                 --litani {litani}
                 --run-dir {run_dir}
                 --operation run-build"""),
-            pipeline=f"End-to-end: {test_file.stem}",
+            pipeline=f"e2e_{test_file.stem}",
             ci_stage="test",
             description=f"{test_file.stem}: run build",
-            inputs=run_build_input,
+            inputs=run_build_dependencies,
             outputs=f"{run_dir}/output/run.json",
             cwd=run_dir,
             timeout=timeout)
@@ -180,7 +239,7 @@ def add_e2e_tests(litani, test_dir, counter, output_dir, fast):
                 --litani {litani}
                 --run-dir {run_dir}
                 --operation check-run"""),
-            pipeline=f"End-to-end: {test_file.stem}",
+            pipeline=f"e2e_{test_file.stem}",
             ci_stage="report",
             description=f"{test_file.stem}: check run",
             inputs=f"{run_dir}/output/run.json",

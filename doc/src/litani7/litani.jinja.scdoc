@@ -55,35 +55,20 @@ running, and use the _run.json_ file during or after the build to gain
 insight into the build outcome.
 
 
-# COMMAND LINE INTERFACE
+# MANUAL PAGES -- TABLE OF CONTENTS
 
-The following is a synopsis of Litani's subcommands:
+The following man pages are available with local installations of Litani (try
+*man litani-add-job*), or online at
+_https://awslabs.github.io/aws-build-accumulator/_:
 
-*litani init*
-	Create a new Litani build, allowing you to add jobs and subsequently
-	run them.
+{% for chapter in chapters %}{% if chapter["mans"] %}
 
-*litani add-job*
-	Add a job to the build. A 'job' is a command that will be executed as
-	part of the build, possibly with inputs and outputs that describe its
-	place in the dependency graph, and other attributes.
+## {{ chapter["name"] }}
 
-*litani run-build*
-	Execute all jobs that have been added to the build since the last time
-	you ran *litani init*.
-
-*litani dump-run*
-	Print a JSON representation of the run so far to stdout both while the
-	build is running as well as after it has completed.
-
-*litani graph*
-	Print the dependency graph of the build in Graphviz format, ready to
-	be rendered into an image using *dot(1)*.
-
-*litani print-capabilities*
-	Print a list of features that this version of Litani supports. This
-	can be used as an alternative to checking the version string.
-
+{% for man in chapter["mans"] %}
+*litani {{ man["name"] }}*: {{ man["description"] }}{% if not loop.last %}++{% endif %}
+{%- endfor -%}
+{% endif %}{% endfor %}
 
 # SEE ALSO
 

@@ -1,0 +1,62 @@
+name: Build and test Deb package for Litani
+description: Build and test Deb package for Litani
+inputs:
+  version:
+    description: Version of deb package
+    required: true
+outputs:
+  deb-package-path:
+    description: Deb Package Path
+    value: ${{steps.create_packages.outputs.deb_package}}
+  deb-package-name:
+    description: Deb Package Name
+    value: ${{steps.create_packages.outputs.deb_package_name}}
+runs:
+  using: composite
+  steps:
+    - name: Setup directory for deb package
+      run: |
+        echo ${{ inputs.version }}
+        sudo apt-get install -y mandoc scdoc ninja-build
+        mkdir -p litani-${{ inputs.version }}/{DEBIAN,usr/{bin,libexec/litani,share/{doc/litani,man/{man1,man5,man7}}}}
+        touch litani-${{ inputs.version }}/DEBIAN/control
+        cat << EOF > litani-${{ inputs.version }}/DEBIAN/control
+        Package: Litani
+        Version: ${{ inputs.version }}
+        Architecture: amd64
+        Depends: ninja-build, gnuplot, graphviz, python3-jinja2
+        Maintainer: Kareem Khazem <karkhaz@amazon.co.uk>
+        Description: Litani is a build system that provides an HTML dashboard of
+          job results, as well as a JSON-formatted record of job results. It
+          provides platform-independent job control (timeouts, return code control)
+          and an output format that is easy to render into reports (for example,
+          using the built-in renderer).
+        EOF
+        ./doc/configure && ninja
+        mv bin lib templates litani litani-${{ inputs.version }}/usr/libexec/litani/
+        mv doc/out/man/*.1 litani-${{ inputs.version }}/usr/share/man/man1
+        mv doc/out/man/*.5 litani-${{ inputs.version }}/usr/share/man/man5
+        mv doc/out/man/*.7 litani-${{ inputs.version }}/usr/share/man/man7
+        mv doc/out/html/index.html litani-${{ inputs.version }}/usr/share/doc/litani
+        ln -s /usr/libexec/litani/litani litani-${{ inputs.version }}/usr/bin/
+        rm -r $(ls -A | grep -v litani-${{ inputs.version }})
+      shell: bash
+    - name: Create .deb package
+      id: create_packages
+      run: |
+        sudo dpkg-deb --build --root-owner-group litani-${{ inputs.version }}
+        deb_package_name="$(ls *.deb)"
+        echo "::set-output name=deb_package::$deb_package_name"
+        echo "::set-output name=deb_package_name::$deb_package_name"
+      shell: bash
+    - name: Install Litani using deb package
+      run: sudo apt-get update && sudo apt install -y ./litani-${{ inputs.version }}.deb
+      shell: bash
+    - name: Test deb package
+      run: |
+        litani -h
+        man litani
+        litani init --project-name test
+        litani add-job --command '/usr/bin/true' --pipeline-name 'test' --ci-stage test
+        litani run-build
+      shell: bash

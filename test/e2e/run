@@ -42,8 +42,8 @@ def run_cmd(cmd):
         sys.exit(1)
 
 
-def run_litani(litani, subcommand, *args, **kwargs):
-    cmd = [litani, subcommand]
+def configure_args(*args, **kwargs):
+    cmd = []
     for arg in args:
         switch = re.sub("_", "-", arg)
         cmd.append(f"--{switch}")
@@ -54,6 +54,12 @@ def run_litani(litani, subcommand, *args, **kwargs):
             cmd.extend(value)
         else:
             cmd.append(value)
+    return cmd
+
+
+def run_litani(litani, subcommand, *args, **kwargs):
+    cmd = [litani, subcommand]
+    cmd.extend(configure_args(*args, **kwargs))
     run_cmd(cmd)
 
 
@@ -98,6 +104,29 @@ def transform_jobs(litani, run_dir, mod):
         sys.exit(1)
 
 
+def get_jobs(litani, run_dir, mod):
+    os.chdir(run_dir)
+    args = mod.get_check_get_jobs_args()
+
+    cmd = [litani, "get-jobs"]
+    cmd.extend(configure_args(*args.get("args", []), **args.get("kwargs", {})))
+    jobs = subprocess.check_output(cmd)
+
+    if not mod.check_get_jobs(jobs):
+        sys.exit(1)
+
+    for job in mod.get_post_check_jobs():
+        run_litani(
+            litani, "add-job", *job.get("args", []), **job.get("kwargs", {}))
+
+
+def set_jobs(litani, run_dir, mod):
+    os.chdir(run_dir)
+    args = mod.get_set_jobs_args()
+    run_litani(
+        litani, "set-jobs", *args.get("args", []), **args.get("kwargs", {}))
+
+
 def run_build(litani, run_dir, mod):
     os.chdir(run_dir)
     args = mod.get_run_build_args()
@@ -129,6 +158,8 @@ OPERATIONS = {
     "run-build": run_build,
     "check-run": check_run,
     "transform-jobs": transform_jobs,
+    "get-jobs": get_jobs,
+    "set-jobs": set_jobs,
 }
 
 
