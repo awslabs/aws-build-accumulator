@@ -3,7 +3,8 @@
 
 Version 1.23.0 -- 2022-04-11
 ----------------------------
-Summary=======
+Summary
+=======
 
 - Add get-jobs and set-jobs subcommands
 
