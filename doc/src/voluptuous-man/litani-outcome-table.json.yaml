@@ -1,7 +1,7 @@
 header: > 
-  # SYNOPSIS
+  # NAME
 
-  _outcome-table.json_: user-provided table to decide the outcome of a job
+  litani outcome-table.json - user-provided table to decide the outcome of a job
 
 
   # DESCRIPTION
