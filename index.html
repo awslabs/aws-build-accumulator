@@ -58,11 +58,17 @@
   body {
 		line-height: 24pt;
     margin: 0;
-    font-family: Roboto Mono, Menlo,monospace;
+    font-family: Helvetica, sans-serif;
     font-size: 16pt;
     color: #3d4d53;
     background-color: #fdf6e3;
     letter-spacing: 1px;
+  }
+  code {
+    font-family: Monaco, Roboto Mono, sans-serif;
+  }
+  pre {
+    font-family: Monaco, Roboto Mono, sans-serif;
   }
   a {
     text-decoration: none;
@@ -359,102 +365,6 @@
     <main class="right-column">
       <div class="content">
         <div id="." class="content-body">
-          
-            <div class="content-title" id="litani-man_litani">
-              <h1>litani</h1>
-            </div>
-            <div class="man-body">
-            
-<div class="manual-text">
-<p class="Pp">Litani allows you to build up a graph of commands to execute in
-    dependency order. You might find it more convenient than other meta-build
-    systems for the following reasons:</p>
-<p class="Pp"></p>
-<div class="Bd-indent">&#x2022; Litani maintains a JSON-formatted record of the
-  current run, which can be printed at any time by running <b>litani
-  dump-run</b>. This record includes various metadata about each of the commands
-  in the build, including their return codes, run times, stdout and stderr, and
-  more. See <b>litani-run.json(5)</b> for the schema.
-<p class="Pp"></p>
-</div>
-<p class="Pp"></p>
-<div class="Bd-indent">&#x2022; Litani generates (and constantly updates) an HTML
-  dashboard from this JSON file while running your build. The dashboard is
-  convenient for watching the progress of your build and investigating failures
-  afterward.
-<p class="Pp"></p>
-</div>
-<p class="Pp"></p>
-<div class="Bd-indent">&#x2022; For builds where some of the commands might fail,
-  Litani provides fine-grained control over its behaviour. For each job, you can
-  decide whether to proceed with dependent jobs upon failure, independently of
-  whether the build as a whole is considered to have passed.
-<p class="Pp"></p>
-</div>
-<p class="Pp"></p>
-<div class="Bd-indent">&#x2022; Litani is invoked entirely as a command-line
-  tool, rather than using a domain-specific language like <b>make(1)</b> or
-  <b>cmake(1)</b>. This means that you can create and run your Litani build by
-  shelling out from a script, or even by invoking Litani from a Makefile. This
-  allows you to replicate the build of an existing Makefile while gaining the
-  HTML dashboard and other Litani features.
-<p class="Pp"></p>
-</div>
-<section class="Sh">
-<h2 class="Sh" id="litani_LITANI_WORKFLOW"><a class="permalink" href="#litani_LITANI_WORKFLOW">LITANI
-  WORKFLOW</a></h2>
-<p class="Pp">The process of defining and running a Litani build proceeds as
-    follows:</p>
-<p class="Pp"></p>
-<div class="Bd-indent">1.Run <b>litani init</b>, usually in the root of your
-  source tree. This touches a file (similar to <b>git-init(1)</b>) so that you
-  can run subsequent Litani commands anywhere else in your source tree.</div>
-<div class="Bd-indent">2.Run <b>litani add-job</b> once for every command you
-  wish to add to the build graph. <b>litani-add-job(1)</b> accepts a variety of
-  options for controlling how the command is executed.</div>
-<div class="Bd-indent">3.Run <b>litani run-build</b> to execute all jobs in
-  dependency order. <b>litani-run-build(1)</b> accumulates all the jobs that you
-  added and generates a Ninja build, which Litani subsequently runs with
-  <b>ninja(1)</b>.
-<p class="Pp"></p>
-</div>
-<p class="Pp">You may then periodically reload the HTML dashboard while the
-    build is running, and use the <i>run.json</i> file during or after the build
-    to gain insight into the build outcome.</p>
-</section>
-<section class="Sh">
-<h2 class="Sh" id="litani_COMMAND_LINE_INTERFACE"><a class="permalink" href="#litani_COMMAND_LINE_INTERFACE">COMMAND
-  LINE INTERFACE</a></h2>
-<p class="Pp">The following is a synopsis of Litani's subcommands:</p>
-<p class="Pp"><b>litani init</b></p>
-<div class="Bd-indent">Create a new Litani build, allowing you to add jobs and
-  subsequently run them.</div>
-<p class="Pp"><b>litani add-job</b></p>
-<div class="Bd-indent">Add a job to the build. A 'job' is a command that will be
-  executed as part of the build, possibly with inputs and outputs that describe
-  its place in the dependency graph, and other attributes.</div>
-<p class="Pp"><b>litani run-build</b></p>
-<div class="Bd-indent">Execute all jobs that have been added to the build since
-  the last time you ran <b>litani init</b>.</div>
-<p class="Pp"><b>litani dump-run</b></p>
-<div class="Bd-indent">Print a JSON representation of the run so far to stdout
-  both while the build is running as well as after it has completed.</div>
-<p class="Pp"><b>litani graph</b></p>
-<div class="Bd-indent">Print the dependency graph of the build in Graphviz
-  format, ready to be rendered into an image using <b>dot(1)</b>.</div>
-<p class="Pp"><b>litani print-capabilities</b></p>
-<div class="Bd-indent">Print a list of features that this version of Litani
-  supports. This can be used as an alternative to checking the version
-  string.</div>
-</section>
-<section class="Sh">
-<h2 class="Sh" id="litani_SEE_ALSO"><a class="permalink" href="#litani_SEE_ALSO">SEE
-  ALSO</a></h2>
-<div class="Bd-indent">&#x2022;<b>ninja(1)</b>, which Litani uses to actually
-  run the build: <i>https://ninja-build.org</i></div>
-</section>
-</div>
-          </div>
           
             <div class="content-title" id="litani-man_litani-transform-jobs">
               <h1>litani transform-jobs</h1>
@@ -821,15 +731,8 @@ subprocess.run([
   tags (although the HTML dashboard generator does use some of them). Each tag
   can be in whatever format you prefer, e.g. a plain string, key-value pair, or
   even arbitrary JSON. A job's list of tags is included in its <i>run.json</i>
-  and is intended to help with analyzing run data.
-<p class="Pp">If 'literal-stdout' is provided as a tag, then the report will
-    render the job's stdout underneath the boxes that indicate the command and
-    its statistics within the associated pipeline's page. If 'front-page-text'
-    is provided as a tag, then the report will render the job's stdout on the
-    front page of the report. These 2 tags allow users to render custom HTML
-    data, e.g. tables, graphs. Examples can be found at
-  'examples/rich-output'.</p>
-</div>
+  and is intended to help with analyzing run data. See <b>TAGS</b> below for a
+  list of tags that affect the display of the HTML report.</div>
 <p class="Pp"><b>--pipeline-name</b> <i>P</i></p>
 <div class="Bd-indent">The 'pipeline' that this job is part of. A pipeline is a
   subgraph of the overall build, representing a single 'end-to-end' set of
@@ -912,20 +815,44 @@ subprocess.run([
   the command will be recorded in the <i>memory_trace</i> field of
   <i>run.json</i>.
 <p class="Pp">The memory usage will also be included on a graph on the HTML
-    dashboard if this job's tags include a &quot;stats group&quot;. For each
-    string <i>G</i>, all jobs that are tagged with
-    &quot;<i>stats-group:G</i>&quot; and that have enabled memory profiling will
-    be included on a graph comparing memory usage amongst those jobs. Different
-    values for <i>G</i> are intended to group different types of jobs. For
-    example, you might tag all the compilation jobs with
-    <i>stats-group:compilation</i> and all the test jobs with
-    <i>stats-group:test</i>. This will result in two graphs on the HTML
-    dasahboard, each one depicting the memory usage of the compilation and test
-    jobs respectively.</p>
+    dashboard if this job's tags include <i>stats-group:</i>; see the
+    <b>TAGS</b> section below for more details.</p>
 </div>
 <p class="Pp"><b>--profile-memory-interval</b> <i>N</i></p>
 <div class="Bd-indent">Profiles the memory usage of this job every <i>N</i>
   seconds. Has no effect unless <b>--profile-memory</b> is also passed.</div>
+</section>
+<section class="Sh">
+<h2 class="Sh" id="litani-add-job_TAGS"><a class="permalink" href="#litani-add-job_TAGS">TAGS</a></h2>
+<p class="Pp">Litani jobs can be 'tagged' by providing one or more strings to
+    the <b>--tags</b> flag. These are meant for users to add arbitrary metadata
+    to jobs; there is no defined format for tags, and Litani does not attempt to
+    parse them.</p>
+<p class="Pp">There are some pre-defined tags that affect how Litani renders the
+    HTML report:</p>
+<p class="Pp"></p>
+<div class="Bd-indent">&#x2022;<i>literal-stdout</i>: Litani will inline this
+  job's stdout verbatim into the job's div on the pipeline detail page. This has
+  the effect of treating the stdout as HTML rather than as plain text, allowing
+  users to e.g. display arbitrary HTML or SVG output in the job div.</div>
+<div class="Bd-indent">&#x2022;<i>front-page-text</i>: Litani will inline this
+  job's stdout verbatim onto the front page of the dashboard, in its own
+  section. Inlining verbatim means that Litani will not escape XML constructs,
+  so this allows users to display custom HTML and SVG output on the front
+  page.</div>
+<div class="Bd-indent">&#x2022;<i>stats-group:</i><b>G</b>: Litani will generate
+  box-and-whiskers diagrams for jobs whose tag begins with <i>stats-group:</i>.
+  Litani considers each value of <b>G</b> to be a different group. For each
+  group, Litani will render:
+<div class="Bd-indent"></div>
+<div class="Bd-indent">&#x2022; A box-and-whiskers diagram depicting the runtime
+  of every job in that group</div>
+<div class="Bd-indent">&#x2022; A box-and-whiskers diagram depicting the peak
+  memory use of every job in that group, if <b>--profile-memory</b> was also
+  passed to those jobs.
+<p class="Pp"></p>
+</div>
+</div>
 </section>
 <section class="Sh">
 <h2 class="Sh" id="litani-add-job_ENVIRONMENT_VARIABLES"><a class="permalink" href="#litani-add-job_ENVIRONMENT_VARIABLES">ENVIRONMENT
@@ -993,6 +920,194 @@ subprocess.run([
 <h2 class="Sh" id="litani-get-jobs_SEE_ALSO"><a class="permalink" href="#litani-get-jobs_SEE_ALSO">SEE
   ALSO</a></h2>
 <div class="Bd-indent">&#x2022;<b>litani set-jobs(1)</b></div>
+</section>
+</div>
+          </div>
+          
+            <div class="content-title" id="litani-man_litani-acquire-html-dir">
+              <h1>litani acquire-html-dir</h1>
+            </div>
+            <div class="man-body">
+            
+<div class="manual-text">
+<section class="Sh">
+<h2 class="Sh" id="litani-acquire-html-dir_NAME"><a class="permalink" href="#litani-acquire-html-dir_NAME">NAME</a></h2>
+<p class="Pp">litani acquire-html-dir - Print the path to a locked HTML report
+    directory</p>
+</section>
+<section class="Sh">
+<h2 class="Sh" id="litani-acquire-html-dir_SYNOPSIS"><a class="permalink" href="#litani-acquire-html-dir_SYNOPSIS">SYNOPSIS</a></h2>
+<p class="Pp"><b>litani acquire-html-dir</b></p>
+<div class="Bd-indent"><b>-t</b>/<b>--timeout</b> <i>N</i></div>
+</section>
+<section class="Sh">
+<h2 class="Sh" id="litani-acquire-html-dir_DESCRIPTION"><a class="permalink" href="#litani-acquire-html-dir_DESCRIPTION">DESCRIPTION</a></h2>
+<p class="Pp">This program attempts to acquire a lock on the most
+    recently-written Litani HTML report, and prints the path to that locked
+    directory.</p>
+<p class="Pp">This command should be used to get a path to a HTML report that is
+    guaranteed to not be deleted or modified by other processes that also use
+    this locking API. If you instead want the path to a HTML report directory
+    that Litani will continuously refresh with updated progress, use
+    <b>litani-print-html-dir(1)</b>.</p>
+<p class="Pp">If this command returns successfully, subsequent invocations of
+    this command will either hang, time out, or print the path to a different
+    report directory. That continues until <b>litani-release-html-dir(1)</b> is
+    run. This program should thus be used by cooperating processes that wish to
+    have exclusive access to a HTML report. Well-behaved processes should only
+    modify HTML report directories after this command has successfully returned,
+    and should run <b>litani-release-html-dir(1)</b> after finishing their
+    modifications.</p>
+</section>
+<section class="Sh">
+<h2 class="Sh" id="litani-acquire-html-dir_MULTIPROCESS_SAFETY"><a class="permalink" href="#litani-acquire-html-dir_MULTIPROCESS_SAFETY">MULTIPROCESS
+  SAFETY</a></h2>
+<p class="Pp">It is safe to run this program concurrently with any other Litani
+    command.</p>
+</section>
+<section class="Sh">
+<h2 class="Sh" id="litani-acquire-html-dir_OPTIONS"><a class="permalink" href="#litani-acquire-html-dir_OPTIONS">OPTIONS</a></h2>
+<p class="Pp"><b>--t</b>/<b>--timeout</b> <i>N</i></p>
+<div class="Bd-indent">Terminate with a return code of 1 if unable to acquire an
+  HTML report directory after <i>N</i> seconds. If <i>N</i> is <b>0</b>, this
+  program will continue trying to acquire a directory forever. It is recommended
+  to set a non-zero timeout because this program might livelock if, for example,
+  a concurrent invocation of <b>litani run-build</b> crashes in the middle of
+  writing a report directory.</div>
+</section>
+<section class="Sh">
+<h2 class="Sh" id="OUTPUT_&amp;_RETURN_CODE"><a class="permalink" href="#OUTPUT_&amp;_RETURN_CODE">OUTPUT
+  &amp; RETURN CODE</a></h2>
+<p class="Pp">This program prints out the path to an HTML report directory and
+    returns 0 if it was able to acquire a lock on that directory. This program
+    returns 2 if there was a command line error. Otherwise, this program prints
+    nothing and returns 1.</p>
+</section>
+<section class="Sh">
+<h2 class="Sh" id="litani-acquire-html-dir_SEE_ALSO"><a class="permalink" href="#litani-acquire-html-dir_SEE_ALSO">SEE
+  ALSO</a></h2>
+<div class="Bd-indent">&#x2022;<b>litani-print-html-dir(1)</b></div>
+<div class="Bd-indent">&#x2022;<b>litani-release-html-dir(1)</b></div>
+</section>
+</div>
+          </div>
+          
+            <div class="content-title" id="litani-man_litani-print-html-dir">
+              <h1>litani print-html-dir</h1>
+            </div>
+            <div class="man-body">
+            
+<div class="manual-text">
+<section class="Sh">
+<h2 class="Sh" id="litani-print-html-dir_NAME"><a class="permalink" href="#litani-print-html-dir_NAME">NAME</a></h2>
+<p class="Pp">litani print-html-dir - Print the path to a continually-updated
+    report directory</p>
+</section>
+<section class="Sh">
+<h2 class="Sh" id="litani-print-html-dir_SYNOPSIS"><a class="permalink" href="#litani-print-html-dir_SYNOPSIS">SYNOPSIS</a></h2>
+<p class="Pp"><b>litani print-html-dir</b></p>
+</section>
+<section class="Sh">
+<h2 class="Sh" id="litani-print-html-dir_DESCRIPTION"><a class="permalink" href="#litani-print-html-dir_DESCRIPTION">DESCRIPTION</a></h2>
+<p class="Pp">This program prints the path to a Litani HTML report directory
+    that will be continuously updated while <b>litani-run-build(1)</b> is
+    concurrently running.</p>
+<p class="Pp">This command is intended to be used by clients who wish to read
+    the most up-to-date report directory without modifying it.
+    <b>litani-run-build(1)</b> will update the report directory periodically
+    while it is running. Thus, this command can be used to print a path to be
+    viewed in a web browser, for example.</p>
+<p class="Pp"><b>litani-run-build(1)</b> refreshes the report directory
+    atomically, that is, the entire HTML report (including the pipeline
+    subpages) are updated all at once. Clients can continue to read the new
+    report data using the same path that this command originally printed. This
+    is implemented through atomically moving a symbolic link from the old to the
+    new report directories.</p>
+<p class="Pp">Clients should <i>not</i> resolve the path that this command
+    prints out before accessing it. This command prints out the path to a
+    symbolic link, and access to report data should be through the symbolic link
+    only. In particular, <b>litani-run-build(1)</b> will occasionally
+    garbage-collect old HTML report directories, but the path that this command
+    prints out will always point to a current (not garbage-collected)
+  report.</p>
+</section>
+<section class="Sh">
+<h2 class="Sh" id="litani-print-html-dir_MULTIPROCESS_SAFETY"><a class="permalink" href="#litani-print-html-dir_MULTIPROCESS_SAFETY">MULTIPROCESS
+  SAFETY</a></h2>
+<p class="Pp">It is safe to run this program concurrently with any other Litani
+    command.</p>
+</section>
+<section class="Sh">
+<h2 class="Sh" id="OUTPUT_&amp;_RETURN_CODE"><a class="permalink" href="#OUTPUT_&amp;_RETURN_CODE">OUTPUT
+  &amp; RETURN CODE</a></h2>
+<p class="Pp">This program prints out the path to an HTML report directory and
+    returns 0.</p>
+</section>
+<section class="Sh">
+<h2 class="Sh" id="litani-print-html-dir_SEE_ALSO"><a class="permalink" href="#litani-print-html-dir_SEE_ALSO">SEE
+  ALSO</a></h2>
+<div class="Bd-indent">&#x2022;<b>litani-acquire-html-dir(1)</b></div>
+</section>
+</div>
+          </div>
+          
+            <div class="content-title" id="litani-man_litani-release-html-dir">
+              <h1>litani release-html-dir</h1>
+            </div>
+            <div class="man-body">
+            
+<div class="manual-text">
+<section class="Sh">
+<h2 class="Sh" id="litani-release-html-dir_NAME"><a class="permalink" href="#litani-release-html-dir_NAME">NAME</a></h2>
+<p class="Pp">litani release-html-dir - Unlock a previously-locked HTML report
+    directory</p>
+</section>
+<section class="Sh">
+<h2 class="Sh" id="litani-release-html-dir_SYNOPSIS"><a class="permalink" href="#litani-release-html-dir_SYNOPSIS">SYNOPSIS</a></h2>
+<p class="Pp"><b>litani release-html-dir</b></p>
+<div class="Bd-indent"><b>-d</b>/<b>--dir</b> <i>D</i></div>
+</section>
+<section class="Sh">
+<h2 class="Sh" id="litani-release-html-dir_DESCRIPTION"><a class="permalink" href="#litani-release-html-dir_DESCRIPTION">DESCRIPTION</a></h2>
+<p class="Pp">This program releases a lock on a Litani HTML report directory
+    that had previously been locked through an invocation of
+    <b>litani-acquire-html-dir(1)</b>. This allows other processes to attempt to
+    acquire the directory.</p>
+<p class="Pp">After this command returns, it becomes possible for a single
+    subsequent (or currently-running) invocation of
+    <b>litani-acquire-html-dir(1)</b> to terminate successfully.</p>
+<p class="Pp">It is an error to run this command if you have not previously
+    acquired the specified report directory using
+    <b>litani-acquire-html-dir(1)</b>. Litani does not check that the locking
+    API is being used correctly, so doing this may cause a race where more than
+    one process can modify a single report directory concurrently.</p>
+<p class="Pp">It is important to release a directory after acquiring it and
+    completing any modifications, so that a concurrent run of
+    <b>litani-run-build(1)</b> can acquire stale HTML report directories for
+    garbage collection.</p>
+</section>
+<section class="Sh">
+<h2 class="Sh" id="litani-release-html-dir_MULTIPROCESS_SAFETY"><a class="permalink" href="#litani-release-html-dir_MULTIPROCESS_SAFETY">MULTIPROCESS
+  SAFETY</a></h2>
+<p class="Pp">It is safe to run this program concurrently with any other Litani
+    command.</p>
+</section>
+<section class="Sh">
+<h2 class="Sh" id="litani-release-html-dir_OPTIONS"><a class="permalink" href="#litani-release-html-dir_OPTIONS">OPTIONS</a></h2>
+<p class="Pp"><b>-d</b>/<b>--dir</b> <i>D</i></p>
+<div class="Bd-indent">The path to a Litani HTML report directory that had
+  previously been printed out from an invocation of
+  <b>litani-acquire-html-dir(1)</b>.</div>
+</section>
+<section class="Sh">
+<h2 class="Sh" id="litani-release-html-dir_RETURN_CODE"><a class="permalink" href="#litani-release-html-dir_RETURN_CODE">RETURN
+  CODE</a></h2>
+<p class="Pp">This program returns 0.</p>
+</section>
+<section class="Sh">
+<h2 class="Sh" id="litani-release-html-dir_SEE_ALSO"><a class="permalink" href="#litani-release-html-dir_SEE_ALSO">SEE
+  ALSO</a></h2>
+<div class="Bd-indent">&#x2022;<b>litani-acquire-html-dir(1)</b></div>
 </section>
 </div>
           </div>
@@ -1316,19 +1431,19 @@ litani set-jobs --from-file /tmp/transformed.JSON</pre>
 </div>
           </div>
           
-            <div class="content-title" id="litani-man_litani-outcome-table.json">
-              <h1>litani outcome-table.json</h1>
+            <div class="content-title" id="litani-man_litani-outcome-table">
+              <h1>litani outcome-table</h1>
             </div>
             <div class="man-body">
             
 <div class="manual-text">
 <section class="Sh">
-<h2 class="Sh" id="litani-outcome-table.json_SYNOPSIS"><a class="permalink" href="#litani-outcome-table.json_SYNOPSIS">SYNOPSIS</a></h2>
-<p class="Pp"><i>outcome-table.json</i>: user-provided table to decide the
+<h2 class="Sh" id="litani-outcome-table_NAME"><a class="permalink" href="#litani-outcome-table_NAME">NAME</a></h2>
+<p class="Pp">litani outcome-table.json - user-provided table to decide the
     outcome of a job</p>
 </section>
 <section class="Sh">
-<h2 class="Sh" id="litani-outcome-table.json_DESCRIPTION"><a class="permalink" href="#litani-outcome-table.json_DESCRIPTION">DESCRIPTION</a></h2>
+<h2 class="Sh" id="litani-outcome-table_DESCRIPTION"><a class="permalink" href="#litani-outcome-table_DESCRIPTION">DESCRIPTION</a></h2>
 <p class="Pp">By default, Litani jobs' outcome is set to <i>success</i> if their
     command returns 0, and <i>fail</i> on other return codes or if the command
     timed out. This can be customized to some extent using the
@@ -1341,100 +1456,32 @@ litani set-jobs --from-file /tmp/transformed.JSON</pre>
     <b>litani-add-job(1)</b>.</p>
 </section>
 <section class="Sh">
-<h2 class="Sh" id="litani-outcome-table.json_SUMMARY"><a class="permalink" href="#litani-outcome-table.json_SUMMARY">SUMMARY</a></h2>
-<section class="Ss">
-<h3 class="Ss">Schema for user-provided outcome table</h3>
-<p class="Pp">{</p>
-<div class="Bd-indent"><b>Optional(&quot;comment&quot;)</b>: <i>str</i> ,
-<p class="Pp"><b>&quot;outcomes&quot;</b>: [</p>
-<p class="Pp"></p>
-<div class="Bd-indent">Any({
-<div class="Bd-indent"><b>&quot;type&quot;</b>: <i>&quot;return-code</i> &quot;,
-<p class="Pp"><b>&quot;value&quot;</b>: <i>int</i> ,</p>
-<p class="Pp"><b>&quot;action&quot;</b>: <i></i>outcome_ (),</p>
-<p class="Pp"><b>Optional(&quot;comment&quot;)</b>: <i>str</i> ,</p>
-</div>
-<p class="Pp">}, {</p>
-<div class="Bd-indent"><b>&quot;type&quot;</b>: <i>&quot;timeout</i> &quot;,
-<p class="Pp"><b>&quot;action&quot;</b>: <i></i>outcome_ (),</p>
-<p class="Pp"><b>Optional(&quot;comment&quot;)</b>: <i>str</i> ,</p>
-</div>
-<p class="Pp">}, {</p>
-<div class="Bd-indent"><b>&quot;type&quot;</b>: <i>&quot;wildcard</i> &quot;,
-<p class="Pp"><b>&quot;action&quot;</b>: <i></i>outcome_ (),</p>
-<p class="Pp"><b>Optional(&quot;comment&quot;)</b>: <i>str</i> ,</p>
-</div>
-</div>
-<p class="Pp">})]</p>
-</div>
-}
-</section>
+<h2 class="Sh" id="litani-outcome-table_SUMMARY"><a class="permalink" href="#litani-outcome-table_SUMMARY">SUMMARY</a></h2>
 </section>
 <section class="Sh">
-<h2 class="Sh" id="litani-outcome-table.json_DETAILED_DOCUMENTATION"><a class="permalink" href="#litani-outcome-table.json_DETAILED_DOCUMENTATION">DETAILED
+<h2 class="Sh" id="litani-outcome-table_DETAILED_DOCUMENTATION"><a class="permalink" href="#litani-outcome-table_DETAILED_DOCUMENTATION">DETAILED
   DOCUMENTATION</a></h2>
-<section class="Ss">
-<h3 class="Ss">Schema for user-provided outcome table</h3>
-<p class="Pp">{</p>
-<div class="Bd-indent"><b>Optional(&quot;comment&quot;)</b>: <i>str</i> ,
-<p class="Pp">A description of the outcome table as a whole.</p>
-<p class="Pp"><b>&quot;outcomes&quot;</b>: [</p>
-<p class="Pp">The outcome of the job will be the first item in this list that
-    matches.</p>
-<p class="Pp"></p>
-<div class="Bd-indent">Any({
-<div class="Bd-indent"><b>&quot;type&quot;</b>: <i>&quot;return-code</i> &quot;,
-<p class="Pp">If the return code of the job matches the value of <b>value</b>,
-    the outcome will be set to the value of <b>action</b>. The value of the
-    optional <b>comment</b> key can contain a human-readable explanation for
-    this outcome.</p>
-<p class="Pp"><b>&quot;value&quot;</b>: <i>int</i> ,</p>
-<p class="Pp"><b>&quot;action&quot;</b>: <i></i>outcome_ (),</p>
-<p class="Pp"><b>Optional(&quot;comment&quot;)</b>: <i>str</i> ,</p>
-</div>
-<p class="Pp">}, {</p>
-<div class="Bd-indent"><b>&quot;type&quot;</b>: <i>&quot;timeout</i> &quot;,
-<p class="Pp">If this job timed out, the outcome will be set to the value of
-    <b>action</b>. The value of the optional <b>comment</b> key can contain a
-    human-readable explanation for this outcome.</p>
-<p class="Pp"><b>&quot;action&quot;</b>: <i></i>outcome_ (),</p>
-<p class="Pp"><b>Optional(&quot;comment&quot;)</b>: <i>str</i> ,</p>
-</div>
-<p class="Pp">}, {</p>
-<div class="Bd-indent"><b>&quot;type&quot;</b>: <i>&quot;wildcard</i> &quot;,
-<p class="Pp">The <b>&quot;wildcard&quot;</b> action type matches any job and
-    sets its outcome to the value of <b>action</b>. It is recommended to place a
-    <b>wildcard</b> action as the last element of the list of <b>outcomes</b> to
-    catch all jobs that were not matched by a previous rule.</p>
-<p class="Pp"><b>&quot;action&quot;</b>: <i></i>outcome_ (),</p>
-<p class="Pp"><b>Optional(&quot;comment&quot;)</b>: <i>str</i> ,</p>
-</div>
-</div>
-<p class="Pp">})]</p>
-</div>
-}
-</section>
 </section>
 <section class="Sh">
-<h2 class="Sh" id="litani-outcome-table.json_SEE_ALSO"><a class="permalink" href="#litani-outcome-table.json_SEE_ALSO">SEE
+<h2 class="Sh" id="litani-outcome-table_SEE_ALSO"><a class="permalink" href="#litani-outcome-table_SEE_ALSO">SEE
   ALSO</a></h2>
 <p class="Pp"><b>litani-add-job(1)</b></p>
 </section>
 </div>
           </div>
           
-            <div class="content-title" id="litani-man_litani-run.json">
-              <h1>litani run.json</h1>
+            <div class="content-title" id="litani-man_litani-run">
+              <h1>litani run</h1>
             </div>
             <div class="man-body">
             
 <div class="manual-text">
 <section class="Sh">
-<h2 class="Sh" id="litani-run.json_SYNOPSIS"><a class="permalink" href="#litani-run.json_SYNOPSIS">SYNOPSIS</a></h2>
-<p class="Pp"><i>run.json</i>: description of a single Litani run</p>
+<h2 class="Sh" id="litani-run_NAME"><a class="permalink" href="#litani-run_NAME">NAME</a></h2>
+<p class="Pp">litani run.json - description of a single Litani run</p>
 </section>
 <section class="Sh">
-<h2 class="Sh" id="litani-run.json_DESCRIPTION"><a class="permalink" href="#litani-run.json_DESCRIPTION">DESCRIPTION</a></h2>
+<h2 class="Sh" id="litani-run_DESCRIPTION"><a class="permalink" href="#litani-run_DESCRIPTION">DESCRIPTION</a></h2>
 <p class="Pp">Litani writes a <i>run.json</i> file to its cache directory when
     the user invokes <b>litani-run-build(1)</b>. This file contains everything
     needed to generate the HTML dashboard, with the notable exception of any
@@ -1446,434 +1493,124 @@ litani set-jobs --from-file /tmp/transformed.JSON</pre>
     are defined separately below. All timestamps are in ISO-8601.</p>
 </section>
 <section class="Sh">
-<h2 class="Sh" id="litani-run.json_SUMMARY"><a class="permalink" href="#litani-run.json_SUMMARY">SUMMARY</a></h2>
+<h2 class="Sh" id="litani-run_SUMMARY"><a class="permalink" href="#litani-run_SUMMARY">SUMMARY</a></h2>
+</section>
+<section class="Sh">
+<h2 class="Sh" id="litani-run_DETAILED_DOCUMENTATION"><a class="permalink" href="#litani-run_DETAILED_DOCUMENTATION">DETAILED
+  DOCUMENTATION</a></h2>
+</section>
+</div>
+          </div>
+          
+            <div class="content-title" id="litani-man_litani.7">
+              <h1>litani.7</h1>
+            </div>
+            <div class="man-body">
+            
+<div class="manual-text">
+<p class="Pp">Litani allows you to build up a graph of commands to execute in
+    dependency order. You might find it more convenient than other meta-build
+    systems for the following reasons:</p>
+<p class="Pp"></p>
+<div class="Bd-indent">&#x2022; Litani maintains a JSON-formatted record of the
+  current run, which can be printed at any time by running <b>litani
+  dump-run</b>. This record includes various metadata about each of the commands
+  in the build, including their return codes, run times, stdout and stderr, and
+  more. See <b>litani-run.json(5)</b> for the schema.
+<p class="Pp"></p>
+</div>
+<p class="Pp"></p>
+<div class="Bd-indent">&#x2022; Litani generates (and constantly updates) an HTML
+  dashboard from this JSON file while running your build. The dashboard is
+  convenient for watching the progress of your build and investigating failures
+  afterward.
+<p class="Pp"></p>
+</div>
+<p class="Pp"></p>
+<div class="Bd-indent">&#x2022; For builds where some of the commands might fail,
+  Litani provides fine-grained control over its behaviour. For each job, you can
+  decide whether to proceed with dependent jobs upon failure, independently of
+  whether the build as a whole is considered to have passed.
+<p class="Pp"></p>
+</div>
+<p class="Pp"></p>
+<div class="Bd-indent">&#x2022; Litani is invoked entirely as a command-line
+  tool, rather than using a domain-specific language like <b>make(1)</b> or
+  <b>cmake(1)</b>. This means that you can create and run your Litani build by
+  shelling out from a script, or even by invoking Litani from a Makefile. This
+  allows you to replicate the build of an existing Makefile while gaining the
+  HTML dashboard and other Litani features.
+<p class="Pp"></p>
+</div>
+<section class="Sh">
+<h2 class="Sh" id="litani.7_LITANI_WORKFLOW"><a class="permalink" href="#litani.7_LITANI_WORKFLOW">LITANI
+  WORKFLOW</a></h2>
+<p class="Pp">The process of defining and running a Litani build proceeds as
+    follows:</p>
+<p class="Pp"></p>
+<div class="Bd-indent">1.Run <b>litani init</b>, usually in the root of your
+  source tree. This touches a file (similar to <b>git-init(1)</b>) so that you
+  can run subsequent Litani commands anywhere else in your source tree.</div>
+<div class="Bd-indent">2.Run <b>litani add-job</b> once for every command you
+  wish to add to the build graph. <b>litani-add-job(1)</b> accepts a variety of
+  options for controlling how the command is executed.</div>
+<div class="Bd-indent">3.Run <b>litani run-build</b> to execute all jobs in
+  dependency order. <b>litani-run-build(1)</b> accumulates all the jobs that you
+  added and generates a Ninja build, which Litani subsequently runs with
+  <b>ninja(1)</b>.
+<p class="Pp"></p>
+</div>
+<p class="Pp">You may then periodically reload the HTML dashboard while the
+    build is running, and use the <i>run.json</i> file during or after the build
+    to gain insight into the build outcome.</p>
+</section>
+<section class="Sh">
+<h2 class="Sh" id="MANUAL_PAGES_--_TABLE_OF_CONTENTS"><a class="permalink" href="#MANUAL_PAGES_--_TABLE_OF_CONTENTS">MANUAL
+  PAGES -- TABLE OF CONTENTS</a></h2>
+<p class="Pp">The following man pages are available with local installations of
+    Litani (try <b>man litani-add-job</b>), or online at
+    <i>https://awslabs.github.io/aws-build-accumulator/</i>:</p>
 <section class="Ss">
-<h3 class="Ss">Schema for entire run.json file</h3>
-<p class="Pp">{</p>
-<div class="Bd-indent"><b>&quot;run_id&quot;</b>: <i>str</i> ,
-<p class="Pp"><b>&quot;project&quot;</b>: <i>str</i> ,</p>
-<p class="Pp"><b>&quot;stages&quot;</b>: <i>[str</i> ],</p>
-<p class="Pp"><b>&quot;pools&quot;</b>: <i>{Optional(str): int</i> },</p>
-<p class="Pp"><b>&quot;start_time&quot;</b>: <i></i>time_str_ ,</p>
-<p class="Pp"><b>&quot;version&quot;</b>: <i>str</i> ,</p>
-<p class="Pp"><b>&quot;version_major&quot;</b>: <i>int</i> ,</p>
-<p class="Pp"><b>&quot;version_minor&quot;</b>: <i>int</i> ,</p>
-<p class="Pp"><b>&quot;version_patch&quot;</b>: <i>int</i> ,</p>
-<p class="Pp"><b>&quot;release_candidate&quot;</b>: <i>bool</i> ,</p>
-<p class="Pp"><b>Optional(&quot;end_time&quot;)</b>: <i></i>time_str_ ,</p>
-<p class="Pp"><b>&quot;status&quot;</b>: <i></i>status_ (),</p>
-<p class="Pp"><b>&quot;aux&quot;</b>: <i>dict</i> ,</p>
-<p class="Pp"><b>&quot;parallelism&quot;</b>: <i>Any</i> ({</p>
-<p class="Pp"></p>
-<div class="Bd-indent"><b>Optional(&quot;trace&quot;)</b>: [{
-<p class="Pp"></p>
-<div class="Bd-indent"><b>&quot;time&quot;</b>: <i></i>ms_time_str_ ,
-<p class="Pp"><b>&quot;finished&quot;</b>: <i>int</i> ,</p>
-<p class="Pp"><b>&quot;running&quot;</b>: <i>int</i> ,</p>
-<p class="Pp"><b>&quot;total&quot;</b>: <i>int</i> ,</p>
-</div>
-<p class="Pp">}],</p>
-<p class="Pp"><b>Optional(&quot;max_parallelism&quot;)</b>: <i>int</i> ,</p>
-<p class="Pp"><b>Optional(&quot;n_proc&quot;)</b>: <i>Any(None, int</i> ),</p>
-</div>
-<p class="Pp">}),</p>
-<p class="Pp"><b>&quot;pipelines&quot;</b>: [{</p>
-<p class="Pp"></p>
-<div class="Bd-indent"><b>&quot;url&quot;</b>: <i>str</i> ,
-<p class="Pp"><b>&quot;name&quot;</b>: <i>str</i> ,</p>
-<p class="Pp"><b>&quot;status&quot;</b>: <i></i>status_ (),</p>
-<p class="Pp"><b>&quot;ci_stages&quot;</b>: [{</p>
-<p class="Pp"></p>
-<div class="Bd-indent"><b>&quot;url&quot;</b>: <i>str</i> ,
-  <b>&quot;complete&quot;</b>: <i>bool</i> ,
-<p class="Pp"><b>&quot;name&quot;</b>: <i>str</i> ,</p>
-<p class="Pp"><b>&quot;status&quot;</b>: <i></i>outcome_ (),</p>
-<p class="Pp"><b>&quot;progress&quot;</b>: <i>All(int, Range(min=0, max=100</i>
-    )),</p>
-<p class="Pp"><b>&quot;jobs&quot;</b>: <i>[Any</i> ({</p>
-<p class="Pp"></p>
-<div class="Bd-indent"><b>&quot;complete&quot;</b>: <i>False</i> ,
-<p class="Pp"><b>&quot;duration_str&quot;</b>: <i>None</i> ,</p>
-<p class="Pp"><b>&quot;wrapper_arguments&quot;</b>: <i></i>single_job_schema_
-    (),</p>
-</div>
-<p class="Pp">}, {</p>
-<div class="Bd-indent"><b>&quot;complete&quot;</b>: <i>False</i> ,
-<p class="Pp"><b>&quot;start_time&quot;</b>: <i></i>time_str_ ,</p>
-<p class="Pp"><b>&quot;duration_str&quot;</b>: <i>None</i> ,</p>
-<p class="Pp"><b>&quot;wrapper_arguments&quot;</b>: <i></i>single_job_schema_
-    (),</p>
-</div>
-<p class="Pp">}, {</p>
-<div class="Bd-indent"><b>&quot;duration&quot;</b>: <i>int</i> ,
-<p class="Pp"><b>&quot;complete&quot;</b>: <i>True</i> ,</p>
-<p class="Pp"><b>&quot;outcome&quot;</b>: <i></i>outcome_ (),</p>
-<p class="Pp"><b>&quot;end_time&quot;</b>: <i></i>time_str_ ,</p>
-<p class="Pp"><b>&quot;start_time&quot;</b>: <i></i>time_str_ ,</p>
-<p class="Pp"><b>&quot;timeout_reached&quot;</b>: <i>bool</i> ,</p>
-<p class="Pp"><b>&quot;command_return_code&quot;</b>: <i>int</i> ,</p>
-<p class="Pp"><b>&quot;wrapper_return_code&quot;</b>: <i>int</i> ,</p>
-<p class="Pp"><b>&quot;stderr&quot;</b>: <i>Any([str], None</i> ),</p>
-<p class="Pp"><b>&quot;stdout&quot;</b>: <i>Any([str], None</i> ),</p>
-<p class="Pp"><b>&quot;duration_str&quot;</b>: <i>Any(str, None</i> ),</p>
-<p class="Pp"><b>&quot;wrapper_arguments&quot;</b>: <i></i>single_job_schema_
-    (),</p>
-<p class="Pp"><b>&quot;loaded_outcome_dict&quot;</b>: <i>Any(dict, None</i>
-  ),</p>
-<p class="Pp"><b>&quot;memory_trace&quot;</b>: {</p>
-<p class="Pp"></p>
-<div class="Bd-indent"><b>Optional(&quot;peak&quot;)</b>: {
-<p class="Pp"></p>
-<div class="Bd-indent"><b>&quot;rss&quot;</b>: <i>int</i> ,
-<p class="Pp"><b>&quot;vsz&quot;</b>: <i>int</i> ,</p>
-<p class="Pp"><b>&quot;human_readable_rss&quot;</b>: <i>str</i> ,</p>
-<p class="Pp"><b>&quot;human_readable_vsz&quot;</b>: <i>str</i> ,</p>
-</div>
-<p class="Pp">},</p>
-<p class="Pp"><b>Optional(&quot;trace&quot;)</b>: [{</p>
-<p class="Pp"></p>
-<div class="Bd-indent"><b>&quot;rss&quot;</b>: <i>int</i> ,
-<p class="Pp"><b>&quot;vsz&quot;</b>: <i>int</i> ,</p>
-<p class="Pp"><b>&quot;time&quot;</b>: <i></i>time_str_ ,</p>
-</div>
-<p class="Pp">}],</p>
-</div>
-},</div>
-})],</div>
-}],</div>
-}],
-<p class="Pp"><b>&quot;latest_symlink&quot;</b>: <i>Any(str, None</i> ),</p>
-</div>
-<p class="Pp">}</p>
+<h3 class="Ss" id="Chapter_1:_Executable_Commands"><a class="permalink" href="#Chapter_1:_Executable_Commands">Chapter
+  1: Executable Commands</a></h3>
+<p class="Pp"><b>litani acquire-html-dir</b>: print the path to a locked HTML
+    report directory
+  <br/>
+  <b>litani add-job</b>: add a single command with its dependencies
+  <br/>
+  <b>litani dump-run</b>: print the current run as a JSON document to stdout
+  <br/>
+  <b>litani get-jobs</b>: print a list of jobs to be run
+  <br/>
+  <b>litani init</b>: set up a new Litani run
+  <br/>
+  <b>litani print-html-dir</b>: print the path to a continually-updated report
+    directory
+  <br/>
+  <b>litani release-html-dir</b>: unlock a previously-locked HTML report
+    directory
+  <br/>
+  <b>litani run-build</b>: start a Litani run
+  <br/>
+  <b>litani set-jobs</b>: set the list of jobs to be run
+  <br/>
+  <b>litani transform-jobs</b>: print a list of jobs to be modified before
+    running</p>
 </section>
 <section class="Ss">
-<h3 class="Ss">Schema for 'wrapper_arguments' key</h3>
-<p class="Pp">{</p>
-<div class="Bd-indent"><b>&quot;job_id&quot;</b>: <i>str</i> ,
-<p class="Pp"><b>&quot;command&quot;</b>: <i>str</i> ,</p>
-<p class="Pp"><b>&quot;ci_stage&quot;</b>: <i>str</i> ,</p>
-<p class="Pp"><b>&quot;verbose&quot;</b>: <i>bool</i> ,</p>
-<p class="Pp"><b>&quot;timeout_ok&quot;</b>: <i>bool</i> ,</p>
-<p class="Pp"><b>&quot;pipeline_name&quot;</b>: <i>str</i> ,</p>
-<p class="Pp"><b>&quot;very_verbose&quot;</b>: <i>bool</i> ,</p>
-<p class="Pp"><b>&quot;timeout_ignore&quot;</b>: <i>bool</i> ,</p>
-<p class="Pp"><b>&quot;profile_memory&quot;</b>: <i>bool</i> ,</p>
-<p class="Pp"><b>&quot;profile_memory_interval&quot;</b>: <i>int</i> ,</p>
-<p class="Pp"><b>&quot;cwd&quot;</b>: <i>Any(str, None</i> ),</p>
-<p class="Pp"><b>&quot;interleave_stdout_stderr&quot;</b>: <i>bool</i> ,</p>
-<p class="Pp"><b>&quot;pool&quot;</b>: <i>Any(str, None</i> ),</p>
-<p class="Pp"><b>&quot;tags&quot;</b>: <i>Any([str], None</i> ),</p>
-<p class="Pp"><b>&quot;timeout&quot;</b>: <i>Any(int, None</i> ),</p>
-<p class="Pp"><b>&quot;inputs&quot;</b>: <i>Any([str], None</i> ),</p>
-<p class="Pp"><b>&quot;outputs&quot;</b>: <i>Any([str], None</i> ),</p>
-<p class="Pp"><b>&quot;description&quot;</b>: <i>Any(str, None</i> ),</p>
-<p class="Pp"><b>&quot;status_file&quot;</b>: <i>Any(str, None</i> ),</p>
-<p class="Pp"><b>&quot;stderr_file&quot;</b>: <i>Any(str, None</i> ),</p>
-<p class="Pp"><b>&quot;stdout_file&quot;</b>: <i>Any(str, None</i> ),</p>
-<p class="Pp"><b>&quot;ok_returns&quot;</b>: <i>Any([str], None</i> ),</p>
-<p class="Pp"><b>&quot;outcome_table&quot;</b>: <i>Any(str, None</i> ),</p>
-<p class="Pp"><b>&quot;phony_outputs&quot;</b>: <i>Any([str], None</i> ),</p>
-<p class="Pp"><b>&quot;ignore_returns&quot;</b>: <i>Any([str], None</i> ),</p>
-<p class="Pp"><b>&quot;subcommand&quot;</b>: <i>Any(&quot;exec&quot;,
-    &quot;add-job</i> &quot;),</p>
-</div>
-}
-</section>
-<section class="Ss">
-<h3 class="Ss">Schema for a pipeline or run status</h3>
-<p class="Pp">Any(&quot;success&quot;, &quot;fail&quot;,
-    &quot;in_progress&quot;)</p>
-</section>
-<section class="Ss">
-<h3 class="Ss">Schema for a job or ci_stage outcome</h3>
-<p class="Pp">Any(&quot;success&quot;, &quot;fail&quot;,
-    &quot;fail_ignored&quot;)</p>
+<h3 class="Ss" id="Chapter_5:_File_Formats_&amp;_Conventions"><a class="permalink" href="#Chapter_5:_File_Formats_&amp;_Conventions">Chapter
+  5: File Formats &amp; Conventions</a></h3>
+<p class="Pp"><b>litani outcome-table.json</b>: user-provided table to decide
+    the outcome of a job
+  <br/>
+  <b>litani run.json</b>: description of a single Litani run</p>
 </section>
 </section>
 <section class="Sh">
-<h2 class="Sh" id="litani-run.json_DETAILED_DOCUMENTATION"><a class="permalink" href="#litani-run.json_DETAILED_DOCUMENTATION">DETAILED
-  DOCUMENTATION</a></h2>
-<section class="Ss">
-<h3 class="Ss">Schema for entire run.json file</h3>
-<p class="Pp">{</p>
-<div class="Bd-indent"><b>&quot;run_id&quot;</b>: <i>str</i> ,
-<p class="Pp">A globally-unique ID for the run.</p>
-<p class="Pp"><b>&quot;project&quot;</b>: <i>str</i> ,</p>
-<p class="Pp">A name for the project that this run is part of. This name is used
-    by the HTML report generator and can be used to group related sets of runs,
-    but is otherwise not used by litani.</p>
-<p class="Pp"><b>&quot;stages&quot;</b>: <i>[str</i> ],</p>
-<p class="Pp">The CI stages that each job can be a member of. Stage names can be
-    provided through the --stages flag of <b>litani-init(1)</b>. Default stages
-    &quot;build&quot;, &quot;test&quot; and &quot;report&quot; are used if the
-    flag is not used.</p>
-<p class="Pp"><b>&quot;pools&quot;</b>: <i>{Optional(str): int</i> },</p>
-<p class="Pp">A mapping from pool names to the depth of the pool. Jobs can be a
-    member of zero or one pool. The depth of a pool that a set of jobs belong to
-    limits the number of those jobs that litani will run in parallel.</p>
-<p class="Pp"><b>&quot;start_time&quot;</b>: <i></i>time_str_ ,</p>
-<p class="Pp">The time at which the run started.</p>
-<p class="Pp"><b>&quot;version&quot;</b>: <i>str</i> ,</p>
-<p class="Pp">The version string of the Litani binary that ran this run.</p>
-<p class="Pp"><b>&quot;version_major&quot;</b>: <i>int</i> ,</p>
-<p class="Pp">Litani's major version number.</p>
-<p class="Pp"><b>&quot;version_minor&quot;</b>: <i>int</i> ,</p>
-<p class="Pp">Litani's minor version number.</p>
-<p class="Pp"><b>&quot;version_patch&quot;</b>: <i>int</i> ,</p>
-<p class="Pp">Litani's patch version number.</p>
-<p class="Pp"><b>&quot;release_candidate&quot;</b>: <i>bool</i> ,</p>
-<p class="Pp">false if this version of Litani is a tagged release.</p>
-<p class="Pp"><b>Optional(&quot;end_time&quot;)</b>: <i></i>time_str_ ,</p>
-<p class="Pp">The time at which the run ended. This key will only exist if
-    <b>status</b> is not equal to &quot;in_progress&quot;.</p>
-<p class="Pp"><b>&quot;status&quot;</b>: <i></i>status_ (),</p>
-<p class="Pp">The state of this run, see the status schema below.</p>
-<p class="Pp"><b>&quot;aux&quot;</b>: <i>dict</i> ,</p>
-<p class="Pp">A free-form dict that users can add custom information into. There
-    are no constraints on the format of this dict, but it is recommended that
-    users add their information to a sub-dict with a key that indicates its
-    function. For example, to add information pertaining to a CI run, users
-    might add a key called &quot;continuous_integration_data&quot; whose value
-    is a sub-dict containing all required fields.</p>
-<p class="Pp"><b>&quot;parallelism&quot;</b>: <i>Any</i> ({</p>
-<p class="Pp">This dict contains information about the parallelism level of the
-    jobs that litani runs. This is to measure whether the run is using as many
-    processor cores as possible over the duration of the run.</p>
-<p class="Pp"></p>
-<div class="Bd-indent"><b>Optional(&quot;trace&quot;)</b>: [{
-<p class="Pp">A list of samples of the run's concurrency level.</p>
-<p class="Pp"></p>
-<div class="Bd-indent"><b>&quot;time&quot;</b>: <i></i>ms_time_str_ ,
-<p class="Pp">The time at which the sample was taken.</p>
-<p class="Pp"><b>&quot;finished&quot;</b>: <i>int</i> ,</p>
-<p class="Pp">How many jobs have finished</p>
-<p class="Pp"><b>&quot;running&quot;</b>: <i>int</i> ,</p>
-<p class="Pp">How many jobs are running</p>
-<p class="Pp"><b>&quot;total&quot;</b>: <i>int</i> ,</p>
-<p class="Pp">The total number of jobs</p>
-</div>
-<p class="Pp">}],</p>
-<p class="Pp"><b>Optional(&quot;max_parallelism&quot;)</b>: <i>int</i> ,</p>
-<p class="Pp">The maximum parallelism attained over the run</p>
-<p class="Pp"><b>Optional(&quot;n_proc&quot;)</b>: <i>Any(None, int</i> ),</p>
-<p class="Pp">The number of processors detected on this machine</p>
-</div>
-<p class="Pp">}),</p>
-<p class="Pp"><b>&quot;pipelines&quot;</b>: [{</p>
-<p class="Pp">Each pipeline contains ci_stages which contain jobs.</p>
-<p class="Pp"></p>
-<div class="Bd-indent"><b>&quot;url&quot;</b>: <i>str</i> ,
-<p class="Pp"><b>&quot;name&quot;</b>: <i>str</i> ,</p>
-<p class="Pp">The pipeline name. The set of pipeline names are all the names
-    passed to the --pipeline-name flag of <b>litani-add-job(1)</b>.</p>
-<p class="Pp"><b>&quot;status&quot;</b>: <i></i>status_ (),</p>
-<p class="Pp">The pipeline's state, see the status schema below.</p>
-<p class="Pp"><b>&quot;ci_stages&quot;</b>: [{</p>
-<p class="Pp">Each ci_stage contains a list of jobs.</p>
-<p class="Pp"></p>
-<div class="Bd-indent"><b>&quot;url&quot;</b>: <i>str</i> ,
-  <b>&quot;complete&quot;</b>: <i>bool</i> ,
-<p class="Pp">Whether all the jobs in this stage are complete.</p>
-<p class="Pp"><b>&quot;name&quot;</b>: <i>str</i> ,</p>
-<p class="Pp">The stage's name. This is any of the <b>stages</b> of the
-  project.</p>
-<p class="Pp"><b>&quot;status&quot;</b>: <i></i>outcome_ (),</p>
-<p class="Pp">The stage's state, see the outcome schema below.</p>
-<p class="Pp"><b>&quot;progress&quot;</b>: <i>All(int, Range(min=0, max=100</i>
-    )),</p>
-<p class="Pp"><b>&quot;jobs&quot;</b>: <i>[Any</i> ({</p>
-<p class="Pp">The list of all the jobs in this ci_stage in this pipeline. There
-    are three different forms the value of this key can take.</p>
-<p class="Pp"></p>
-<div class="Bd-indent"><b>&quot;complete&quot;</b>: <i>False</i> ,
-<p class="Pp">If <b>complete</b> is false and no <b>start_time</b> key exists,
-    then this job has not yet started.</p>
-<p class="Pp"><b>&quot;duration_str&quot;</b>: <i>None</i> ,</p>
-<p class="Pp"><b>&quot;wrapper_arguments&quot;</b>: <i></i>single_job_schema_
-    (),</p>
-<p class="Pp">The arguments passed to this job, see the single_job_schema schema
-    below.</p>
-</div>
-<p class="Pp">}, {</p>
-<div class="Bd-indent"><b>&quot;complete&quot;</b>: <i>False</i> ,
-<p class="Pp">If <b>complete</b> is false but the <b>start_time</b> key exists,
-    then the job has started running but has not yet finished.</p>
-<p class="Pp"><b>&quot;start_time&quot;</b>: <i></i>time_str_ ,</p>
-<p class="Pp">The time at which the job started running.</p>
-<p class="Pp"><b>&quot;duration_str&quot;</b>: <i>None</i> ,</p>
-<p class="Pp"><b>&quot;wrapper_arguments&quot;</b>: <i></i>single_job_schema_
-    (),</p>
-<p class="Pp">The arguments passed to this job, see the single_job_schema schema
-    below.</p>
-</div>
-<p class="Pp">}, {</p>
-<div class="Bd-indent"><b>&quot;duration&quot;</b>: <i>int</i> ,
-<p class="Pp">How long the job ran for.</p>
-<p class="Pp"><b>&quot;complete&quot;</b>: <i>True</i> ,</p>
-<p class="Pp">If <b>complete</b> is true, then the job has terminated.</p>
-<p class="Pp"><b>&quot;outcome&quot;</b>: <i></i>outcome_ (),</p>
-<p class="Pp">The job's outcome, see the outcome schema below.</p>
-<p class="Pp"><b>&quot;end_time&quot;</b>: <i></i>time_str_ ,</p>
-<p class="Pp">The time at which the job completed.</p>
-<p class="Pp"><b>&quot;start_time&quot;</b>: <i></i>time_str_ ,</p>
-<p class="Pp">The time at which the job started running.</p>
-<p class="Pp"><b>&quot;timeout_reached&quot;</b>: <i>bool</i> ,</p>
-<p class="Pp">Whether the job reached its timeout limit.</p>
-<p class="Pp"><b>&quot;command_return_code&quot;</b>: <i>int</i> ,</p>
-<p class="Pp">The command's return code.</p>
-<p class="Pp"><b>&quot;wrapper_return_code&quot;</b>: <i>int</i> ,</p>
-<p class="Pp"><b>&quot;stderr&quot;</b>: <i>Any([str], None</i> ),</p>
-<p class="Pp">A list of strings that the command printed to its stderr.</p>
-<p class="Pp"><b>&quot;stdout&quot;</b>: <i>Any([str], None</i> ),</p>
-<p class="Pp">A list of strings that the command printed to its stdout.</p>
-<p class="Pp"><b>&quot;duration_str&quot;</b>: <i>Any(str, None</i> ),</p>
-<p class="Pp">A human-readable duration of this job (HH:MM:SS).</p>
-<p class="Pp"><b>&quot;wrapper_arguments&quot;</b>: <i></i>single_job_schema_
-    (),</p>
-<p class="Pp">The arguments passed to this job, see the single_job_schema schema
-    below.</p>
-<p class="Pp"><b>&quot;loaded_outcome_dict&quot;</b>: <i>Any(dict, None</i>
-  ),</p>
-<p class="Pp">If <b>wrapper_arguments[&quot;outcome_table&quot;]</b> is not
-    null, the value of this key will be the deserialized data loaded from the
-    outcome table file.</p>
-<p class="Pp"><b>&quot;memory_trace&quot;</b>: {</p>
-<p class="Pp">If <b>profile_memory</b> was set to true in the wrapper arguments
-    for this job, this dict will contain samples of the command's memory
-  usage.</p>
-<p class="Pp"></p>
-<div class="Bd-indent"><b>Optional(&quot;peak&quot;)</b>: {
-<p class="Pp">The command's peak memory usage.</p>
-<p class="Pp"></p>
-<div class="Bd-indent"><b>&quot;rss&quot;</b>: <i>int</i> ,
-<p class="Pp">Peak resident set</p>
-<p class="Pp"><b>&quot;vsz&quot;</b>: <i>int</i> ,</p>
-<p class="Pp">Peak virtual memory size</p>
-<p class="Pp"><b>&quot;human_readable_rss&quot;</b>: <i>str</i> ,</p>
-<p class="Pp">Peak resident set</p>
-<p class="Pp"><b>&quot;human_readable_vsz&quot;</b>: <i>str</i> ,</p>
-<p class="Pp">Peak virtual memory size</p>
-</div>
-<p class="Pp">},</p>
-<p class="Pp"><b>Optional(&quot;trace&quot;)</b>: [{</p>
-<p class="Pp">A list of samples of memory usage.</p>
-<p class="Pp"></p>
-<div class="Bd-indent"><b>&quot;rss&quot;</b>: <i>int</i> ,
-<p class="Pp">Resident set</p>
-<p class="Pp"><b>&quot;vsz&quot;</b>: <i>int</i> ,</p>
-<p class="Pp">Virtual memory</p>
-<p class="Pp"><b>&quot;time&quot;</b>: <i></i>time_str_ ,</p>
-<p class="Pp">The time at which the sample was taken</p>
-</div>
-<p class="Pp">}],</p>
-</div>
-},</div>
-})],</div>
-}],</div>
-}],
-<p class="Pp"><b>&quot;latest_symlink&quot;</b>: <i>Any(str, None</i> ),</p>
-<p class="Pp">The symbolic link to the report advertised to users</p>
-</div>
-}
-</section>
-<section class="Ss">
-<h3 class="Ss">Schema for 'wrapper_arguments' key</h3>
-<p class="Pp">The <b>wrapper_arguments</b> key to run.json maps to the following
-    dict. None of the values in this dict change at any point during the run;
-    they are mostly the same as the flags passed to <b>litani-add-job(1)</b> for
-    this job. {</p>
-<div class="Bd-indent"><b>&quot;job_id&quot;</b>: <i>str</i> ,
-<p class="Pp">A globally-unique ID for this job.</p>
-<p class="Pp"><b>&quot;command&quot;</b>: <i>str</i> ,</p>
-<p class="Pp">The command that litani will execute in a subshell.</p>
-<p class="Pp"><b>&quot;ci_stage&quot;</b>: <i>str</i> ,</p>
-<p class="Pp">The name of the 'stage' that this job will execute in, used for
-    organizing the HTML dashboard.</p>
-<p class="Pp"><b>&quot;verbose&quot;</b>: <i>bool</i> ,</p>
-<p class="Pp"><b>&quot;timeout_ok&quot;</b>: <i>bool</i> ,</p>
-<p class="Pp">If true, then if this job times out, the outcome will be set to
-    'success'.</p>
-<p class="Pp"><b>&quot;pipeline_name&quot;</b>: <i>str</i> ,</p>
-<p class="Pp">The name of the 'pipeline' that this job will execute in, used for
-    organizing the HTML dashboard.</p>
-<p class="Pp"><b>&quot;very_verbose&quot;</b>: <i>bool</i> ,</p>
-<p class="Pp"><b>&quot;timeout_ignore&quot;</b>: <i>bool</i> ,</p>
-<p class="Pp">If true, then if this job times out, the outcome will be set to
-    'fail_ignored'.</p>
-<p class="Pp"><b>&quot;profile_memory&quot;</b>: <i>bool</i> ,</p>
-<p class="Pp">If true, then litani will regularly sample the memory usage of
-    this job's command while it runs. Samples are stored in the job's
-    <b>memory_trace</b>.</p>
-<p class="Pp"><b>&quot;profile_memory_interval&quot;</b>: <i>int</i> ,</p>
-<p class="Pp">How frequently (in seconds) litani will profile the command's
-    memory use, if <b>profile_memory</b> is true.</p>
-<p class="Pp"><b>&quot;cwd&quot;</b>: <i>Any(str, None</i> ),</p>
-<p class="Pp">The directory that litani will run the command in.</p>
-<p class="Pp"><b>&quot;interleave_stdout_stderr&quot;</b>: <i>bool</i> ,</p>
-<p class="Pp">Whether the command's stderr will be sent to the stdout stream. If
-    true, the job's <b>stderr</b> key will be None and the <b>stdout</b> key
-    will contain lines from both the command's stdout and stderr.</p>
-<p class="Pp"><b>&quot;pool&quot;</b>: <i>Any(str, None</i> ),</p>
-<p class="Pp">The pool that this job will execute in; if not null, then it must
-    be a key in the <b>pools</b> dict of the overall run.</p>
-<p class="Pp"><b>&quot;tags&quot;</b>: <i>Any([str], None</i> ),</p>
-<p class="Pp">A list of user-specified tags. Litani mostly doesn't interpret
-    these, although the HTML dashboard generator does use some of them. Tags are
-    intended to help users find particular jobs for data analysis and can
-    contain arbitrary data.</p>
-<p class="Pp"><b>&quot;timeout&quot;</b>: <i>Any(int, None</i> ),</p>
-<p class="Pp">The number of seconds that Litani will allow the job to run for
-    before sending SIGTERM followed by SIGKILL (see <b>signal(3)</b>).</p>
-<p class="Pp"><b>&quot;inputs&quot;</b>: <i>Any([str], None</i> ),</p>
-<p class="Pp">The list of files that should be made up-to-date before the job
-    will run</p>
-<p class="Pp"><b>&quot;outputs&quot;</b>: <i>Any([str], None</i> ),</p>
-<p class="Pp">The list of files that this job will make up-to-date after it
-    completes</p>
-<p class="Pp"><b>&quot;description&quot;</b>: <i>Any(str, None</i> ),</p>
-<p class="Pp">A human-readable description of this job</p>
-<p class="Pp"><b>&quot;status_file&quot;</b>: <i>Any(str, None</i> ),</p>
-<p class="Pp"><b>&quot;stderr_file&quot;</b>: <i>Any(str, None</i> ),</p>
-<p class="Pp">A file to redirect stderr to, as well as buffering it
-  internally</p>
-<p class="Pp"><b>&quot;stdout_file&quot;</b>: <i>Any(str, None</i> ),</p>
-<p class="Pp">A file to redirect stdout to, as well as buffering it
-  internally</p>
-<p class="Pp"><b>&quot;ok_returns&quot;</b>: <i>Any([str], None</i> ),</p>
-<p class="Pp">A list of return codes. If the command exits with any of these
-    return codes (or 0), then the outcome will be set to 'success'.</p>
-<p class="Pp"><b>&quot;outcome_table&quot;</b>: <i>Any(str, None</i> ),</p>
-<p class="Pp">A file to load an outcome table from.</p>
-<p class="Pp"><b>&quot;phony_outputs&quot;</b>: <i>Any([str], None</i> ),</p>
-<p class="Pp">A list of outputs that Litani will not warn about if they were not
-    created by the job.</p>
-<p class="Pp"><b>&quot;ignore_returns&quot;</b>: <i>Any([str], None</i> ),</p>
-<p class="Pp">A list of return codes. If the command exits with any of these
-    return codes (or 0), then the outcome will be set to 'fail_ignored'.</p>
-<p class="Pp"><b>&quot;subcommand&quot;</b>: <i>Any(&quot;exec&quot;,
-    &quot;add-job</i> &quot;),</p>
-</div>
-}
-</section>
-<section class="Ss">
-<h3 class="Ss">Schema for a pipeline or run status</h3>
-<p class="Pp">pipelines and runs have a <b>&quot;status&quot;</b>. The status is
-    &quot;in_progress&quot; when some of the jobs are incomplete and either
-    &quot;success&quot; or &quot;fail&quot; once all jobs complete.</p>
-<p class="Pp">Any(&quot;success&quot;, &quot;fail&quot;,
-    &quot;in_progress&quot;)</p>
-</section>
-<section class="Ss">
-<h3 class="Ss">Schema for a job or ci_stage outcome</h3>
-<p class="Pp">Outcomes and ci_stages have an <b>&quot;outcome&quot;</b> (though,
-    confusingly, the key is <b>&quot;status&quot;</b> for ci_stages).
-    &quot;fail_ignored&quot; means that the job failed but the user specified
-    that the job's dependencies should run anyway. If a pipeline contains a job
-    whose outcome is &quot;fail_ignored&quot;, then the status of the pipeline
-    will be &quot;fail&quot; after all of its jobs complete.</p>
-<p class="Pp">Any(&quot;success&quot;, &quot;fail&quot;,
-    &quot;fail_ignored&quot;)</p>
-</section>
+<h2 class="Sh" id="litani.7_SEE_ALSO"><a class="permalink" href="#litani.7_SEE_ALSO">SEE
+  ALSO</a></h2>
+<div class="Bd-indent">&#x2022;<b>ninja(1)</b>, which Litani uses to actually
+  run the build: <i>https://ninja-build.org</i></div>
 </section>
 </div>
           </div>
@@ -1901,12 +1638,6 @@ litani set-jobs --from-file /tmp/transformed.JSON</pre>
             
               <li class="navL1">
 								<a
-                  href="#litani-man_litani"
-                  >litani(7)</a>
-              </li>
-            
-              <li class="navL1">
-								<a
                   href="#litani-man_litani-transform-jobs"
                   >litani transform-jobs(1)</a>
               </li>
@@ -1921,6 +1652,24 @@ litani set-jobs --from-file /tmp/transformed.JSON</pre>
 								<a
                   href="#litani-man_litani-get-jobs"
                   >litani get-jobs(1)</a>
+              </li>
+            
+              <li class="navL1">
+								<a
+                  href="#litani-man_litani-acquire-html-dir"
+                  >litani acquire-html-dir(1)</a>
+              </li>
+            
+              <li class="navL1">
+								<a
+                  href="#litani-man_litani-print-html-dir"
+                  >litani print-html-dir(1)</a>
+              </li>
+            
+              <li class="navL1">
+								<a
+                  href="#litani-man_litani-release-html-dir"
+                  >litani release-html-dir(1)</a>
               </li>
             
               <li class="navL1">
@@ -1949,14 +1698,20 @@ litani set-jobs --from-file /tmp/transformed.JSON</pre>
             
               <li class="navL1">
 								<a
-                  href="#litani-man_litani-outcome-table.json"
-                  >litani outcome-table.json(5)</a>
+                  href="#litani-man_litani-outcome-table"
+                  >litani outcome-table(5)</a>
               </li>
             
               <li class="navL1">
 								<a
-                  href="#litani-man_litani-run.json"
-                  >litani run.json(5)</a>
+                  href="#litani-man_litani-run"
+                  >litani run(5)</a>
+              </li>
+            
+              <li class="navL1">
+								<a
+                  href="#litani-man_litani.7"
+                  >litani.7(7)</a>
               </li>
             
           </ul>
