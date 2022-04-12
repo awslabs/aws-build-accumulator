@@ -14,8 +14,9 @@
 # permissions and limitations under the License.
 
 
-import sys
+import argparse
 import pathlib
+import sys
 
 
 DOC_DIR = pathlib.Path(sys.path[0]).resolve()
@@ -89,6 +90,19 @@ RULES = [{
 }]
 
 
+def get_args():
+    pars = argparse.ArgumentParser(description="Build documentation for Litani")
+    for arg in [{
+            "flags": ["--no-html"],
+            "action": "store_false",
+            "help": "Do not build a version of the documentation in HTML",
+            "dest": "gen_html",
+    }]:
+        flags = arg.pop("flags")
+        pars.add_argument(*flags, **arg)
+    return pars.parse_args()
+
+
 def make_html_unique(man_name, html_man, html_mans, builds):
     html_unique = HTML_UNIQUE_DIR / f"{man_name}.html"
     builds.append({
@@ -118,7 +132,7 @@ def man_to_html(man_name, man_out, builds):
 
 
 def convert_man_dir_to_man(
-        src_dir, dst_dir, rule, html_mans, builds, extra_inputs=None):
+        src_dir, dst_dir, rule, html_mans, builds, gen_html, extra_inputs=None):
     for man in (src_dir).iterdir():
         man_name = str(man.name).split(".", 1)[0]
         if man.suffix == ".scdoc":
@@ -140,11 +154,12 @@ def convert_man_dir_to_man(
                 "data-path": man.resolve(),
             }
         })
-        html_man = man_to_html(man_name, man_out, builds)
-        make_html_unique(man_name, html_man, html_mans, builds)
+        if gen_html:
+            html_man = man_to_html(man_name, man_out, builds)
+            make_html_unique(man_name, html_man, html_mans, builds)
 
 
-def add_litani_7(builds, html_mans):
+def add_litani_7(builds, html_mans, gen_html):
     """The litani(7) man page is special because it contains a table of contents
     of the other pages, so it depends on the others."""
 
@@ -171,34 +186,39 @@ def add_litani_7(builds, html_mans):
         "outputs": [man_out],
         "rule": "sc_to_man",
     }])
-    html_man = man_to_html("litani.7", man_out, builds)
-    make_html_unique("litani.7", html_man, html_mans, builds)
+    if gen_html:
+        html_man = man_to_html("litani.7", man_out, builds)
+        make_html_unique("litani.7", html_man, html_mans, builds)
 
 
 def main():
+    args = get_args()
     builds = []
     html_mans = []
 
     convert_man_dir_to_man(
-        SRC_DIR / "man", MAN_DIR, "sc_to_man", html_mans, builds)
+        SRC_DIR / "man", MAN_DIR, "sc_to_man", html_mans, builds,
+        args.gen_html)
     convert_man_dir_to_man(
         SRC_DIR / "voluptuous-man", MAN_DIR, "voluptuous_to_man", html_mans,
-        builds, extra_inputs=[TEMPLATE_DIR / "voluptuous-man.jinja.scdoc"])
+        builds, args.gen_html,
+        extra_inputs=[TEMPLATE_DIR / "voluptuous-man.jinja.scdoc"])
 
-    add_litani_7(builds, html_mans)
+    add_litani_7(builds, html_mans, args.gen_html)
 
-    builds.append({
-        "inputs": html_mans + [
-            BIN_DIR / "build-html-doc",
-            TEMPLATE_DIR / "index.jinja.html",
-        ],
-        "outputs": [DOC_DIR / "out" / "html"/ "index.html"],
-        "rule": "build_html_doc",
-        "variables": {
-            "html-mans": " ".join([str(h) for h in html_mans]),
-            "man-html-dir": HTML_MAN_SRC_DIR,
-        }
-    })
+    if args.gen_html:
+        builds.append({
+            "inputs": html_mans + [
+                BIN_DIR / "build-html-doc",
+                TEMPLATE_DIR / "index.jinja.html",
+            ],
+            "outputs": [DOC_DIR / "out" / "html"/ "index.html"],
+            "rule": "build_html_doc",
+            "variables": {
+                "html-mans": " ".join([str(h) for h in html_mans]),
+                "man-html-dir": HTML_MAN_SRC_DIR,
+            }
+        })
 
     for build in builds:
         for k, v in build.items():
