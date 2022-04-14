@@ -1,9 +1,22 @@
                               CHANGELOG
                               `````````
 
+Version 1.24.0 -- 2022-04-14
+----------------------------
+- Do not create HTML docs of Litani man pages if a flag is specified
+  Running `doc/configure` with `--no-html` allows one
+  to ultimately build only the man equivalent of the
+  Litani documentation.
+
+- License documentation under CC-BY-SA 4.0
+
+- Fix changelog
+
+
 Version 1.23.0 -- 2022-04-11
 ----------------------------
-Summary=======
+Summary
+=======
 
 - Add get-jobs and set-jobs subcommands
 

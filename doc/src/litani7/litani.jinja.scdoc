@@ -1,17 +1,7 @@
 litani(7) "" "Litani Build System"
 
 ; Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-
-; Licensed under the Apache License, Version 2.0 (the "License").
-; You may not use this file except in compliance with the License.
-; A copy of the License is located at
-
-;     http://www.apache.org/licenses/LICENSE-2.0
-
-; or in the "license" file accompanying this file. This file is distributed
-; on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
-; express or implied. See the License for the specific language governing
-; permissions and limitations under the License.
+; SPDX-License-Identifier: CC-BY-SA-4.0
 
 
 Litani allows you to build up a graph of commands to execute in
@@ -69,6 +59,13 @@ _https://awslabs.github.io/aws-build-accumulator/_:
 *litani {{ man["name"] }}*: {{ man["description"] }}{% if not loop.last %}++{% endif %}
 {%- endfor -%}
 {% endif %}{% endfor %}
+
+# COPYING
+
+Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved. Litani's
+source code is licensed under the Apache License 2.0, and the manual pages are
+licensed under CC-BY-SA 4.0. See the LICENSE files for details.
+
 
 # SEE ALSO
 
