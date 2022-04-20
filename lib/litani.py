@@ -183,6 +183,9 @@ def _get_cache_dir(path=os.getcwd()):
 
 
 def get_cache_dir(path=os.getcwd()):
+    env_dir = os.getenv("LITANI_CACHE_DIR", None)
+    if env_dir:
+        return pathlib.Path(env_dir)
     try:
         return _get_cache_dir(path)
     except FileNotFoundError:
