@@ -590,8 +590,9 @@ async def init(args):
 
     logging.info("cache dir is at: %s", cache_dir)
 
-    with litani.atomic_write(litani.CACHE_POINTER) as handle:
-        print(str(cache_dir), file=handle)
+    if not os.getenv("LITANI_CACHE_DIR", None):
+        with litani.atomic_write(litani.CACHE_POINTER) as handle:
+            print(str(cache_dir), file=handle)
 
 
 async def add_job(args):
