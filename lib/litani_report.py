@@ -305,6 +305,8 @@ class ReportRenderer:
 
 
     def __call__(self, run):
+        logging.error("============rendering")
+
         temporary_report_dir = litani.get_report_data_dir() / str(uuid.uuid4())
         temporary_report_dir.mkdir(parents=True)
         old_report_dir_path = litani.get_report_dir().resolve()
@@ -391,6 +393,7 @@ class ReportRenderer:
             pass
 
         litani.unlink_expired()
+        logging.error("============end")
 
 
 
