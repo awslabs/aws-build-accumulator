@@ -71,6 +71,9 @@ configure times.
 
 *--inputs* _F_ [_F_ ...]
 	A list of inputs that this job depends on. Litani interprets each _F_ as a file:
+	- If _F_ starts with @, then treat the remainder of the file name as JSON
+	  file containing a list of files, which in turn are to be handled as
+	  specified in the following items.
 	- If every _F_ exists and has an older timestamp than all of this job's
 	  outputs, then Litani will not run this job.
 	- If some of the _F_ are newer than any of this job's outputs, then those
@@ -81,7 +84,8 @@ configure times.
 	  out-of-date files, then the build will fail.
 
 *--outputs* _F_ [_F_ ...]
-	A list of outputs that this job emits. Litani interprets each _F_ as a file,
+	A list of outputs that this job emits. Litani interprets each _F_ as a file
+	(or a JSON file if prefixed with @, as described for *--inputs* above),
 	and expects that the command will write a file with that name upon completion.
 	If a job _J_ has _F_ as an output, but does not actually write a file called
 	_F_, then _J_ will run unconditionally because _F_ will always be considered

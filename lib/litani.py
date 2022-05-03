@@ -272,3 +272,21 @@ def unlink_expired():
             # No need to release lock after deletion
         else:
             lock_dir.release()
+
+
+def expand_args(files):
+    """Produce a list of files by expanding any "@"-prefixed file names to their
+    JSON-list contents.
+    """
+    if not files:
+        return []
+
+    result = []
+    for f in files:
+        if f.startswith("@"):
+            with open(f[1:]) as json_file:
+                result.extend(json.load(json_file))
+        else:
+            result.append(f)
+
+    return result
