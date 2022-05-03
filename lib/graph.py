@@ -177,12 +177,12 @@ class SinglePipelineGraph:
                 args["command"])
             self.nodes.add(cmd_node)
 
-            for inputt in args.get("inputs") or []:
+            for inputt in lib.litani.expand_args(args.get("inputs")):
                 in_node = lib.graph.DependencyNode(inputt)
                 self.nodes.add(in_node)
                 self.edges.add(lib.graph.Edge(src=in_node, dst=cmd_node))
 
-            for output in args.get("outputs") or []:
+            for output in lib.litani.expand_args(args.get("outputs")):
                 out_node = lib.graph.DependencyNode(output)
                 self.nodes.add(out_node)
                 self.edges.add(lib.graph.Edge(src=cmd_node, dst=out_node))
@@ -265,12 +265,12 @@ class Graph:
                 args["pipeline_name"], args["description"], args["command"])
             nodes.add(cmd_node)
             if args["outputs"]:
-                for output in args["outputs"]:
+                for output in lib.litani.expand_args(args["outputs"]):
                     out_node = DependencyNode(output)
                     nodes.add(out_node)
                     edges.add(Edge(src=cmd_node, dst=out_node))
             if args["inputs"]:
-                for inputt in args["inputs"]:
+                for inputt in lib.litani.expand_args(args["inputs"]):
                     in_node = DependencyNode(inputt)
                     nodes.add(in_node)
                     edges.add(Edge(src=in_node, dst=cmd_node))
