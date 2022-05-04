@@ -206,6 +206,10 @@ def main():
 
     add_litani_7(builds, html_mans, args.gen_html)
 
+    for h in html_mans:
+        if "litani.7" in str(h.resolve()):
+            html_mans.insert(0, html_mans.pop(html_mans.index(h)))
+
     if args.gen_html:
         builds.append({
             "inputs": html_mans + [
