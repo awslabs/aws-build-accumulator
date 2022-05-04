@@ -134,7 +134,7 @@ def man_to_html(man_name, man_out, builds):
 def convert_man_dir_to_man(
         src_dir, dst_dir, rule, html_mans, builds, gen_html, extra_inputs=None):
     for man in (src_dir).iterdir():
-        man_name = str(man.name).split(".", 1)[0]
+        man_name = man.stem
         if man.suffix == ".scdoc":
             with open(man) as fp:
                 line = fp.readline().rstrip()
@@ -207,7 +207,7 @@ def main():
     add_litani_7(builds, html_mans, args.gen_html)
 
     for h in html_mans:
-        if "litani.7" in str(h.resolve()):
+        if "litani.7" in h.name:
             html_mans.insert(0, html_mans.pop(html_mans.index(h)))
 
     if args.gen_html:
