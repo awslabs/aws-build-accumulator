@@ -14,7 +14,6 @@
 
 import asyncio
 import contextlib
-import dataclasses
 import json
 import logging
 import os
@@ -68,7 +67,6 @@ class TimeoutExpired(Exception):
     pass
 
 
-@dataclasses.dataclass
 class CacheDir:
     cache_dir_path: pathlib.Path = None
 
@@ -76,14 +74,8 @@ class CacheDir:
     def get(lookup_path=os.getcwd()):
         if CacheDir.cache_dir_path:
             return CacheDir.cache_dir_path
-        def cache_pointer_dirs():
-            current = pathlib.Path(lookup_path).resolve(strict=True)
-            yield current
-            while current.parent != current:
-                current = current.parent
-                yield current
 
-        for possible_dir in cache_pointer_dirs():
+        for possible_dir in CacheDir.cache_pointer_dirs(lookup_path):
             logging.debug(
                 "Searching for cache pointer in %s", possible_dir)
             possible_pointer = possible_dir / CACHE_POINTER
@@ -94,14 +86,16 @@ class CacheDir:
                     with open(possible_pointer) as handle:
                         pointer = handle.read().strip()
                     possible_cache = pathlib.Path(pointer)
-                    if possible_cache.exists():
-                        logging.debug("cache is at %s", possible_cache)
-                        CacheDir.cache_dir_path = possible_cache
-                        return possible_cache
-                    logging.warning(
-                        "Found a cache file at %s pointing to %s, but that "
-                        "directory does not exist. Continuing search...",
-                        possible_pointer, possible_cache)
+                    if not possible_cache.exists():
+                        logging.warning(
+                            "Found a cache file at %s pointing to %s, but that "
+                            "directory does not exist. Continuing search...",
+                            possible_pointer, possible_cache)
+                        continue
+                    logging.debug("cache is at %s", possible_cache)
+                    CacheDir.cache_dir_path = possible_cache
+                    return possible_cache
+
             except PermissionError:
                 pass
 
@@ -109,6 +103,14 @@ class CacheDir:
             "Could not find a pointer to a litani cache. Did you forget "
             "to run `litani init`?")
         raise FileNotFoundError
+
+    @staticmethod
+    def cache_pointer_dirs(lookup_path):
+        current = pathlib.Path(lookup_path).resolve(strict=True)
+        yield current
+        while current.parent != current:
+            current = current.parent
+            yield current
 
 
 class LockableDirectory:
