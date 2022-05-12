@@ -19,18 +19,6 @@ jobs:
 
       - name: Run Unit and e2e tests
         run: ./test/run
-        continue-on-error: true
-        timeout-minutes: 5
-
-      - name: Get absolute path to report dir
-        run: echo "REPORT_PATH=$(readlink test/output/latest/html)" >> $GITHUB_ENV
-
-      - name: Upload report as artifact
-        uses: actions/upload-artifact@main
-        if: always()
-        with:
-          name: Report
-          path: ${{ env.REPORT_PATH }}
 
   test-build-documentation:
     name: Test Build Documentation
