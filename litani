@@ -444,8 +444,8 @@ def fill_out_ninja(cache, rules, builds, pools):
         pools[name] = depth
 
     for entry in cache["jobs"]:
-        outs = entry["outputs"] or []
-        ins = entry["inputs"] or []
+        outs = lib.litani.expand_args(entry["outputs"])
+        ins = lib.litani.expand_args(entry["inputs"])
 
         if "description" in entry:
             description = entry["description"]

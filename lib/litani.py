@@ -33,7 +33,7 @@ TIME_FORMAT_R = "%Y-%m-%dT%H:%M:%SZ"
 TIME_FORMAT_W = "%Y-%m-%dT%H:%M:%SZ"
 TIME_FORMAT_MS = "%Y-%m-%dT%H:%M:%S.%fZ"
 VERSION_MAJOR = 1
-VERSION_MINOR = 24
+VERSION_MINOR = 25
 VERSION_PATCH = 0
 RC = False
 
@@ -269,3 +269,21 @@ def unlink_expired():
             # No need to release lock after deletion
         else:
             lock_dir.release()
+
+
+def expand_args(files):
+    """Produce a list of files by expanding any "@"-prefixed file names to their
+    JSON-list contents.
+    """
+    if not files:
+        return []
+
+    result = []
+    for f in files:
+        if f.startswith("@"):
+            with open(f[1:]) as json_file:
+                result.extend(json.load(json_file))
+        else:
+            result.append(f)
+
+    return result
