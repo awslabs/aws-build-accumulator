@@ -29,12 +29,33 @@ import time
 import lib.litani
 import lib.litani_report
 import lib.pid_file
+import lib.util
 
 
 """When run-build receives this Unix signal, it will write the run file"""
 DUMP_SIGNAL = signal.SIGUSR1
 _DUMPED_RUN = "dumped-run.json"
 
+
+def add_subparser(subparsers):
+    dump_run_pars = subparsers.add_parser("dump-run")
+    dump_run_pars.set_defaults(func=dump_run)
+    for arg in [{
+            "flags": ["-r", "--retries"],
+            "metavar": "N",
+            "type": lib.util.non_negative_int,
+            "default": 10,
+            "help":
+                "how many times to retry loading the run in 1 second intervals"
+                " (Default: %(default)s)"
+        }, {
+            "flags": ["-o", "--out-file"],
+            "metavar": "F",
+            "type": lib.util._non_directory_path,
+            "help": "Output file to dump run file in"
+    }]:
+        flags = arg.pop("flags")
+        dump_run_pars.add_argument(*flags, **arg)
 
 
 @dataclasses.dataclass

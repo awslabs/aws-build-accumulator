@@ -36,6 +36,19 @@ _CAPABILITIES = {
 }
 
 
+def add_subparser(subparsers):
+    caps_pars = subparsers.add_parser("print-capabilities",
+            help="Print out Litani's capabilities in a list")
+    caps_pars.set_defaults(func=dump)
+    for arg in [{
+            "flags": ["-r", "--human-readable"],
+            "help": "also print out capabilities with their descriptions",
+            "action": "store_true"
+    }]:
+        flags = arg.pop("flags")
+        caps_pars.add_argument(*flags, **arg)
+
+
 def _human_readable_dump():
     longest_capability = 0
     for capability in _CAPABILITIES:
