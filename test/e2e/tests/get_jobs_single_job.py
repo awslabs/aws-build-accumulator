@@ -20,7 +20,7 @@ SLOW = False
 EXPECTED_JOB = {
     "command": "echo foo",
     "ci_stage": "build",
-    "pipeline": "foo",
+    "pipeline_name": "foo",
 }
 
 
