@@ -57,6 +57,8 @@ def get_manual(man, man_html_dir):
         "body": [],
         "chapter": get_chapter(man_html_dir / man.name),
     }
+    if record["title"] == "litani.7":
+        record["title"] = "litani"
     with open(man) as handle:
         for line in handle:
             record["body"].append(line.rstrip())
