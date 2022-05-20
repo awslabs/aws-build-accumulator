@@ -16,26 +16,25 @@
 
 import argparse
 import asyncio
+import importlib
 import logging
+import pkgutil
 import sys
 
 from lib import litani
-import lib.capabilities
-import lib.exec
-import lib.graph
-import lib.init
-import lib.job_outcome
-import lib.jobs
-import lib.ninja
-import lib.output_artifact
-import lib.pid_file
-import lib.process
-import lib.run_build
-import lib.run_printer
-import lib.validation
+import lib
 
 
 VALIDATE_DATA = False
+
+
+def add_subparsers(subparsers):
+    modules = list(pkgutil.iter_modules(
+        lib.__path__, prefix=f"{lib.__name__}."))
+    for module in modules:
+        imported_module = importlib.import_module(module.name)
+        if hasattr(imported_module, 'add_subparser'):
+            imported_module.add_subparser(subparsers)
 
 
 def get_args():
@@ -63,19 +62,7 @@ def get_args():
         flags = arg.pop("flags")
         pars.add_argument(*flags, **arg)
 
-    lib.init.add_subparser(subs)
-    lib.jobs.add_add_jobs_subparser(subs)
-    lib.jobs.add_get_jobs_subparser(subs)
-    lib.jobs.add_set_jobs_subparser(subs)
-    lib.jobs.add_transform_jobs_subparser(subs)
-    lib.graph.add_subparser(subs)
-    lib.run_build.add_subparser(subs)
-    lib.exec.add_subparser(subs)
-    lib.capabilities.add_subparser(subs)
-    lib.run_printer.add_subparser(subs)
-    lib.litani_report.add_print_html_dir_subparser(subs)
-    lib.litani_report.add_acquire_html_dir_subparser(subs)
-    lib.litani_report.add_release_html_dir_subparser(subs)
+    add_subparsers(subs)
 
     all_args = sys.argv[1:]
     wrapped_command = None

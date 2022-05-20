@@ -133,6 +133,13 @@ def get_add_job_args():
     ]
 
 
+def add_subparser(subparsers):
+    add_add_jobs_subparser(subparsers)
+    add_get_jobs_subparser(subparsers)
+    add_set_jobs_subparser(subparsers)
+    add_transform_jobs_subparser(subparsers)
+
+
 def add_add_jobs_subparser(subparsers):
     add_job_pars = subparsers.add_parser("add-job")
     add_job_pars.set_defaults(func=add_job_command)

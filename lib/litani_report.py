@@ -33,6 +33,12 @@ import lib.graph
 import lib.util
 
 
+def add_subparser(subparsers):
+    add_acquire_html_dir_subparser(subparsers)
+    add_print_html_dir_subparser(subparsers)
+    add_release_html_dir_subparser(subparsers)
+
+
 def add_print_html_dir_subparser(subparsers):
     print_html_dir_pars = subparsers.add_parser("print-html-dir",
         help="Print out the path to the HTML report directory")
