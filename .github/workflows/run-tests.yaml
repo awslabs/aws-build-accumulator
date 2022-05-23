@@ -18,7 +18,9 @@ jobs:
           python3 -m pip install jinja2
 
       - name: Run Unit and e2e tests
-        run: ./test/run
+        run: |
+          ./test/run
+          exit $?
 
   test-build-documentation:
     name: Test Build Documentation
