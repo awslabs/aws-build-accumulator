@@ -292,7 +292,7 @@ def main():
         litani, test_dir, counter, output_dir, args.fast)
     print()
 
-    run_cmd([litani, "run-build"])
+    run_cmd([litani, "run-build", "--fail-on-pipeline-failure"])
 
 
 if __name__ == "__main__":
