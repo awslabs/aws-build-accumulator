@@ -14,6 +14,7 @@ litani run-build - Start a Litani run
 	\[*-n*/*--dry-run*]
 	\[*-j*/*--parallel* _N_]
 	\[*-o*/*--out-file* _F_]
+	\[*--summarize-results*]
 	\[*--fail-on-pipeline-failure*]
 	\[*--no-pipeline-dep-graph*]
 	\[*-p*/*--pipelines* _P_ [_P_ ...]]
@@ -46,6 +47,11 @@ parallel.
 
 *-o* _F_, *--out-file* _F_
 	Periodically write the _run.json_ file to _F_.
+
+*--summarize-results*
+	Summarize build results by printing a JSON object. A user will be able
+	to get a breakdown of statuses across pipelines as well as a breakdown
+	of the status of each pipeline.
 
 *--fail-on-pipeline-failure*
 	Return _0_ only if all pipelines were successful. See *RETURN CODE*

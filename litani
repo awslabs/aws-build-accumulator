@@ -39,6 +39,7 @@ import lib.jobs
 import lib.ninja
 import lib.output_artifact
 import lib.pid_file
+import lib.post_build
 import lib.process
 import lib.run_printer
 import lib.validation
@@ -267,6 +268,10 @@ def get_args():
             "flags": ["-o", "--out-file"],
             "metavar": "F",
             "help": "periodically write JSON representation of the run"
+    }, {
+            "flags": ["--summarize-results"],
+            "action": "store_true",
+            "help": "prints a JSON object summarizing the results of the build"
     }, {
             "flags": ["--fail-on-pipeline-failure"],
             "action": "store_true",
@@ -701,6 +706,8 @@ async def run_build(args):
         print("Report was rendered at "
               f"file://{run_info['latest_symlink']}/html/index.html")
 
+    if args.summarize_results:
+        lib.post_build.summarize_results(run)
     if args.fail_on_pipeline_failure:
         sys.exit(0 if runner.was_successful() else 10)
 
