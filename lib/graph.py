@@ -22,6 +22,18 @@ import lib.litani
 import lib.litani_report
 
 
+def add_subparser(subparsers):
+    graph_pars = subparsers.add_parser("graph")
+    graph_pars.set_defaults(func=print_graph)
+    for arg in [{
+            "flags": ["-p", "--pipelines"],
+            "help": "only display the graph for these pipelines (default: all)",
+            "nargs": "+",
+            "metavar": "P",
+    }]:
+        flags = arg.pop("flags")
+        graph_pars.add_argument(*flags, **arg)
+
 
 class Node:
     @staticmethod

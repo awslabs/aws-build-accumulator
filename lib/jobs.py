@@ -133,6 +133,65 @@ def get_add_job_args():
     ]
 
 
+def add_subparser(subparsers):
+    add_add_jobs_subparser(subparsers)
+    add_get_jobs_subparser(subparsers)
+    add_set_jobs_subparser(subparsers)
+    add_transform_jobs_subparser(subparsers)
+
+
+def add_add_jobs_subparser(subparsers):
+    add_job_pars = subparsers.add_parser("add-job")
+    add_job_pars.set_defaults(func=add_job_command)
+    for group_name, args in get_add_job_args():
+        group = add_job_pars.add_argument_group(title=group_name)
+        for arg in args:
+            flags = arg.pop("flags")
+            group.add_argument(*flags, **arg)
+
+
+def add_get_jobs_subparser(subparsers):
+    get_jobs_pars = subparsers.add_parser("get-jobs", help="print jobs")
+    for arg in [{
+        "flags": ["-f", "--out-file"],
+        "help": "write the list of jobs to a JSON file, default: stdout",
+        "default": sys.stdout,
+        "metavar": "F",
+        "type": argparse.FileType("w")
+    }]:
+        flags = arg.pop("flags")
+        get_jobs_pars.add_argument(*flags, **arg)
+    get_jobs_pars.set_defaults(func=print_jobs)
+
+
+def add_set_jobs_subparser(subparsers):
+    set_jobs_pars = subparsers.add_parser("set-jobs", help="set jobs to run")
+    set_jobs_mutually_exclusive = set_jobs_pars.add_mutually_exclusive_group()
+    for arg in [{
+            "flags": ["-f", "--from-file"],
+            "help": "read a list of jobs from a JSON file, default: stdin",
+            "metavar": "F",
+            "default": sys.stdin,
+            "type": argparse.FileType("r")
+    }, {
+            "flags": ["-s", "--from-string"],
+            "help": "read a list of jobs from a JSON string",
+            "metavar": "S"
+    }]:
+        flags = arg.pop("flags")
+        set_jobs_mutually_exclusive.add_argument(*flags, **arg)
+    set_jobs_pars.set_defaults(func=set_jobs_command)
+
+
+def add_transform_jobs_subparser(subparsers):
+    transform_jobs_pars = subparsers.add_parser("transform-jobs",
+        help="print jobs, then read jobs on stdin to save")
+    transform_jobs_pars.set_defaults(func=transform_jobs)
+    for arg in []:
+        flags = arg.pop("flags")
+        transform_jobs_pars.add_argument(*flags, **arg)
+
+
 def configure_args(**kwargs):
     cmd = []
     for arg, value in kwargs.items():
@@ -207,6 +266,10 @@ async def add_job(job_dict):
         print(json.dumps(job_dict, indent=2), file=handle)
 
 
+async def add_job_command(args):
+    return await add_job(vars(args))
+
+
 async def get_jobs():
     out = []
     jobs_dir = litani.get_cache_dir() / litani.JOBS_DIR
@@ -256,6 +319,19 @@ async def set_jobs(job_list):
         filled_job = fill_job(job)
         filled_job["subcommand"] = "add-job"
         await add_job(filled_job)
+
+
+async def set_jobs_command(args):
+    try:
+        if args.from_string:
+            job_list = json.loads(args.from_string)
+        else:
+            job_list = json.load(args.from_file)
+    except json.JSONDecodeError:
+        logging.error("Could not read jobs provided to set-jobs")
+        sys.exit(1)
+
+    await set_jobs(job_list)
 
 
 def _read_jobs():
