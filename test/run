@@ -223,6 +223,23 @@ def add_e2e_tests(test_dir, output_dir, fast, queue, litani):
                 cwd=run_dir)
             run_build_dependencies.append(set_jobs_output)
 
+        if test_has_method("on_run"):
+            enqueue_job(
+                queue,
+                command=collapse(f"""
+                    {e2e_test_dir / 'run'}
+                    --test-file {test_file}
+                    --litani {litani}
+                    --run-dir {run_dir}
+                    --operation on-run"""),
+                pipeline=f"e2e_{test_file.stem}",
+                ci_stage="test",
+                description=f"{test_file.stem}: run-build callback",
+                inputs=run_build_dependencies,
+                phony_outputs=str(uuid.uuid4()),
+                cwd=run_dir,
+                timeout=timeout)
+
         enqueue_job(
             queue,
             command=collapse(f"""
