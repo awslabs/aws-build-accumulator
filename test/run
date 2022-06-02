@@ -89,12 +89,19 @@ def collapse(string):
     return re.sub(r"\s+", " ", string)
 
 
-def has_line(test_file, line):
-    with open(test_file) as handle:
-        for current_line in handle:
-            if current_line.strip().startswith(line):
-                return True
-    return False
+
+@dataclasses.dataclass
+class TestFileMethodChecker:
+    test_file: pathlib.Path
+
+    def __call__(self, meth_name):
+        pat = f"def {meth_name}("   # ) <- for syntax highlighting
+        with open(self.test_file) as handle:
+            for line in handle:
+                if line.strip().startswith(pat):
+                    return True
+        return False
+
 
 def enqueue_job(queue, **kwargs):
     queue.put_nowait(kwargs)
@@ -111,9 +118,7 @@ def add_e2e_tests(test_dir, output_dir, fast, queue, litani):
         if test_file.name in ["__init__.py", "__pycache__"]:
             continue
 
-        add_transform_jobs = has_line(test_file, "def transform_jobs(")
-        add_get_jobs = has_line(test_file, "def check_get_jobs(")
-        add_set_jobs = has_line(test_file, "def get_set_jobs_args(")
+        test_has_method = TestFileMethodChecker(test_file)
 
         if fast and is_slow_test(test_file):
             continue
@@ -164,7 +169,7 @@ def add_e2e_tests(test_dir, output_dir, fast, queue, litani):
             **add_jobs_kwargs)
 
         run_build_dependencies = [add_jobs_output]
-        if add_transform_jobs:
+        if test_has_method("transform_jobs"):
             transform_jobs_output = str(uuid.uuid4())
             enqueue_job(
                 queue,
@@ -182,7 +187,7 @@ def add_e2e_tests(test_dir, output_dir, fast, queue, litani):
                 cwd=run_dir)
             run_build_dependencies.append(transform_jobs_output)
 
-        if add_get_jobs:
+        if test_has_method("check_get_jobs"):
             get_jobs_output = str(uuid.uuid4())
             enqueue_job(
                 queue,
@@ -200,7 +205,7 @@ def add_e2e_tests(test_dir, output_dir, fast, queue, litani):
                 cwd=run_dir)
             run_build_dependencies.append(get_jobs_output)
 
-        if add_set_jobs:
+        if test_has_method("get_set_jobs_args"):
             set_jobs_output = str(uuid.uuid4())
             enqueue_job(
                 queue,
