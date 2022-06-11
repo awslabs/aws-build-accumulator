@@ -15,12 +15,16 @@
 import dataclasses
 import datetime
 import io
+import logging
 import math
 import os
 import pathlib
 import re
+import signal
 import subprocess
+import sys
 import threading
+import time
 
 import lib.litani
 
@@ -129,6 +133,50 @@ class _OutputAccumulator:
 
 
 
+def _make_pgroup_leader():
+    try:
+        os.setpgid(0, 0)
+    except OSError as err:
+        logging.error(
+            "Failed to create new process group for ninja (errno: %s)",
+            err.errno)
+        sys.exit(1)
+
+
+
+@dataclasses.dataclass
+class _SignalHandler:
+    """
+    Objects of this class are callable. They implement the API of a signal
+    handler, and can thus be passed to Python's signal.signal call.
+    """
+    proc: subprocess.Popen
+    render_killer: threading.Event
+    pgroup: int = None
+
+
+    def __post_init__(self):
+        try:
+            self.pgroup = os.getpgid(self.proc.pid)
+        except ProcessLookupError:
+            logging.error(
+                "Failed to find ninja process group %d", self.proc.pid)
+            sys.exit(1)
+
+
+    def __call__(self, signum, _frame):
+        self.render_killer.set()
+        try:
+            os.killpg(self.pgroup, signum)
+        except OSError as err:
+            logging.error(
+                "Failed to send signal '%s' to ninja process group (errno: %s)",
+                signum, err.errno)
+            sys.exit(1)
+        sys.exit(0)
+
+
+
 @dataclasses.dataclass
 class Runner:
     ninja_file: pathlib.Path
@@ -136,9 +184,11 @@ class Runner:
     parallelism: int
     pipelines: list
     ci_stage: str
+    render_killer: threading.Event
     proc: subprocess.CompletedProcess = None
     status_parser: _StatusParser = _StatusParser()
     out_acc: _OutputAccumulator = None
+    signal_handler: _SignalHandler = None
 
 
     def _get_cmd(self):
@@ -162,19 +212,35 @@ class Runner:
         return [str(c) for c in cmd]
 
 
+    def _register_signal_handler(self):
+        sigs = (signal.SIGTERM, signal.SIGINT, signal.SIGHUP)
+        fails = []
+        for sig in sigs:
+            try:
+                signal.signal(sig, self.signal_handler)
+            except ValueError:
+                fails.append(str(sig))
+        if fails:
+            logging.error(
+                "Failed to set signal handler for %s", ", ".join(fails))
+            sys.exit(1)
+
+
     def run(self):
         env = {
             **os.environ,
             **{"NINJA_STATUS": self.status_parser.status_format},
         }
 
-        with subprocess.Popen(
-                self._get_cmd(), env=env, stdout=subprocess.PIPE, text=True,
-                ) as proc:
-            self.proc = proc
-            self.out_acc = _OutputAccumulator(proc.stdout, self.status_parser)
-            self.out_acc.start()
-            self.out_acc.join()
+        self.proc = subprocess.Popen(
+            self._get_cmd(), env=env, stdout=subprocess.PIPE, text=True,
+            preexec_fn=_make_pgroup_leader)
+        self.signal_handler = _SignalHandler(self.proc, self.render_killer)
+        self._register_signal_handler()
+
+        self.out_acc = _OutputAccumulator(self.proc.stdout, self.status_parser)
+        self.out_acc.start()
+        self.out_acc.join()
 
 
     def was_successful(self):

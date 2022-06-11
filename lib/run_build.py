@@ -166,12 +166,12 @@ async def run_build(args):
     killer = threading.Event()
     render_thread = threading.Thread(
         group=None, target=lib.render.continuous_render_report,
-        args=(cache_dir, killer, args.out_file, render))
+        args=(cache_dir, killer, args.out_file, render), daemon=True)
     render_thread.start()
 
     runner = lib.ninja.Runner(
         ninja_file, args.dry_run, args.parallel, args.pipelines,
-        args.ci_stage)
+        args.ci_stage, killer)
 
     lib.pid_file.write()
     sig_handler = lib.run_printer.DumpRunSignalHandler(cache_dir)
