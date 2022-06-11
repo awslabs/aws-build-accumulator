@@ -20,7 +20,6 @@ import decimal
 import logging
 import os
 import platform
-import signal
 import subprocess
 import sys
 
@@ -219,7 +218,7 @@ class _Process:
 
         proc = await asyncio.create_subprocess_shell(
             self.command, stdout=asyncio.subprocess.PIPE, stderr=pipe,
-            cwd=self.cwd, env=env, start_new_session=True)
+            cwd=self.cwd, env=env)
         self.proc = proc
 
         timeout_reached = False
@@ -227,11 +226,10 @@ class _Process:
             out, err = await asyncio.wait_for(
                 proc.communicate(), timeout=self.timeout)
         except asyncio.TimeoutError:
-            pgid = os.getpgid(proc.pid)
-            os.killpg(pgid, signal.SIGTERM)
+            proc.terminate()
             await asyncio.sleep(1)
             try:
-                os.killpg(pgid, signal.SIGKILL)
+                proc.kill()
             except ProcessLookupError:
                 pass
             out, err = await proc.communicate()
