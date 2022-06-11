@@ -15,8 +15,11 @@
 
 
 import argparse
+import asyncio
+import dataclasses
 import importlib
 import logging
+import math
 import os
 import pathlib
 import re
@@ -44,10 +47,11 @@ def get_args():
     return pars.parse_args()
 
 
-def run_cmd(cmd):
-    try:
-        subprocess.run([str(c) for c in cmd], check=True)
-    except subprocess.CalledProcessError:
+async def run_cmd(cmd):
+    proc = await asyncio.create_subprocess_exec(
+        str(cmd[0]), *[str(arg) for arg in cmd[1:]])
+    await proc.wait()
+    if proc.returncode:
         logging.error(
             "Failed to run command '%s'", " ".join([str(c) for c in cmd]))
         sys.exit(1)
@@ -69,11 +73,8 @@ def has_phony_add_jobs(module_file):
     return False
 
 
-def litani_add(litani, counter, *args, **kwargs):
+async def litani_add(litani, **kwargs):
     cmd = [litani, "add-job"]
-    for arg in args:
-        switch = re.sub("_", "-", arg)
-        cmd.append(f"--{switch}")
     for arg, value in kwargs.items():
         switch = re.sub("_", "-", arg)
         cmd.append(f"--{switch}")
@@ -81,9 +82,7 @@ def litani_add(litani, counter, *args, **kwargs):
             cmd.extend(value)
         else:
             cmd.append(value)
-    run_cmd(cmd)
-    counter["added"] += 1
-    print_counter(counter)
+    await run_cmd(cmd)
 
 
 def collapse(string):
@@ -97,13 +96,17 @@ def has_line(test_file, line):
                 return True
     return False
 
+def enqueue_job(queue, **kwargs):
+    queue.put_nowait(kwargs)
 
-def add_e2e_tests(litani, test_dir, counter, output_dir, fast):
+
+
+def add_e2e_tests(test_dir, output_dir, fast, queue, litani):
     e2e_test_dir = test_dir / "e2e"
     # 4 jobs per test (init, add-jobs, run-build, check-run)
     # skip __init__.py and __pycache__
-    counter["total"] += (len(os.listdir(e2e_test_dir / "tests")) - 2) * 4
     sys.path.insert(1, str(e2e_test_dir / "tests"))
+
     for test_file in (e2e_test_dir / "tests").iterdir():
         if test_file.name in ["__init__.py", "__pycache__"]:
             continue
@@ -119,8 +122,8 @@ def add_e2e_tests(litani, test_dir, counter, output_dir, fast):
 
         timeout=10 if fast else 0
 
-        litani_add(
-            litani, counter,
+        enqueue_job(
+            queue,
             command=collapse(f"""
                 {e2e_test_dir / 'run'}
                 --test-file {test_file}
@@ -144,8 +147,8 @@ def add_e2e_tests(litani, test_dir, counter, output_dir, fast):
         else:
             add_jobs_kwargs["outputs"] = [jobs_output]
 
-        litani_add(
-            litani, counter,
+        enqueue_job(
+            queue,
             command=collapse(f"""
                 {e2e_test_dir / 'run'}
                 --test-file {test_file}
@@ -163,8 +166,8 @@ def add_e2e_tests(litani, test_dir, counter, output_dir, fast):
         run_build_dependencies = [add_jobs_output]
         if add_transform_jobs:
             transform_jobs_output = str(uuid.uuid4())
-            litani_add(
-                litani, counter,
+            enqueue_job(
+                queue,
                 command=collapse(f"""
                     {e2e_test_dir / 'run'}
                     --test-file {test_file}
@@ -181,8 +184,8 @@ def add_e2e_tests(litani, test_dir, counter, output_dir, fast):
 
         if add_get_jobs:
             get_jobs_output = str(uuid.uuid4())
-            litani_add(
-                litani, counter,
+            enqueue_job(
+                queue,
                 command=collapse(f"""
                     {e2e_test_dir / 'run'}
                     --test-file {test_file}
@@ -199,8 +202,8 @@ def add_e2e_tests(litani, test_dir, counter, output_dir, fast):
 
         if add_set_jobs:
             set_jobs_output = str(uuid.uuid4())
-            litani_add(
-                litani, counter,
+            enqueue_job(
+                queue,
                 command=collapse(f"""
                     {e2e_test_dir / 'run'}
                     --test-file {test_file}
@@ -215,8 +218,8 @@ def add_e2e_tests(litani, test_dir, counter, output_dir, fast):
                 cwd=run_dir)
             run_build_dependencies.append(set_jobs_output)
 
-        litani_add(
-            litani, counter,
+        enqueue_job(
+            queue,
             command=collapse(f"""
                 {e2e_test_dir / 'run'}
                 --test-file {test_file}
@@ -231,8 +234,8 @@ def add_e2e_tests(litani, test_dir, counter, output_dir, fast):
             cwd=run_dir,
             timeout=timeout)
 
-        litani_add(
-            litani, counter,
+        enqueue_job(
+            queue,
             command=collapse(f"""
                 {e2e_test_dir / 'run'}
                 --test-file {test_file}
@@ -247,25 +250,55 @@ def add_e2e_tests(litani, test_dir, counter, output_dir, fast):
             timeout=timeout)
 
 
-def add_unit_tests(litani, test_dir, root_dir, counter):
+def add_unit_tests(test_dir, root_dir, queue):
     for fyle in (test_dir / "unit").iterdir():
         if fyle.name in ["__init__.py", "__pycache__"]:
             continue
-        litani_add(
-            litani, counter,
+        enqueue_job(
+            queue,
             command=f"python3 -m unittest test.unit.{fyle.stem}",
             pipeline="Unit tests",
             ci_stage="test",
             description=fyle.stem,
             cwd=root_dir)
-        counter["total"] += 1
 
 
-def print_counter(counter):
-    print("\r{added} / {total} tests added".format(**counter), end="")
+
+@dataclasses.dataclass
+class Counter:
+    total: int
+    added: int = 0
+    width: int = 0
 
 
-def main():
+    def __post_init__(self):
+        self.width = int(math.log10(self.total)) + 1
+
+
+    def bump(self):
+        self.added += 1
+        msg = "\r{added:{width}}/{total:{width}} tests added".format(
+            added=self.added, total=self.total, width=self.width)
+        print(msg, end="", file=sys.stderr)
+
+
+
+async def drain_job_queue(queue, counter, litani):
+    while True:
+        args = await queue.get()
+        await litani_add(litani, **args)
+        counter.bump()
+        queue.task_done()
+
+
+def get_pool_size():
+    ret = os.cpu_count()
+    if ret is None or ret < 4:
+        return 1
+    return ret - 2
+
+
+async def main():
     args = get_args()
     logging.basicConfig(format="\nrun-tests: %(message)s")
     test_dir = pathlib.Path(__file__).resolve().parent
@@ -276,24 +309,25 @@ def main():
     output_dir.mkdir(exist_ok=True, parents=True)
     os.chdir(output_dir)
 
-    run_cmd([
+    await run_cmd([
         litani, "init",
         "--project", "Litani Test Suite",
         "--output-prefix", ".",
         "--output-symlink", "latest"])
 
-    counter = {
-        "added": 0,
-        "total": 0,
-    }
+    job_queue = asyncio.Queue()
+    add_unit_tests(test_dir, root, job_queue)
+    add_e2e_tests(test_dir, output_dir, args.fast, job_queue, litani)
 
-    add_unit_tests(litani, test_dir, root, counter)
-    add_e2e_tests(
-        litani, test_dir, counter, output_dir, args.fast)
-    print()
-
-    run_cmd([litani, "run-build", "--fail-on-pipeline-failure"])
+    counter =  Counter(job_queue.qsize())
+    tasks = []
+    for _ in range(get_pool_size()):
+        task = asyncio.create_task(drain_job_queue(job_queue, counter, litani))
+        tasks.append(task)
+    await job_queue.join()
+    print("", file=sys.stderr)
+    await run_cmd([litani, "run-build", "--fail-on-pipeline-failure"])
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
