@@ -14,11 +14,14 @@
 
 import asyncio
 import contextlib
+import dataclasses
 import json
 import logging
 import os
 import pathlib
+import signal
 import shutil
+import subprocess
 import sys
 import uuid
 
@@ -39,6 +42,37 @@ RC = True
 
 RC_STR = "-rc" if RC else ""
 VERSION = "%d.%d.%d%s" % (VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, RC_STR)
+
+
+
+@dataclasses.dataclass
+class DescendentTerminator:
+    """
+    Objects of this class are callable. They implement the API of a signal
+    handler, and can thus be passed to Python's signal.signal call.
+    """
+    proc: subprocess.Popen
+    pgroup: int = None
+
+
+    def __post_init__(self):
+        try:
+            self.pgroup = os.getpgid(self.proc.pid)
+        except ProcessLookupError:
+            logging.error(
+                "Failed to find process group %d", self.proc.pid)
+            sys.exit(1)
+
+
+    def __call__(self, signum, _frame):
+        try:
+            os.killpg(self.pgroup, signum)
+        except OSError as err:
+            logging.error(
+                "Failed to send signal '%s' to process group (errno: %s)",
+                signum, err.errno)
+            sys.exit(1)
+        sys.exit(0)
 
 
 
@@ -190,6 +224,30 @@ class LockableDirectory:
             yield
         self.release()
 
+
+
+def register_signal_handler(handler):
+    sigs = (signal.SIGTERM, signal.SIGINT, signal.SIGHUP)
+    fails = []
+    for sig in sigs:
+        try:
+            signal.signal(sig, handler)
+        except ValueError:
+            fails.append(str(sig))
+    if fails:
+        logging.error(
+            "Failed to set signal handler for %s", ", ".join(fails))
+        sys.exit(1)
+
+
+def make_pgroup_leader():
+    try:
+        os.setpgid(0, 0)
+    except OSError as err:
+        logging.error(
+            "Failed to create new process group (errno: %s)",
+            err.errno)
+        sys.exit(1)
 
 
 def get_cache_dir(path=os.getcwd()):
