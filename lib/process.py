@@ -20,6 +20,7 @@ import decimal
 import logging
 import os
 import platform
+import signal
 import subprocess
 import sys
 
@@ -205,6 +206,7 @@ class _Process:
     stdout: str = None
     stderr: str = None
     timeout_reached: bool = None
+    handler: lib.litani.DescendentTerminator = None
 
 
     async def __call__(self):
@@ -216,23 +218,25 @@ class _Process:
         env = dict(os.environ)
         env[lib.litani.ENV_VAR_JOB_ID] = self.job_id
 
-        proc = await asyncio.create_subprocess_shell(
+        self.proc = await asyncio.create_subprocess_shell(
             self.command, stdout=asyncio.subprocess.PIPE, stderr=pipe,
-            cwd=self.cwd, env=env)
-        self.proc = proc
+            preexec_fn=os.setpgrp, cwd=self.cwd, env=env)
+        self.handler = lib.litani.DescendentTerminator(self.proc)
+        lib.litani.register_signal_handler(self.handler)
 
         timeout_reached = False
         try:
             out, err = await asyncio.wait_for(
-                proc.communicate(), timeout=self.timeout)
+                self.proc.communicate(), timeout=self.timeout)
         except asyncio.TimeoutError:
-            proc.terminate()
-            await asyncio.sleep(1)
             try:
-                proc.kill()
+                p_group = os.getpgid(self.proc.pid)
+                os.killpg(p_group, signal.SIGTERM)
+                await asyncio.sleep(1)
+                os.killpg(p_group, signal.SIGKILL)
             except ProcessLookupError:
                 pass
-            out, err = await proc.communicate()
+            out, err = await self.proc.communicate()
             timeout_reached = True
 
         self.stdout = out

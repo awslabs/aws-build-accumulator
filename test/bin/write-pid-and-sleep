@@ -15,4 +15,4 @@
 
 mkdir -p pids
 touch "pids/$$"
-sleep 999
+sleep $((999 + $RANDOM % 100))

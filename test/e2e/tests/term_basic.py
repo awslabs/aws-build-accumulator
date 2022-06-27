@@ -47,7 +47,7 @@ def get_run_build_args():
 
 
 def on_run():
-    time.sleep(5)
+    time.sleep(20)
     with open(".litani_cache_dir") as handle:
         cache_dir = pathlib.Path(handle.read().strip())
     with open(cache_dir / "run-pid") as handle:

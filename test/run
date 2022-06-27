@@ -348,7 +348,9 @@ async def main():
         tasks.append(task)
     await job_queue.join()
     print("", file=sys.stderr)
-    await run_cmd([litani, "run-build", "--fail-on-pipeline-failure"])
+    await run_cmd([
+        litani, "run-build", "--fail-on-pipeline-failure",
+        "--pipe", "e2e_term_basic"])
 
 
 if __name__ == "__main__":

@@ -45,28 +45,25 @@ VERSION = "%d.%d.%d%s" % (VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, RC_STR)
 
 
 
-@dataclasses.dataclass
 class DescendentTerminator:
     """
     Objects of this class are callable. They implement the API of a signal
     handler, and can thus be passed to Python's signal.signal call.
     """
-    proc: subprocess.Popen
-    pgroup: int = None
 
 
-    def __post_init__(self):
-        try:
-            self.pgroup = os.getpgid(self.proc.pid)
-        except ProcessLookupError:
-            logging.error(
-                "Failed to find process group %d", self.proc.pid)
-            sys.exit(1)
+    def __init__(self, proc):
+        self.proc = proc
 
 
     def __call__(self, signum, _frame):
+        pgroup = os.getpgid(proc.pid)
+
         try:
-            os.killpg(self.pgroup, signum)
+            logging.error("caught signal")
+            os.killpg(pgroup, signal.SIGTERM)
+            time.sleep(1)
+            os.killpg(pgroup, signal.SIGKILL)
         except OSError as err:
             logging.error(
                 "Failed to send signal '%s' to process group (errno: %s)",
@@ -237,16 +234,6 @@ def register_signal_handler(handler):
     if fails:
         logging.error(
             "Failed to set signal handler for %s", ", ".join(fails))
-        sys.exit(1)
-
-
-def make_pgroup_leader():
-    try:
-        os.setpgid(0, 0)
-    except OSError as err:
-        logging.error(
-            "Failed to create new process group (errno: %s)",
-            err.errno)
         sys.exit(1)
 
 

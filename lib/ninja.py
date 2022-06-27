@@ -143,7 +143,6 @@ class Runner:
     proc: subprocess.CompletedProcess = None
     status_parser: _StatusParser = _StatusParser()
     out_acc: _OutputAccumulator = None
-    signal_handler: lib.litani.DescendentTerminator = None
 
 
     def _get_cmd(self):
@@ -174,10 +173,7 @@ class Runner:
         }
 
         self.proc = subprocess.Popen(
-            self._get_cmd(), env=env, stdout=subprocess.PIPE, text=True,
-            preexec_fn=lib.litani.make_pgroup_leader)
-        self.signal_handler = lib.litani.DescendentTerminator(self.proc)
-        lib.litani.register_signal_handler(self.signal_handler)
+            self._get_cmd(), env=env, stdout=subprocess.PIPE, text=True)
 
         self.out_acc = _OutputAccumulator(self.proc.stdout, self.status_parser)
         self.out_acc.start()
