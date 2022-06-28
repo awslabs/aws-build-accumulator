@@ -222,7 +222,7 @@ async def run_build(args):
     if args.fail_on_pipeline_failure:
         for _ in itertools.filterfalse(
                 lambda pipe: pipe["status"] != "fail", run["pipelines"]):
-            sys.exit(1)
+            sys.exit(10)
         sys.exit(0)
 
     sys.exit(0)
