@@ -1,6 +1,29 @@
                               CHANGELOG
                               `````````
 
+Version 1.26.0 -- 2022-05-18
+----------------------------
+
+This release fixes an important bug and contains several other fixes
+and improvements.
+
+- Fix incorrect RC with --fail-on-pipeline-failure
+
+  This fixes an important bug in --fail-on-pipeline-failure.  Prior to
+  this commit, litani run-build would only terminate abnormally with
+  this flag set when ninja terminated abnormally. This commit fixes
+  this behavior so that litani run-build instead checks whether any
+  pipeline failed, and terminates abnormally if so.
+
+  When using --fail-on-pipeline-failure, `litani run-build` will now
+  terminate with an exit code of 0 if all pipelines passed, and 10 if
+  at least one of them failed.
+
+- Fix litani(7) HTML documentation and improve font size and choice
+
+
+
+
 Version 1.25.0 -- 2022-05-18
 ----------------------------
 - Fix litani run.json and litani outcome-table.json man pages

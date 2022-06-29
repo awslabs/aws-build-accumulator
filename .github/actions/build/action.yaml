@@ -17,6 +17,7 @@ runs:
     - name: Setup directory for deb package
       run: |
         echo ${{ inputs.version }}
+        sudo apt-get update
         sudo apt-get install -y mandoc scdoc ninja-build
         mkdir -p litani-${{ inputs.version }}/{DEBIAN,usr/{bin,libexec/litani,share/{doc/litani,man/{man1,man5,man7}}}}
         touch litani-${{ inputs.version }}/DEBIAN/control

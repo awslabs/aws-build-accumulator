@@ -66,7 +66,10 @@ parallel.
 
 # RETURN CODE
 
-Unless there was a crash, this program should return _0_ upon exit
-unless the *--fail-on-pipeline-failure* flag was supplied. In that case,
-this program will return _0_ if all pipelines were successful and _1_
-otherwise.
+This program will return _1_ if it terminates abnormally. On normal
+termination:
+
+- If the *--fail-on-pipeline-failure* flag was passed, this program will
+  return _0_ if all pipelines were successful and _10_ otherwise.
+- Otherwise, this program will always return _0_ upon normal
+  termination, regardless of the pipelines' success or failure.

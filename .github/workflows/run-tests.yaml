@@ -9,25 +9,30 @@ jobs:
   test-litani:
     if: "!contains(github.event.pull_request.labels.*.name, 'no-test')"
     name: Run Litani Tests
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - name: Install dependencies
         run: |
-          brew install ninja
+          sudo apt-get install -y ninja-build
           python3 -m pip install jinja2
 
       - name: Run Unit and e2e tests
-        run: ./test/run
-        continue-on-error: true
-        timeout-minutes: 5
+        run: |
+          ./test/run
+          exit $?
 
-      - name: Get absolute path to report dir
-        run: echo "REPORT_PATH=$(readlink test/output/latest/html)" >> $GITHUB_ENV
+  test-build-documentation:
+    name: Test Build Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mandoc scdoc ninja-build
 
-      - name: Upload report as artifact
-        uses: actions/upload-artifact@main
-        if: always()
-        with:
-          name: Report
-          path: ${{ env.REPORT_PATH }}
+      - name: Test Documentation
+        run: |
+          ./doc/configure
+          ninja

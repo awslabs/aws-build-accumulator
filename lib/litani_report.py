@@ -30,7 +30,51 @@ import jinja2
 
 from lib import litani
 import lib.graph
+import lib.util
 
+
+def add_subparser(subparsers):
+    add_acquire_html_dir_subparser(subparsers)
+    add_print_html_dir_subparser(subparsers)
+    add_release_html_dir_subparser(subparsers)
+
+
+def add_print_html_dir_subparser(subparsers):
+    print_html_dir_pars = subparsers.add_parser("print-html-dir",
+        help="Print out the path to the HTML report directory")
+    print_html_dir_pars.set_defaults(func=print_html_dir)
+
+
+def add_acquire_html_dir_subparser(subparsers):
+    acquire_html_dir_pars = subparsers.add_parser("acquire-html-dir",
+        help="Print the path to a locked HTML report directory")
+    acquire_html_dir_pars.set_defaults(func=acquire_html_dir)
+    for arg in [{
+            "flags": ["-t", "--timeout"],
+            "help": (
+                "how many seconds to wait before giving up "
+                "(0 means forever)"),
+            "required": True,
+            "type": lib.util.non_negative_int,
+            "metavar": "N",
+    }]:
+        flags = arg.pop("flags")
+        acquire_html_dir_pars.add_argument(*flags, **arg)
+
+
+def add_release_html_dir_subparser(subparsers):
+    release_html_dir_pars = subparsers.add_parser("release-html-dir",
+        help="Unlock a previously-locked HTML report directory")
+    release_html_dir_pars.set_defaults(func=release_html_dir)
+    for arg in [{
+            "flags": ["-d", "--dir"],
+            "help": "the locked HTML report directory to unlock",
+            "required": True,
+            "type": pathlib.Path,
+            "metavar": "D",
+    }]:
+        flags = arg.pop("flags")
+        release_html_dir_pars.add_argument(*flags, **arg)
 
 
 class Gnuplot:
