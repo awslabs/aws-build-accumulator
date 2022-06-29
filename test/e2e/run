@@ -29,17 +29,18 @@ DESCRIPTION = "Execute a single Litani run and test the resulting run.json"
 EPILOG = "See test/e2e/README for the organization of this test suite"
 
 
-def run_cmd(cmd):
+def run_cmd(cmd, check):
     cmd_list = [str(c) for c in cmd]
     print(" ".join(cmd_list))
     try:
-        subprocess.run(cmd_list, check=True)
+        proc = subprocess.run(cmd_list, check=check)
     except subprocess.CalledProcessError:
         logging.error("Invocation failed")
         sys.exit(1)
     except FileNotFoundError:
         logging.error("Executable not found")
         sys.exit(1)
+    return proc
 
 
 def configure_args(*args, **kwargs):
@@ -57,10 +58,10 @@ def configure_args(*args, **kwargs):
     return cmd
 
 
-def run_litani(litani, subcommand, *args, **kwargs):
+def run_litani(litani, subcommand, *args, check=True, **kwargs):
     cmd = [litani, subcommand]
     cmd.extend(configure_args(*args, **kwargs))
-    run_cmd(cmd)
+    return run_cmd(cmd, check)
 
 
 def get_test_module(module_file):
@@ -130,8 +131,24 @@ def set_jobs(litani, run_dir, mod):
 def run_build(litani, run_dir, mod):
     os.chdir(run_dir)
     args = mod.get_run_build_args()
-    run_litani(
-        litani, "run-build", *args.get("args", []), **args.get("kwargs", {}))
+    proc = run_litani(
+        litani, "run-build",
+        *args.get("args", []), check=False, **args.get("kwargs", {}))
+
+    try:
+        expected_rc = mod.get_run_build_return_code()
+        if expected_rc != proc.returncode:
+            logging.error(
+                "Expected return code %d did not match actual "
+                "return code %d", expected_rc, proc.returncode)
+            sys.exit(1)
+    except AttributeError:
+        # test does not have a get_run_build_return_code method, so assume that
+        # run-build is expected to succeed
+        if proc.returncode:
+            logging.error("Invocation failed")
+            sys.exit(1)
+
 
 
 def init(litani, run_dir, mod):
