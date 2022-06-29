@@ -571,8 +571,7 @@
     those scripts by running them as follows:</p>
 <p class="Pp"></p>
 <div class="Bd-indent">
-<pre>
-$ litani init                     # run this manually in your shell
+<pre>$ litani init                     # run this manually in your shell
 $
 $ ./run-1.py --no-standalone      # add the jobs emitted by run-1.py
 $                                 # without re-initializing the build
@@ -587,8 +586,7 @@ $ ./transform-all-jobs.sh         # This script invokes `litani
 $                                 # transform-jobs` as a subprocess
 $                                 # and modifies the jobs
 $
-$ litani run-build                # run all jobs added from all scripts
-</pre>
+$ litani run-build                # run all jobs added from all scripts</pre>
 </div>
 <p class="Pp">This allows users to 'compose' Litani-based builds that they do
     not have control over, and also modify them before running.</p>
@@ -639,8 +637,7 @@ $ litani run-build                # run all jobs added from all scripts
     write them back to <b>transform-jobs</b>.</p>
 <p class="Pp"></p>
 <div class="Bd-indent">
-<pre>
-proc = subprocess.Popen(
+<pre>proc = subprocess.Popen(
 <br/>
         [litani, &quot;-v&quot;, &quot;transform-jobs&quot;], stdin=subprocess.PIPE,
 <br/>
@@ -649,8 +646,7 @@ jobs = json.loads(proc.stdout.read())
 # jobs is now a list of dicts, which can be processed here
 print(json.dumps(jobs), file=proc.stdin)
 proc.stdin.close()
-proc.wait()
-</pre>
+proc.wait()</pre>
 </div>
 </section>
 <section class="Ss">
@@ -660,8 +656,7 @@ proc.wait()
     is, you start off with a build graph that looks like this:</p>
 <p class="Pp"></p>
 <div class="Bd-indent">
-<pre>
-foo.exe --&gt; foo.out
+<pre>foo.exe --&gt; foo.out
 <br/>
                    \
 <br/>
@@ -671,8 +666,7 @@ bar.exe --&gt; bar.out --&gt; final.exe --&gt; final.out
                     /
 <br/>
                    /
-baz.exe --&gt; baz.out
-</pre>
+baz.exe --&gt; baz.out</pre>
 </div>
 <p class="Pp">And you want to print `<i>echo Starting</i>` before any job starts
     to run:</p>
@@ -691,8 +685,7 @@ echo 'Start' --&gt; fake.out --&gt; bar.exe --&gt; bar.out --&gt; final.exe --&g
 <br/>
                                v                 /
 <br/>
-                              baz.exe --&gt; baz.out
-</pre>
+                              baz.exe --&gt; baz.out</pre>
 </div>
 <p class="Pp">The way to accomplish this is</p>
 <p class="Pp"></p>
@@ -708,8 +701,7 @@ echo 'Start' --&gt; fake.out --&gt; bar.exe --&gt; bar.out --&gt; final.exe --&g
   example:</p>
 <p class="Pp"></p>
 <div class="Bd-indent">
-<pre>
-proc = subprocess.Popen(
+<pre>proc = subprocess.Popen(
 <br/>
         [litani, &quot;transform-jobs&quot;], stdin=subprocess.PIPE,
 <br/>
@@ -741,8 +733,7 @@ subprocess.run([
         &quot;--command&quot;, &quot;&gt;&amp;2 echo Starting &amp;&amp; sleep 2&quot;,
 <br/>
         &quot;--phony-outputs&quot;, dependency_node,
-], check=True)
-</pre>
+], check=True)</pre>
 </div>
 </section>
 </section>
@@ -1327,9 +1318,7 @@ subprocess.run([
 <p class="Pp">A useful pattern is to run this program as</p>
 </div>
 <div class="Bd-indent">
-<pre>
-	litani init --output-prefix output --output-symlink output/latest
-</pre>
+<pre>	litani init --output-prefix output --output-symlink output/latest</pre>
 </div>
 <div class="Bd-indent">This way, all Litani runs are stored under the
   <i>output</i> directory, and the <i>output/latest</i> directory always points
@@ -1396,14 +1385,12 @@ subprocess.run([
     has been added to a litani run either using a pipeline or a sequence</p>
 <p class="Pp"></p>
 <div class="Bd-indent">
-<pre>
-# Pipeline
+<pre># Pipeline
 litani get-jobs | jq '[.[] | (.command = &quot;echo &quot; + .command)]' | litani set-jobs
 # Sequence
 litani get-jobs --out-file /tmp/original.json
 jq '[.[] | (.command = &quot;echo &quot; + .command)]' &lt; /tmp/original.json &gt; /tmp/transformed.json
-litani set-jobs --from-file /tmp/transformed.JSON
-</pre>
+litani set-jobs --from-file /tmp/transformed.JSON</pre>
 </div>
 </section>
 <section class="Sh">
