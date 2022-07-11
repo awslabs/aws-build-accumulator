@@ -446,13 +446,15 @@ p {
         {% for stage in pipe["ci_stages"] %}
         <div class="pipeline-stage">
 
-          <a class="stage-artifacts-link {{ stage['status'] }}"
-             href="{{ stage['url'] }}/index.html">
-            <div class="stage-bar">
-              <div class="progress" style="width: {{ stage['progress'] }}%">
-              </div><!-- class="progress" -->
-            </div><!-- class="stage-bar" -->
-          </a>
+          {% if stage['jobs'] %}
+            <a class="stage-artifacts-link {{ stage['status'] }}"
+              href="{{ stage['url'] }}/index.html">
+              <div class="stage-bar">
+                <div class="progress" style="width: {{ stage['progress'] }}%">
+                </div><!-- class="progress" -->
+              </div><!-- class="stage-bar" -->
+            </a>
+          {% endif %}{# stage['jobs'] #}
 
         </div><!-- class="pipeline-stage" -->
         {% endfor %}{# stage in pipe["stages"] #}
