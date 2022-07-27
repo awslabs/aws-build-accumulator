@@ -213,6 +213,9 @@ async def run_build(args):
         with litani.atomic_write(args.out_file) as handle:
             print(json.dumps(run, indent=2), file=handle)
 
+    report_rendering = litani.ReportRenderingCompletion(report_dir)
+    report_rendering.complete()
+
     # Print the path to the complete report at the end of 'litani run-build'.
     # The same path was printed at the start of 'litani init'.
     if 'latest_symlink' in run_info:
