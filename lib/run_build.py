@@ -19,10 +19,11 @@ import signal
 import sys
 import threading
 
-from lib import litani, ninja_syntax, litani_report
+from lib import aws_s3, litani, litani_report, ninja_syntax
 import lib.exec
 import lib.render
 import lib.run_printer
+import lib.util
 
 
 def add_subparser(subparsers):
@@ -41,6 +42,17 @@ def add_subparser(subparsers):
             "flags": ["-o", "--out-file"],
             "metavar": "F",
             "help": "periodically write JSON representation of the run"
+    }, {
+            "flags": ["--bucket-name"],
+            "metavar": "B",
+            "help": "upload incremental, final build artifacts to Amazon S3."
+                    "During an upload, both incremental snapshots and a final "
+                    "version of the report directory are being uploaded. The "
+                    f"location in S3 starts with \"{litani.BUILD_ARTIFACTS}\". "
+                    "It is followed by a subfolder whose name indicates "
+                    "the build's run ID. There are 2 more nested subfolders "
+                    "distinguishing the final report directory from the "
+                    "possibly several incremental ones.",
     }, {
             "flags": ["--fail-on-pipeline-failure"],
             "action": "store_true",
@@ -166,7 +178,7 @@ async def run_build(args):
     killer = threading.Event()
     render_thread = threading.Thread(
         group=None, target=lib.render.continuous_render_report,
-        args=(cache_dir, killer, args.out_file, render))
+        args=(cache_dir, killer, args.out_file, render, args.bucket_name))
     render_thread.start()
 
     runner = lib.ninja.Runner(
@@ -214,6 +226,9 @@ async def run_build(args):
     if 'latest_symlink' in run_info:
         print("Report was rendered at "
               f"file://{run_info['latest_symlink']}/html/index.html")
+
+    if args.bucket_name:
+        aws_s3.sync(args.bucket_name, cache_dir, litani.FINAL)
 
     if args.fail_on_pipeline_failure:
         for _ in itertools.filterfalse(

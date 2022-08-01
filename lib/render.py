@@ -17,11 +17,11 @@ import time
 import traceback
 
 
-from lib import litani_report, litani
+from lib import aws_s3, litani, litani_report
 import lib.validation
 
 
-def continuous_render_report(cache_dir, killer, out_file, render):
+def continuous_render_report(cache_dir, killer, out_file, render, bucket_name):
     try:
         while True:
             run = litani_report.get_run_data(cache_dir)
@@ -34,6 +34,8 @@ def continuous_render_report(cache_dir, killer, out_file, render):
             render(run)
             if killer.is_set():
                 break
+            if bucket_name:
+                aws_s3.sync(bucket_name, cache_dir, litani.INCREMENTAL)
             time.sleep(2)
     except BaseException as e:
         logging.error("Continuous render function crashed")

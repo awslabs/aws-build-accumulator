@@ -26,10 +26,14 @@ import uuid
 CACHE_FILE = "cache.json"
 CACHE_POINTER = ".litani_cache_dir"
 DEFAULT_STAGES = ["build", "test", "report"]
+INCREMENTAL = "incremental"
+FINAL = "final"
+BUILD_ARTIFACTS = "BuildArtifacts"
 ENV_VAR_JOB_ID = "LITANI_JOB_ID"
 JOBS_DIR = "jobs"
 RUN_FILE = "run.json"
 TIME_FORMAT_R = "%Y-%m-%dT%H:%M:%SZ"
+TIME_FORMAT_FILENAME_FRIENDLY = "%Y-%m-%dT%H-%M-%SZ"
 TIME_FORMAT_MS = "%Y-%m-%dT%H:%M:%S.%fZ"
 VERSION_MAJOR = 1
 VERSION_MINOR = 27
@@ -196,6 +200,12 @@ def get_cache_dir(path=os.getcwd()):
         return CacheDir.get(path)
     except FileNotFoundError:
         sys.exit(1)
+
+
+def get_run_id():
+    with open(get_cache_dir() / CACHE_FILE) as handle:
+        cache = json.load(handle)
+        return cache["run_id"]
 
 
 def get_report_dir():

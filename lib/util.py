@@ -14,8 +14,10 @@
 import argparse
 import datetime
 import logging
+import os
 import pathlib
 import sys
+import zipfile
 
 from lib import litani
 
@@ -73,3 +75,21 @@ def _non_directory_path(arg):
         raise ValueError(
           f"--out-file flag expects a file and not a directory: {arg}")
     return path
+
+
+def zip_directory(directory_path, report_dir_type):
+    zipfile_path = directory_path / "html.zip"
+    with zipfile.ZipFile(zipfile_path, "w", zipfile.ZIP_DEFLATED) as zipf:
+        for root, subdirs, files in os.walk(directory_path):
+            if report_dir_type == litani.INCREMENTAL:
+                if "artifacts" in subdirs:
+                    subdirs.remove("artifacts")
+            for filename in files:
+                if filename == pathlib.Path(zipfile_path).name:
+                    continue
+                filepath = pathlib.Path(root) / filename
+                try:
+                    zipf.write(filepath, filepath.relative_to(directory_path))
+                except FileNotFoundError as err:
+                    logging.error("File not found: %s", filename)
+                    logging.error(str(err))
