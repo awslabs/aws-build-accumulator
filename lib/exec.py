@@ -96,7 +96,7 @@ async def exec_job(args):
         "wrapper_arguments": args_dict,
         "complete": False,
     }
-    lib.util.timestamp("start_time", out_data)
+    out_data["start_time"] = lib.util.timestamp()
     with litani.atomic_write(args.status_file) as handle:
         print(json.dumps(out_data, indent=2), file=handle)
 
@@ -126,7 +126,7 @@ async def exec_job(args):
             "\n".join([l.rstrip() for l in out_data["stderr"]]),
             file=sys.stderr)
 
-    lib.util.timestamp("end_time", out_data)
+    out_data["end_time"] = lib.util.timestamp()
     out_str = json.dumps(out_data, indent=2)
     logging.debug("run status: %s", out_str)
     with litani.atomic_write(args.status_file) as handle:

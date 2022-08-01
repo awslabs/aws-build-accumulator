@@ -30,7 +30,6 @@ ENV_VAR_JOB_ID = "LITANI_JOB_ID"
 JOBS_DIR = "jobs"
 RUN_FILE = "run.json"
 TIME_FORMAT_R = "%Y-%m-%dT%H:%M:%SZ"
-TIME_FORMAT_W = "%Y-%m-%dT%H:%M:%SZ"
 TIME_FORMAT_MS = "%Y-%m-%dT%H:%M:%S.%fZ"
 VERSION_MAJOR = 1
 VERSION_MINOR = 27

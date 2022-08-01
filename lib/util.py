@@ -20,9 +20,8 @@ import sys
 from lib import litani
 
 
-def timestamp(key, data):
-    data[key] = datetime.datetime.now(datetime.timezone.utc).strftime(
-        litani.TIME_FORMAT_W)
+def timestamp(format=litani.TIME_FORMAT_R):
+    return datetime.datetime.now(datetime.timezone.utc).strftime(format)
 
 
 def get_pools(args):

@@ -11,7 +11,6 @@
 # express or implied. See the License for the specific language governing
 # permissions and limitations under the License
 
-import datetime
 import itertools
 import json
 import logging
@@ -179,12 +178,9 @@ async def run_build(args):
     signal.signal(lib.run_printer.DUMP_SIGNAL, sig_handler)
     runner.run()
 
-    now = datetime.datetime.now(datetime.timezone.utc).strftime(
-        litani.TIME_FORMAT_W)
-
     with open(cache_dir / litani.CACHE_FILE) as handle:
         run_info = json.load(handle)
-    run_info["end_time"] = now
+    run_info["end_time"] = lib.util.timestamp()
     run_info["parallelism"] = runner.get_parallelism_graph()
 
     success = True

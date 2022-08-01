@@ -108,7 +108,7 @@ async def init(args):
             f"file://{str(latest_symlink)}/html/index.html")
 
     now = datetime.datetime.now(datetime.timezone.utc).strftime(
-        litani.TIME_FORMAT_W)
+        litani.TIME_FORMAT_R)
 
     with litani.atomic_write(cache_dir / litani.CACHE_FILE) as handle:
         print(json.dumps({
