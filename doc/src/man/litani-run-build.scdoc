@@ -47,6 +47,14 @@ parallel.
 *-o* _F_, *--out-file* _F_
 	Periodically write the _run.json_ file to _F_.
 
+*--bucket-name* _B_
+	Periodically upload the report directory containing all build artifacts to
+	a Amazon S3 bucket _B_. Both "incremental snapshots" and a final version
+    of the report directory will be uploaded. The location in S3 starts
+    with "BuildArtifacts". It is followed by a subfolder whose name indicates
+    the build's run ID. There are 2 more nested subfolders distinguishing
+    the final report directory from the possibly several incremental ones.
+
 *--fail-on-pipeline-failure*
 	Return _0_ only if all pipelines were successful. See *RETURN CODE*
 	below.
