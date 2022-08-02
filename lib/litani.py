@@ -58,6 +58,22 @@ class ExpireableDirectory:
 
 
 
+class ReportRendering:
+    """This class is to mark the completion of the report rendering process"""
+
+    def __init__(self):
+        self._touchfile = get_cache_dir().resolve() / ".litani-completed"
+
+
+    def complete(self):
+        self._touchfile.touch()
+
+
+    def has_completed(self):
+        return self._touchfile.exists()
+
+
+
 class AcquisitionFailed(Exception):
     pass
 
