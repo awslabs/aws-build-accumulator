@@ -35,7 +35,7 @@ TIME_FORMAT_MS = "%Y-%m-%dT%H:%M:%S.%fZ"
 VERSION_MAJOR = 1
 VERSION_MINOR = 27
 VERSION_PATCH = 0
-RC = True
+RC = False
 
 RC_STR = "-rc" if RC else ""
 VERSION = "%d.%d.%d%s" % (VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, RC_STR)
