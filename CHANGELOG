@@ -1,6 +1,14 @@
                               CHANGELOG
                               `````````
 
+Version 1.27.0 -- 2022-08-03
+----------------------------
+- Modify behavior of acquire-html-dir command
+  If a build has finished, then a lock will not be acquired (and
+  consequently the path to the HTML directory will not be
+  printed to stdout) until the report has finished rendering.
+
+
 Version 1.26.0 -- 2022-05-18
 ----------------------------
 

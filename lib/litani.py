@@ -33,7 +33,7 @@ TIME_FORMAT_R = "%Y-%m-%dT%H:%M:%SZ"
 TIME_FORMAT_W = "%Y-%m-%dT%H:%M:%SZ"
 TIME_FORMAT_MS = "%Y-%m-%dT%H:%M:%S.%fZ"
 VERSION_MAJOR = 1
-VERSION_MINOR = 26
+VERSION_MINOR = 27
 VERSION_PATCH = 0
 RC = False
 
@@ -54,6 +54,22 @@ class ExpireableDirectory:
 
 
     def is_expired(self):
+        return self._touchfile.exists()
+
+
+
+class ReportRendering:
+    """This class is to mark the completion of the report rendering process"""
+
+    def __init__(self):
+        self._touchfile = get_cache_dir().resolve() / ".litani-completed"
+
+
+    def complete(self):
+        self._touchfile.touch()
+
+
+    def has_completed(self):
         return self._touchfile.exists()
 
 

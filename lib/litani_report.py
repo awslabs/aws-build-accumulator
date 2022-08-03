@@ -448,16 +448,22 @@ async def acquire_html_dir(args):
         end = datetime.datetime.now() + datetime.timedelta(seconds=args.timeout)
     else:
         end = datetime.datetime.max
-    while True:
+    while datetime.datetime.now() <= end:
         html_dir = lib.litani.get_report_dir().resolve()
         lockable_dir = lib.litani.LockableDirectory(html_dir)
-        if lockable_dir.acquire():
-            print(html_dir)
-            sys.exit(0)
-        if datetime.datetime.now() > end:
-            sys.exit(1)
-        await asyncio.sleep(1)
-
+        if not lockable_dir.acquire():
+            await asyncio.sleep(1)
+            continue
+        with open(html_dir / "run.json") as handle:
+            run = json.load(handle)
+            is_completed_run = run["status"] != "in_progress"
+        if is_completed_run and not litani.ReportRendering().has_completed():
+            lockable_dir.release()
+            await asyncio.sleep(1)
+            continue
+        print(html_dir)
+        sys.exit(0)
+    sys.exit(1)
 
 async def print_html_dir(_):
     html_dir = lib.litani.get_report_dir()
