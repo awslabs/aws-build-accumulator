@@ -104,8 +104,8 @@ async def init(args):
 
     if not args.no_print_out_dir:
         print(
-            "Report will be rendered at "
-            f"file://{str(latest_symlink)}/html/index.html")
+            "Build outputs will be present at this directory: "
+            f"file://{str(latest_symlink)}")
 
     now = datetime.datetime.now(datetime.timezone.utc).strftime(
         litani.TIME_FORMAT_W)

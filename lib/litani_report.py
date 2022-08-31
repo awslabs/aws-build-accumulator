@@ -344,11 +344,15 @@ class StatsGroupRenderer:
 
 @dataclasses.dataclass
 class ReportRenderer:
-    report_dir: pathlib.Path
-    pipeline_depgraph_renderer: PipelineDepgraphRenderer
+    should_render_html_report: bool
+    should_render_pipeline_dep_graph: bool
 
 
     def __call__(self, run):
+        if not self.should_render_html_report:
+            return
+        pipeline_depgraph_renderer = PipelineDepgraphRenderer(
+            should_render=self.should_render_pipeline_dep_graph)
         temporary_report_dir = litani.get_report_data_dir() / str(uuid.uuid4())
         temporary_report_dir.mkdir(parents=True)
         old_report_dir_path = litani.get_report_dir().resolve()
@@ -378,7 +382,7 @@ class ReportRenderer:
         front_page_outputs = {}
         pipe_templ = env.get_template("pipeline.jinja.html")
         for pipe in run["pipelines"]:
-            self.pipeline_depgraph_renderer.render(
+            pipeline_depgraph_renderer.render(
                 render_root=temporary_report_dir,
                 pipe_url=pathlib.Path(pipe["url"]), pipe=pipe)
             for stage in pipe["ci_stages"]:
@@ -422,10 +426,11 @@ class ReportRenderer:
 
         locked_dir = litani.LockableDirectory(temporary_report_dir)
 
-        temp_symlink_dir = self.report_dir.with_name(
-            self.report_dir.name + str(uuid.uuid4()))
+        report_dir = litani.get_report_dir()
+        new_report_dir_name = report_dir.name + str(uuid.uuid4())
+        temp_symlink_dir = report_dir.with_name(new_report_dir_name)
         os.symlink(temporary_report_dir, temp_symlink_dir)
-        os.rename(temp_symlink_dir, self.report_dir)
+        os.rename(temp_symlink_dir, report_dir)
 
         locked_dir.release()
 

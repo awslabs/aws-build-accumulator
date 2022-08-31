@@ -50,6 +50,10 @@ def add_subparser(subparsers):
             "flags": ["--no-pipeline-dep-graph"],
             "action": "store_true",
             "help": "do not attempt to generate pipeline dependency graph"
+    }, {
+            "flags": ["--no-report-render"],
+            "action": "store_true",
+            "help": "do not render the HTML report"
     }]:
         flags = arg.pop("flags")
         run_build_pars.add_argument(*flags, **arg)
@@ -156,13 +160,12 @@ async def run_build(args):
         for build in builds:
             logging.debug(build)
             ninja.build(**build)
+    should_render_html_report = not args.no_report_render
     run = litani_report.get_run_data(cache_dir)
     lib.validation.validate_run(run)
-    report_dir = lib.litani.get_report_dir()
-    pipeline_depgraph_renderer = litani_report.PipelineDepgraphRenderer(
-        should_render=not args.no_pipeline_dep_graph)
     render = litani_report.ReportRenderer(
-        report_dir, pipeline_depgraph_renderer)
+        should_render_html_report=should_render_html_report,
+        should_render_pipeline_dep_graph=not args.no_pipeline_dep_graph)
     render(run)
     killer = threading.Event()
     render_thread = threading.Thread(
@@ -213,14 +216,15 @@ async def run_build(args):
         with litani.atomic_write(args.out_file) as handle:
             print(json.dumps(run, indent=2), file=handle)
 
-    report_rendering = litani.ReportRendering()
-    report_rendering.complete()
+    if should_render_html_report:
+        report_rendering = litani.ReportRendering()
+        report_rendering.complete()
 
     # Print the path to the complete report at the end of 'litani run-build'.
     # The same path was printed at the start of 'litani init'.
     if 'latest_symlink' in run_info:
-        print("Report was rendered at "
-              f"file://{run_info['latest_symlink']}/html/index.html")
+        print("Build outputs are present at this directory: "
+              f"file://{run_info['latest_symlink']}")
 
     if args.fail_on_pipeline_failure:
         for _ in itertools.filterfalse(
