@@ -78,6 +78,22 @@ def check_run(_, run_dir, mod):
         sys.exit(1)
 
 
+def check_no_report_render(_, run_dir, mod):
+    os.chdir(run_dir)
+    does_html_dir_exist = False
+    for child in (run_dir / "output").iterdir():
+        if child.is_dir() and child.name == "html":
+            does_html_dir_exist = True
+            break
+    should_not_render_report = mod.check_no_report_render()
+    unexpected_html_dir_was_created = should_not_render_report \
+        and does_html_dir_exist
+    expected_html_dir_was_not_created = not should_not_render_report \
+        and not does_html_dir_exist
+    if unexpected_html_dir_was_created or expected_html_dir_was_not_created:
+        sys.exit(1)
+
+
 def add_jobs(litani, run_dir, mod):
     os.chdir(run_dir)
     jobs = mod.get_jobs()
@@ -174,6 +190,7 @@ OPERATIONS = {
     "add-jobs": add_jobs,
     "run-build": run_build,
     "check-run": check_run,
+    "check-no-report-render": check_no_report_render,
     "transform-jobs": transform_jobs,
     "get-jobs": get_jobs,
     "set-jobs": set_jobs,

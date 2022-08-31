@@ -255,6 +255,23 @@ def add_e2e_tests(test_dir, output_dir, fast, queue, litani):
             timeout=timeout)
 
 
+        if test_has_method("check_no_report_render"):
+            enqueue_job(
+                queue,
+                command=collapse(f"""
+                    {e2e_test_dir / 'run'}
+                    --test-file {test_file}
+                    --litani {litani}
+                    --run-dir {run_dir}
+                    --operation check-no-report-render"""),
+                pipeline=f"e2e_{test_file.stem}",
+                ci_stage="test",
+                description=f"{test_file.stem}: check report rendering",
+                inputs=f"{run_dir}/output/run.json",
+                cwd=run_dir,
+                timeout=timeout)
+
+
 def add_unit_tests(test_dir, root_dir, queue):
     for fyle in (test_dir / "unit").iterdir():
         if fyle.name in ["__init__.py", "__pycache__"]:
