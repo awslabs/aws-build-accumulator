@@ -455,6 +455,8 @@ async def acquire_html_dir(args):
         end = datetime.datetime.max
     while datetime.datetime.now() <= end:
         html_dir = lib.litani.get_report_dir().resolve()
+        if not html_dir.exists():
+            sys.exit(1)
         lockable_dir = lib.litani.LockableDirectory(html_dir)
         if not lockable_dir.acquire():
             await asyncio.sleep(1)
