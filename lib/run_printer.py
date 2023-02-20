@@ -36,6 +36,8 @@ import lib.util
 DUMP_SIGNAL = signal.SIGUSR1
 _DUMPED_RUN = "dumped-run.json"
 
+_SIGNAL_HANDLER_RUNNING = False
+
 
 def add_subparser(subparsers):
     dump_run_pars = subparsers.add_parser("dump-run")
@@ -206,7 +208,14 @@ class DumpRunSignalHandler:
 
 
     def __call__(self, _signum, _frame):
+        global _SIGNAL_HANDLER_RUNNING
+
+        if _SIGNAL_HANDLER_RUNNING:
+            return
+
+        _SIGNAL_HANDLER_RUNNING = True
         run = lib.litani_report.get_run_data(self.cache_dir)
         with lib.litani.atomic_write(
                 self.cache_dir / _DUMPED_RUN) as handle:
             print(json.dumps(run, indent=2), file=handle)
+        _SIGNAL_HANDLER_RUNNING = False
