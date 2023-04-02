@@ -137,7 +137,7 @@ class Runner:
     pipelines: list
     ci_stage: str
     proc: subprocess.CompletedProcess = None
-    status_parser: _StatusParser = _StatusParser()
+    status_parser: _StatusParser = = dataclasses.field(default_factory=_StatusParser)
     out_acc: _OutputAccumulator = None
 
 
