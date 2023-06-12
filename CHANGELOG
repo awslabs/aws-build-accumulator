@@ -1,6 +1,13 @@
                               CHANGELOG
                               `````````
 
+Version 1.29.0 -- 2023-06-12
+----------------------------
+
+- Litani now measures the runtime of each job in fractional seconds and
+	records this information in the "duration_ms" field in run.json.
+
+
 Version 1.28.0 -- 2023-03-02
 ----------------------------
 This is a bugfix release containing the following fix:

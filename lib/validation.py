@@ -392,6 +392,9 @@ def _run_schema():
                     "stdout": voluptuous.Any([str], None),
                     # A list of strings that the command printed to its stdout.
 
+                    "duration_ms": voluptuous.Any(str, None),
+                    # Duration of this job S.MS
+
                     "duration_str": voluptuous.Any(str, None),
                     # A human-readable duration of this job (HH:MM:SS).
 

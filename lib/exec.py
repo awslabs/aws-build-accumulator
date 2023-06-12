@@ -13,6 +13,7 @@
 
 import __main__
 
+import datetime
 import json
 import logging
 import os
@@ -96,6 +97,7 @@ async def exec_job(args):
         "wrapper_arguments": args_dict,
         "complete": False,
     }
+    start_time = datetime.datetime.now(datetime.timezone.utc)
     lib.util.timestamp("start_time", out_data)
     with litani.atomic_write(args.status_file) as handle:
         print(json.dumps(out_data, indent=2), file=handle)
@@ -105,6 +107,7 @@ async def exec_job(args):
         args.timeout, args.profile_memory, args.profile_memory_interval,
         args_dict["job_id"])
     await run()
+    end_time = datetime.datetime.now(datetime.timezone.utc)
     lib.job_outcome.fill_in_result(run, out_data, args)
 
     for out_field, proc_pipe, arg_file in [
@@ -127,6 +130,11 @@ async def exec_job(args):
             file=sys.stderr)
 
     lib.util.timestamp("end_time", out_data)
+
+    duration = end_time - start_time
+    dur_sec = duration.seconds + (duration.days * 60 * 60 * 24)
+    out_data["duration_ms"] = f"{dur_sec}.{duration.microseconds}"
+
     out_str = json.dumps(out_data, indent=2)
     logging.debug("run status: %s", out_str)
     with litani.atomic_write(args.status_file) as handle:
