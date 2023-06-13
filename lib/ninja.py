@@ -15,12 +15,15 @@
 import dataclasses
 import datetime
 import io
+import logging
 import math
 import os
 import pathlib
 import re
 import subprocess
+import sys
 import threading
+import time
 
 import lib.litani
 
@@ -136,6 +139,7 @@ class Runner:
     parallelism: int
     pipelines: list
     ci_stage: str
+    render_killer: threading.Event
     proc: subprocess.CompletedProcess = None
     status_parser: _StatusParser = dataclasses.field(default_factory=_StatusParser)
     out_acc: _OutputAccumulator = None
@@ -168,13 +172,12 @@ class Runner:
             **{"NINJA_STATUS": self.status_parser.status_format},
         }
 
-        with subprocess.Popen(
-                self._get_cmd(), env=env, stdout=subprocess.PIPE, text=True,
-                ) as proc:
-            self.proc = proc
-            self.out_acc = _OutputAccumulator(proc.stdout, self.status_parser)
-            self.out_acc.start()
-            self.out_acc.join()
+        self.proc = subprocess.Popen(
+            self._get_cmd(), env=env, stdout=subprocess.PIPE, text=True)
+
+        self.out_acc = _OutputAccumulator(self.proc.stdout, self.status_parser)
+        self.out_acc.start()
+        self.out_acc.join()
 
 
     def was_successful(self):
