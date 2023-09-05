@@ -118,50 +118,27 @@ class Writer(object):
     def default(self, paths):
         self._line('default %s' % ' '.join(as_list(paths)))
 
-    def _count_dollars_before_index(self, s, i):
-        """Returns the number of '$' characters right in front of s[i]."""
-        dollar_count = 0
-        dollar_index = i - 1
-        while dollar_index > 0 and s[dollar_index] == '$':
-            dollar_count += 1
-            dollar_index -= 1
-        return dollar_count
-
     def _line(self, text, indent=0):
         """Write 'text' word-wrapped at self.width characters."""
         leading_space = '  ' * indent
-        while len(leading_space) + len(text) > self.width:
-            # The text is too wide; wrap if possible.
-
-            # Find the rightmost space that would obey our width constraint and
-            # that's not an escaped space.
-            available_space = self.width - len(leading_space) - len(' $')
-            space = available_space
-            while True:
-                space = text.rfind(' ', 0, space)
-                if (space < 0 or
-                    self._count_dollars_before_index(text, space) % 2 == 0):
-                    break
-
-            if space < 0:
-                # No such space; just use the first unescaped space we can find.
-                space = available_space - 1
-                while True:
-                    space = text.find(' ', space + 1)
-                    if (space < 0 or
-                        self._count_dollars_before_index(text, space) % 2 == 0):
-                        break
-            if space < 0:
-                # Give up on breaking.
-                break
-
-            self.output.write(leading_space + text[0:space] + ' $\n')
-            text = text[space+1:]
-
-            # Subsequent lines are continuations, so indent them.
-            leading_space = '  ' * (indent+2)
-
-        self.output.write(leading_space + text + '\n')
+        in_escape = False
+        most_recent_space_index = None
+        written_up_to = 0
+        for i, c in enumerate(text):
+            if c == '$':
+                in_escape = not in_escape
+            if not in_escape and c == ' ':
+                most_recent_space_index = i
+            if (len(leading_space) + i - written_up_to > self.width and
+                    most_recent_space_index is not None):
+                self.output.write(leading_space +
+                                  text[written_up_to:most_recent_space_index] +
+                                  ' $\n')
+                # Subsequent lines are continuations, so indent them.
+                leading_space = '  ' * (indent + 2)
+                written_up_to = most_recent_space_index + 1
+                most_recent_space_index = None
+        self.output.write(leading_space + text[written_up_to:] + '\n')
 
     def close(self):
         self.output.close()
